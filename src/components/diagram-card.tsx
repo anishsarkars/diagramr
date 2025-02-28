@@ -16,6 +16,7 @@ interface DiagramCardProps {
   tags?: string[];
   className?: string;
   aspectRatio?: number;
+  isGenerated?: boolean;
 }
 
 export function DiagramCard({
@@ -27,6 +28,7 @@ export function DiagramCard({
   tags = [],
   className,
   aspectRatio = 16 / 9,
+  isGenerated = false,
 }: DiagramCardProps) {
   const [isLiked, setIsLiked] = useState(false);
   
@@ -54,6 +56,14 @@ export function DiagramCard({
             }}
           />
         </AspectRatio>
+        
+        {isGenerated && (
+          <div className="absolute top-2 left-2">
+            <Badge variant="secondary" className="bg-primary/90 text-white backdrop-blur-sm">
+              AI Generated
+            </Badge>
+          </div>
+        )}
         
         {author && (
           <div className="absolute bottom-2 right-2 text-xs">

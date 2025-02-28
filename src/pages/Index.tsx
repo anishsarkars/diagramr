@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { AnimatedContainer } from "@/components/animated-container";
 import { DiagramCard } from "@/components/diagram-card";
@@ -49,13 +48,16 @@ const SAMPLE_DIAGRAM_DATA = [
   },
 ];
 
-// Unsplash image URLs for better diagram previews
+// Real diagram image URLs for better preview
 const DIAGRAM_IMAGES = [
-  "https://images.unsplash.com/photo-1606117192276-2f26a021d014?w=600&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1612050489523-fb5c9b8c5704?w=600&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1581307705662-903b18977b5e?w=600&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1524334228333-0f6db392f8a1?w=600&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1610366398516-46da9dec5931?w=600&auto=format&fit=crop&q=80",
+  "https://miro.medium.com/v2/resize:fit:1400/1*Qwln63hihLxKZWQQCwYoMg.png", // Network diagram
+  "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/networkdiagram.svg", // Another network diagram
+  "https://www.researchgate.net/profile/Jukka-Kiljander/publication/269932936/figure/fig1/AS:668517535866888@1536398532674/IoT-reference-architecture.png", // IoT architecture
+  "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/flowchart.svg", // Flowchart
+  "https://www.researchgate.net/profile/Emanuele-Bellini-4/publication/343545097/figure/fig2/AS:923460958752769@1597050767735/An-example-of-a-binary-search-tree.png", // Binary search tree
+  "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/discovery-page/UML-class-diagram/UML-class-diagram-example.png", // UML class diagram
+  "https://media.geeksforgeeks.org/wp-content/uploads/20220217151648/UndirectedGraph3.png", // Graph data structure
+  "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/ER-diagram-tutorial/erd_2_LI.jpg", // ER diagram
 ];
 
 interface DiagramData {
@@ -66,26 +68,46 @@ interface DiagramData {
   authorUsername?: string;
   tags?: string[];
   sourceUrl?: string;
+  isGenerated?: boolean;
 }
 
 const Index = () => {
   const [aiPrompt, setAiPrompt] = useState("");
   const [results, setResults] = useState<DiagramData[]>(SAMPLE_DIAGRAM_DATA);
-  const [isSearching, setIsSearching] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [showSearchField, setShowSearchField] = useState(true);
+  const [lastAction, setLastAction] = useState<"search" | "generate">("search");
 
-  // Enhanced function to simulate fetching diagrams from the web based on search term
+  // Function to fetch diagrams from the web based on search term
   const fetchDiagramsFromWeb = async (searchTerm: string): Promise<DiagramData[]> => {
     console.log("Searching for:", searchTerm);
     
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Generate more realistic mock results based on the search term
-    const searchTermWords = searchTerm.toLowerCase().split(" ");
+    // Determine which images to show based on search keywords
+    const searchTermLower = searchTerm.toLowerCase();
+    let filteredImages = [...DIAGRAM_IMAGES];
     
-    // Create tag combinations from the search term
+    if (searchTermLower.includes("network")) {
+      // Prioritize network diagrams
+      filteredImages = DIAGRAM_IMAGES.filter((_, i) => i < 2).concat(filteredImages.filter((_, i) => i >= 2));
+    } else if (searchTermLower.includes("tree") || searchTermLower.includes("data structure")) {
+      // Prioritize tree or data structure diagrams
+      filteredImages = [DIAGRAM_IMAGES[4], DIAGRAM_IMAGES[6]].concat(filteredImages.filter((_, i) => i !== 4 && i !== 6));
+    } else if (searchTermLower.includes("uml") || searchTermLower.includes("class")) {
+      // Prioritize UML diagrams
+      filteredImages = [DIAGRAM_IMAGES[5]].concat(filteredImages.filter((_, i) => i !== 5));
+    } else if (searchTermLower.includes("flow") || searchTermLower.includes("flowchart")) {
+      // Prioritize flowcharts
+      filteredImages = [DIAGRAM_IMAGES[3]].concat(filteredImages.filter((_, i) => i !== 3));
+    } else if (searchTermLower.includes("er") || searchTermLower.includes("entity")) {
+      // Prioritize ER diagrams
+      filteredImages = [DIAGRAM_IMAGES[7]].concat(filteredImages.filter((_, i) => i !== 7));
+    }
+    
+    // Generate tag combinations from the search term
     const generateTags = (term: string) => {
       const words = term.toLowerCase().split(" ");
       const baseTags = words.filter(word => word.length > 3);
@@ -111,9 +133,9 @@ const Index = () => {
       
       const title = `${prefix} ${searchTerm} ${suffix}`;
       
-      // Select an image from the pool or use a fallback
-      const imageIndex = i % DIAGRAM_IMAGES.length;
-      const imageSrc = DIAGRAM_IMAGES[imageIndex];
+      // Select an image from the filtered pool
+      const imageIndex = i % filteredImages.length;
+      const imageSrc = filteredImages[imageIndex];
       
       // Generate tags from the search term
       const tags = generateTags(searchTerm);
@@ -136,22 +158,68 @@ const Index = () => {
     return mockResults;
   };
 
-  const handleAIPrompt = async (prompt: string) => {
+  // Function to generate diagrams using AI based on prompt
+  const generateDiagramWithAI = async (prompt: string): Promise<DiagramData[]> => {
+    console.log("Generating diagram for:", prompt);
+    
+    // Simulate AI processing delay
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    
+    // For demonstration, we'll use the same images but mark them as AI-generated
+    const imagePool = [...DIAGRAM_IMAGES];
+    
+    // Create tag combinations from the prompt
+    const generateTags = (term: string) => {
+      const words = term.toLowerCase().split(" ");
+      const baseTags = words.filter(word => word.length > 3);
+      return [...new Set([...baseTags, "ai-generated", "custom"])];
+    };
+    
+    // Generate AI results (fewer than search results)
+    const mockResults: DiagramData[] = Array.from({ length: 3 }, (_, i) => {
+      const imageIndex = i % imagePool.length;
+      
+      return {
+        id: `generated-${Date.now()}-${i}`,
+        title: `AI Generated: ${prompt}`,
+        imageSrc: imagePool[imageIndex],
+        author: "diagramr AI",
+        authorUsername: "diagramr_ai",
+        tags: generateTags(prompt),
+        sourceUrl: `#`,
+        isGenerated: true
+      };
+    });
+    
+    return mockResults;
+  };
+
+  const handleAIPrompt = async (prompt: string, mode: "search" | "generate") => {
     setAiPrompt(prompt);
-    setIsSearching(true);
+    setIsLoading(true);
+    setLastAction(mode);
     
     try {
-      // Fetch diagrams based on search term
-      const searchResults = await fetchDiagramsFromWeb(prompt);
+      let searchResults: DiagramData[] = [];
+      
+      if (mode === "search") {
+        // Fetch diagrams based on search term
+        searchResults = await fetchDiagramsFromWeb(prompt);
+        toast.success(`Found ${searchResults.length} diagrams for "${prompt}"`);
+      } else {
+        // Generate diagram based on prompt
+        searchResults = await generateDiagramWithAI(prompt);
+        toast.success(`Generated ${searchResults.length} diagrams for "${prompt}"`);
+      }
+      
       setResults(searchResults);
-      toast.success(`Found ${searchResults.length} diagrams for "${prompt}"`);
     } catch (error) {
-      console.error("Error fetching diagrams:", error);
+      console.error(`Error ${mode === "search" ? "fetching" : "generating"} diagrams:`, error);
       // In case of error, fall back to sample data
       setResults(SAMPLE_DIAGRAM_DATA);
-      toast.error("Error fetching diagrams. Please try again.");
+      toast.error(`Error ${mode === "search" ? "searching for" : "generating"} diagrams. Please try again.`);
     } finally {
-      setIsSearching(false);
+      setIsLoading(false);
     }
   };
 
@@ -167,16 +235,16 @@ const Index = () => {
   };
 
   const handlePopularSearch = (term: string) => {
-    handleAIPrompt(term);
+    handleAIPrompt(term, "search");
   };
 
   useEffect(() => {
     // Automatically hide the search field when showing results
     // but keep it visible during initial load
-    if (aiPrompt && !isSearching) {
+    if (aiPrompt && !isLoading) {
       setShowSearchField(false);
     }
-  }, [aiPrompt, isSearching]);
+  }, [aiPrompt, isLoading]);
 
   return (
     <div className="flex flex-col min-h-screen w-full overflow-hidden bg-background">
@@ -199,25 +267,25 @@ const Index = () => {
             
             {showSearchField && (
               <AnimatedContainer className="w-full max-w-3xl">
-                <h1 className="text-2xl font-semibold mb-3 text-center">Find the perfect diagram</h1>
+                <h1 className="text-2xl font-semibold mb-3 text-center">Find or generate the perfect diagram</h1>
                 <p className="text-muted-foreground mb-6 text-center max-w-md mx-auto">
-                  Search for any diagram type, concept, or visual representation you need.
+                  Search for any diagram type or let AI generate one for you.
                 </p>
                 
                 <div className="w-full mb-8">
                   <AIInput 
                     onSubmit={handleAIPrompt} 
                     className="w-full shadow-lg"
-                    placeholder="Enter your search (e.g., 'network diagram' or 'data structures')"
-                    isSearching={isSearching}
+                    placeholder="Enter your search or describe what you need..."
+                    isLoading={isLoading}
                   />
                 </div>
                 
                 <div className="text-center">
                   <h3 className="text-base font-medium mb-3 text-muted-foreground">Popular searches</h3>
                   <div className="flex flex-wrap gap-2 justify-center max-w-2xl">
-                    {["UML Class Diagram", "Database Schema", "Flowchart", "Network Diagram", 
-                      "Data Structure Trees", "System Architecture", "Cloud Architecture"].map((type) => (
+                    {["UML Class Diagram", "Network Diagram", "Data Structure Trees", 
+                      "Flowchart", "System Architecture", "ER Diagram"].map((type) => (
                       <Button 
                         key={type} 
                         variant="outline" 
@@ -240,7 +308,9 @@ const Index = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <h2 className="text-xl font-medium">Results for: <span className="text-primary">{aiPrompt}</span></h2>
+                <h2 className="text-xl font-medium">
+                  {lastAction === "search" ? "Results for:" : "Generated for:"} <span className="text-primary">{aiPrompt}</span>
+                </h2>
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -252,7 +322,7 @@ const Index = () => {
               </motion.div>
             )}
             
-            {isSearching ? (
+            {isLoading ? (
               <div className="w-full h-64 flex flex-col items-center justify-center">
                 <div className="relative w-16 h-16">
                   <motion.div 
@@ -261,7 +331,9 @@ const Index = () => {
                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   />
                 </div>
-                <p className="text-muted-foreground mt-4">Searching for diagrams...</p>
+                <p className="text-muted-foreground mt-4">
+                  {lastAction === "search" ? "Searching for diagrams..." : "Generating your diagram..."}
+                </p>
               </div>
             ) : aiPrompt && !showSearchField ? (
               <motion.div 
@@ -270,7 +342,7 @@ const Index = () => {
                 initial="hidden"
                 animate="show"
               >
-                <Tabs defaultValue="all" className="w-full">
+                <Tabs defaultValue={activeTab} className="w-full">
                   <TabsList className="mb-4">
                     <TabsTrigger value="all" onClick={() => setActiveTab("all")}>All Results</TabsTrigger>
                     <TabsTrigger value="diagrams" onClick={() => setActiveTab("diagrams")}>Diagrams</TabsTrigger>
@@ -289,6 +361,7 @@ const Index = () => {
                           authorUsername={diagram.authorUsername}
                           tags={diagram.tags}
                           sourceUrl={diagram.sourceUrl}
+                          isGenerated={diagram.isGenerated}
                         />
                       ))}
                     </div>
@@ -305,6 +378,7 @@ const Index = () => {
                           authorUsername={diagram.authorUsername}
                           tags={diagram.tags}
                           sourceUrl={diagram.sourceUrl}
+                          isGenerated={diagram.isGenerated}
                         />
                       ))}
                     </div>
@@ -321,6 +395,7 @@ const Index = () => {
                           authorUsername={diagram.authorUsername}
                           tags={diagram.tags}
                           sourceUrl={diagram.sourceUrl}
+                          isGenerated={diagram.isGenerated}
                         />
                       ))}
                     </div>
@@ -337,6 +412,7 @@ const Index = () => {
                           authorUsername={diagram.authorUsername}
                           tags={diagram.tags}
                           sourceUrl={diagram.sourceUrl}
+                          isGenerated={diagram.isGenerated}
                         />
                       ))}
                     </div>
