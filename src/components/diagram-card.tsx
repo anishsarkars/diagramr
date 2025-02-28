@@ -3,8 +3,9 @@ import { cn } from "@/lib/utils";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, ExternalLink } from "lucide-react";
+import { Download, ExternalLink, Heart } from "lucide-react";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 interface DiagramCardProps {
   title: string;
@@ -27,6 +28,8 @@ export function DiagramCard({
   className,
   aspectRatio = 16 / 9,
 }: DiagramCardProps) {
+  const [isLiked, setIsLiked] = useState(false);
+  
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -45,6 +48,10 @@ export function DiagramCard({
             alt={title}
             className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
+            onError={(e) => {
+              // Fallback to a placeholder if the image fails to load
+              e.currentTarget.src = "/placeholder.svg";
+            }}
           />
         </AspectRatio>
         
@@ -63,10 +70,20 @@ export function DiagramCard({
               <span>Source</span>
             </a>
           </Button>
-          <Button size="sm" variant="secondary" className="gap-1">
-            <Download className="h-3.5 w-3.5" />
-            <span>Download</span>
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              size="icon" 
+              variant="secondary" 
+              className={cn(isLiked ? "text-red-500" : "")}
+              onClick={() => setIsLiked(!isLiked)}
+            >
+              <Heart className="h-3.5 w-3.5" fill={isLiked ? "currentColor" : "none"} />
+            </Button>
+            <Button size="sm" variant="secondary" className="gap-1">
+              <Download className="h-3.5 w-3.5" />
+              <span>Download</span>
+            </Button>
+          </div>
         </div>
       </div>
       <div className="p-3.5">

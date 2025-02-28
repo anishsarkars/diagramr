@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { AnimatedContainer } from "@/components/animated-container";
 import { DiagramCard } from "@/components/diagram-card";
@@ -5,8 +6,8 @@ import { AIInput } from "@/components/ai-input";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/logo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 // Sample diagram data for initial load
 const SAMPLE_DIAGRAM_DATA = [
@@ -48,6 +49,15 @@ const SAMPLE_DIAGRAM_DATA = [
   },
 ];
 
+// Unsplash image URLs for better diagram previews
+const DIAGRAM_IMAGES = [
+  "https://images.unsplash.com/photo-1606117192276-2f26a021d014?w=600&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1612050489523-fb5c9b8c5704?w=600&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1581307705662-903b18977b5e?w=600&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1524334228333-0f6db392f8a1?w=600&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1610366398516-46da9dec5931?w=600&auto=format&fit=crop&q=80",
+];
+
 interface DiagramData {
   id: number | string;
   title: string;
@@ -65,54 +75,63 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [showSearchField, setShowSearchField] = useState(true);
 
-  // Mock function to simulate fetching diagrams from the web based on search term
-  // In a real implementation, this would call an API to get diagram search results
+  // Enhanced function to simulate fetching diagrams from the web based on search term
   const fetchDiagramsFromWeb = async (searchTerm: string): Promise<DiagramData[]> => {
     console.log("Searching for:", searchTerm);
     
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // For demo purposes, we'll just return a modified version of our sample data
-    // with the search term in the titles
-    const mockResults: DiagramData[] = [
-      {
-        id: `search-${Date.now()}-1`,
-        title: `${searchTerm} - Comprehensive Diagram`,
-        imageSrc: "/lovable-uploads/0bd711da-9830-4f71-ad4b-5b7325223770.png",
-        author: "Web Search",
-        authorUsername: "websearch",
-        tags: searchTerm.toLowerCase().split(" "),
-        sourceUrl: "https://example.com/search-result-1"
-      },
-      {
-        id: `search-${Date.now()}-2`,
-        title: `${searchTerm} - Visual Representation`,
-        imageSrc: "/lovable-uploads/0bd711da-9830-4f71-ad4b-5b7325223770.png",
-        author: "Diagram Search",
-        authorUsername: "diagramsearch",
-        tags: [...searchTerm.toLowerCase().split(" "), "visual"],
-        sourceUrl: "https://example.com/search-result-2"
-      },
-      {
-        id: `search-${Date.now()}-3`,
-        title: `${searchTerm} - Conceptual Model`,
-        imageSrc: "/lovable-uploads/0bd711da-9830-4f71-ad4b-5b7325223770.png",
-        author: "Diagram Hub",
-        authorUsername: "diagramhub",
-        tags: [...searchTerm.toLowerCase().split(" "), "conceptual"],
-        sourceUrl: "https://example.com/search-result-3"
-      },
-      {
-        id: `search-${Date.now()}-4`,
-        title: `${searchTerm} - Detailed Overview`,
-        imageSrc: "/lovable-uploads/0bd711da-9830-4f71-ad4b-5b7325223770.png",
-        author: "Diagram Expert",
-        authorUsername: "diagramexpert",
-        tags: [...searchTerm.toLowerCase().split(" "), "detailed"],
-        sourceUrl: "https://example.com/search-result-4"
-      },
-    ];
+    // Generate more realistic mock results based on the search term
+    const searchTermWords = searchTerm.toLowerCase().split(" ");
+    
+    // Create tag combinations from the search term
+    const generateTags = (term: string) => {
+      const words = term.toLowerCase().split(" ");
+      const baseTags = words.filter(word => word.length > 3);
+      
+      // Add some common diagram-related tags
+      const diagramTypes = ["flowchart", "uml", "er", "sequence", "class", "network", "architecture"];
+      const matchingTypes = diagramTypes.filter(type => term.toLowerCase().includes(type));
+      
+      return [...new Set([...baseTags, ...matchingTypes])];
+    };
+    
+    // Create author variations
+    const authors = ["DiagramHub", "DiagramExpert", "VisualDocs", "Mermaid", "DrawIO", "LucidChart"];
+    
+    // Generate diagram results
+    const mockResults: DiagramData[] = Array.from({ length: 8 }, (_, i) => {
+      // Create a title combining the search term with common diagram terminology
+      const titlePrefixes = ["Complete", "Detailed", "Professional", "Simple", "Modern", "Comprehensive"];
+      const titleSuffixes = ["Diagram", "Chart", "Visualization", "Model", "Representation", "Layout"];
+      
+      const prefix = titlePrefixes[Math.floor(Math.random() * titlePrefixes.length)];
+      const suffix = titleSuffixes[Math.floor(Math.random() * titleSuffixes.length)];
+      
+      const title = `${prefix} ${searchTerm} ${suffix}`;
+      
+      // Select an image from the pool or use a fallback
+      const imageIndex = i % DIAGRAM_IMAGES.length;
+      const imageSrc = DIAGRAM_IMAGES[imageIndex];
+      
+      // Generate tags from the search term
+      const tags = generateTags(searchTerm);
+      
+      // Select an author
+      const authorIndex = i % authors.length;
+      const author = authors[authorIndex];
+      
+      return {
+        id: `search-${Date.now()}-${i}`,
+        title,
+        imageSrc,
+        author,
+        authorUsername: author.toLowerCase().replace(/\s/g, ""),
+        tags,
+        sourceUrl: `https://example.com/diagram-${i}`
+      };
+    });
     
     return mockResults;
   };
@@ -125,10 +144,12 @@ const Index = () => {
       // Fetch diagrams based on search term
       const searchResults = await fetchDiagramsFromWeb(prompt);
       setResults(searchResults);
+      toast.success(`Found ${searchResults.length} diagrams for "${prompt}"`);
     } catch (error) {
       console.error("Error fetching diagrams:", error);
       // In case of error, fall back to sample data
       setResults(SAMPLE_DIAGRAM_DATA);
+      toast.error("Error fetching diagrams. Please try again.");
     } finally {
       setIsSearching(false);
     }
@@ -187,7 +208,7 @@ const Index = () => {
                   <AIInput 
                     onSubmit={handleAIPrompt} 
                     className="w-full shadow-lg"
-                    placeholder="Enter your search (e.g., 'data structures tree types diagrams')"
+                    placeholder="Enter your search (e.g., 'network diagram' or 'data structures')"
                     isSearching={isSearching}
                   />
                 </div>
