@@ -3,14 +3,15 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { Plus, SendIcon } from "lucide-react";
+import { Plus, SendIcon, Sparkles } from "lucide-react";
 
 interface AIInputProps {
   className?: string;
   onSubmit?: (prompt: string) => void;
+  placeholder?: string;
 }
 
-export function AIInput({ className, onSubmit }: AIInputProps) {
+export function AIInput({ className, onSubmit, placeholder }: AIInputProps) {
   const [prompt, setPrompt] = useState("");
 
   const handleSubmit = () => {
@@ -31,21 +32,21 @@ export function AIInput({ className, onSubmit }: AIInputProps) {
       <Button
         variant="ghost"
         size="icon"
-        className="absolute left-2 h-8 w-8 rounded-full"
+        className="absolute left-3 h-8 w-8 rounded-full"
       >
-        <Plus className="h-4 w-4" />
+        <Sparkles className="h-4 w-4" />
       </Button>
       <Input
         type="text"
-        placeholder="Ask about diagrams or request AI to generate one..."
-        className="pl-12 pr-14 py-6 text-base w-full bg-background/80 backdrop-blur-sm border-border"
+        placeholder={placeholder || "Ask for a specific diagram or request AI to generate one..."}
+        className="pl-14 pr-14 py-7 text-base rounded-xl w-full bg-background/80 backdrop-blur-sm border-border focus-visible:ring-offset-1"
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
         onKeyDown={handleKeyDown}
       />
       <Button
         size="icon"
-        className="absolute right-2 h-8 w-8 rounded-full bg-primary"
+        className="absolute right-3 h-8 w-8 rounded-full bg-primary"
         onClick={handleSubmit}
         disabled={!prompt.trim()}
       >
