@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 export function Footer() {
   return (
     <motion.footer 
-      className="mt-16 border-t border-border/50 py-8 bg-background"
+      className="border-t border-border/30 py-6 bg-background/80 backdrop-blur-sm"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 0.5, duration: 0.5 }}
@@ -18,14 +18,13 @@ export function Footer() {
             <a href="#" className="hover:text-foreground transition-colors">About</a>
             <a href="#" className="hover:text-foreground transition-colors">Features</a>
             <a href="#" className="hover:text-foreground transition-colors">Pricing</a>
-            <a href="#" className="hover:text-foreground transition-colors">Blog</a>
             <a href="#" className="hover:text-foreground transition-colors">Help</a>
             <a href="#" className="hover:text-foreground transition-colors">Terms</a>
             <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
           </div>
           
           <div className="text-sm text-muted-foreground">
-            © 2023 Diagramr. All rights reserved.
+            © 2023 Diagramr
           </div>
         </div>
       </div>

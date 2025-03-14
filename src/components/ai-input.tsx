@@ -48,8 +48,8 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
         <motion.div
           className={cn(
             "flex items-center w-full rounded-2xl overflow-hidden",
-            "border border-border/50",
-            "bg-background/80 backdrop-blur-lg shadow-lg",
+            "border border-border/30",
+            "bg-background/80 backdrop-blur-lg shadow-md",
             isFocused ? "ring-2 ring-primary/20 shadow-xl border-primary/30" : "",
             isLoading ? "opacity-80" : ""
           )}
@@ -83,7 +83,10 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
             <Button
               size="sm"
               variant={mode === "search" ? "default" : "outline"}
-              className="rounded-xl transition-all px-4 py-2.5"
+              className={cn(
+                "rounded-xl transition-all px-4 py-2.5",
+                mode === "search" ? "bg-primary/90 hover:bg-primary" : "bg-background/60 hover:bg-background"
+              )}
               onClick={() => setMode("search")}
               disabled={isLoading}
             >
@@ -93,7 +96,10 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
             <Button
               size="sm"
               variant={mode === "generate" ? "default" : "outline"}
-              className="rounded-xl transition-all px-4 py-2.5"
+              className={cn(
+                "rounded-xl transition-all px-4 py-2.5",
+                mode === "generate" ? "bg-primary/90 hover:bg-primary" : "bg-background/60 hover:bg-background"
+              )}
               onClick={() => setMode("generate")}
               disabled={isLoading}
             >
@@ -110,7 +116,7 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
                 >
                   <Button
                     size="sm"
-                    className="rounded-xl px-4 py-2.5 bg-primary"
+                    className="rounded-xl px-4 py-2.5 bg-primary/90 hover:bg-primary"
                     onClick={handleSubmit}
                     disabled={!prompt.trim() || isLoading}
                   >

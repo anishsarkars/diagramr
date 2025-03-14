@@ -40,7 +40,7 @@ export function DiagramrLogo({ showText = true, className, textClassName }: Diag
           variants={itemVariants}
         />
         <motion.div 
-          className="absolute inset-0 border-2 border-white/80 rounded-md transform rotate-45 translate-x-1 translate-y-1"
+          className="absolute inset-0 border-2 border-white/80 dark:border-background/80 rounded-md transform rotate-45 translate-x-1 translate-y-1"
           variants={itemVariants}
           transition={{ delay: 0.1 }}
         />

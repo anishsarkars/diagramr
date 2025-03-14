@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
@@ -6,8 +5,9 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { searchGoogleImages } from "@/utils/googleSearch";
 
-// Sample diagram data for initial load
+// Sample diagram data for initial load and fallback
 const SAMPLE_DIAGRAM_DATA = [
   {
     id: 1,
@@ -47,7 +47,7 @@ const SAMPLE_DIAGRAM_DATA = [
   },
 ];
 
-// Real diagram image URLs for better preview
+// AI generation image sources
 const DIAGRAM_IMAGES = [
   "https://miro.medium.com/v2/resize:fit:1400/1*Qwln63hihLxKZWQQCwYoMg.png", // Network diagram
   "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/networkdiagram.svg", // Another network diagram
@@ -81,79 +81,71 @@ const Index = () => {
   const fetchDiagramsFromWeb = async (searchTerm: string): Promise<DiagramData[]> => {
     console.log("Searching for:", searchTerm);
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Determine which images to show based on search keywords
-    const searchTermLower = searchTerm.toLowerCase();
-    let filteredImages = [...DIAGRAM_IMAGES];
-    
-    if (searchTermLower.includes("network")) {
-      // Prioritize network diagrams
-      filteredImages = DIAGRAM_IMAGES.filter((_, i) => i < 2).concat(filteredImages.filter((_, i) => i >= 2));
-    } else if (searchTermLower.includes("tree") || searchTermLower.includes("data structure")) {
-      // Prioritize tree or data structure diagrams
-      filteredImages = [DIAGRAM_IMAGES[4], DIAGRAM_IMAGES[6]].concat(filteredImages.filter((_, i) => i !== 4 && i !== 6));
-    } else if (searchTermLower.includes("uml") || searchTermLower.includes("class")) {
-      // Prioritize UML diagrams
-      filteredImages = [DIAGRAM_IMAGES[5]].concat(filteredImages.filter((_, i) => i !== 5));
-    } else if (searchTermLower.includes("flow") || searchTermLower.includes("flowchart")) {
-      // Prioritize flowcharts
-      filteredImages = [DIAGRAM_IMAGES[3]].concat(filteredImages.filter((_, i) => i !== 3));
-    } else if (searchTermLower.includes("er") || searchTermLower.includes("entity")) {
-      // Prioritize ER diagrams
-      filteredImages = [DIAGRAM_IMAGES[7]].concat(filteredImages.filter((_, i) => i !== 7));
-    }
-    
-    // Generate tag combinations from the search term
-    const generateTags = (term: string) => {
-      const words = term.toLowerCase().split(" ");
-      const baseTags = words.filter(word => word.length > 3);
+    try {
+      // Use Google Search API
+      const searchResults = await searchGoogleImages(searchTerm + " diagram");
       
-      // Add some common diagram-related tags
-      const diagramTypes = ["flowchart", "uml", "er", "sequence", "class", "network", "architecture"];
-      const matchingTypes = diagramTypes.filter(type => term.toLowerCase().includes(type));
+      if (searchResults.length > 0) {
+        return searchResults;
+      }
       
-      return [...new Set([...baseTags, ...matchingTypes])];
-    };
-    
-    // Create author variations
-    const authors = ["DiagramHub", "DiagramExpert", "VisualDocs", "Mermaid", "DrawIO", "LucidChart"];
-    
-    // Generate diagram results
-    const mockResults: DiagramData[] = Array.from({ length: 8 }, (_, i) => {
-      // Create a title combining the search term with common diagram terminology
-      const titlePrefixes = ["Complete", "Detailed", "Professional", "Simple", "Modern", "Comprehensive"];
-      const titleSuffixes = ["Diagram", "Chart", "Visualization", "Model", "Representation", "Layout"];
+      // Fallback to mock data if no results
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 800));
       
-      const prefix = titlePrefixes[Math.floor(Math.random() * titlePrefixes.length)];
-      const suffix = titleSuffixes[Math.floor(Math.random() * titleSuffixes.length)];
-      
-      const title = `${prefix} ${searchTerm} ${suffix}`;
-      
-      // Select an image from the filtered pool
-      const imageIndex = i % filteredImages.length;
-      const imageSrc = filteredImages[imageIndex];
-      
-      // Generate tags from the search term
-      const tags = generateTags(searchTerm);
-      
-      // Select an author
-      const authorIndex = i % authors.length;
-      const author = authors[authorIndex];
-      
-      return {
-        id: `search-${Date.now()}-${i}`,
-        title,
-        imageSrc,
-        author,
-        authorUsername: author.toLowerCase().replace(/\s/g, ""),
-        tags,
-        sourceUrl: `https://example.com/diagram-${i}`
+      // Generate tag combinations from the search term
+      const generateTags = (term: string) => {
+        const words = term.toLowerCase().split(" ");
+        const baseTags = words.filter(word => word.length > 3);
+        
+        // Add some common diagram-related tags
+        const diagramTypes = ["flowchart", "uml", "er", "sequence", "class", "network", "architecture"];
+        const matchingTypes = diagramTypes.filter(type => term.toLowerCase().includes(type));
+        
+        return [...new Set([...baseTags, ...matchingTypes])];
       };
-    });
-    
-    return mockResults;
+      
+      // Create author variations
+      const authors = ["DiagramHub", "DiagramExpert", "VisualDocs", "Mermaid", "DrawIO", "LucidChart"];
+      
+      // Generate diagram results
+      const mockResults: DiagramData[] = Array.from({ length: 8 }, (_, i) => {
+        // Create a title combining the search term with common diagram terminology
+        const titlePrefixes = ["Complete", "Detailed", "Professional", "Simple", "Modern", "Comprehensive"];
+        const titleSuffixes = ["Diagram", "Chart", "Visualization", "Model", "Representation", "Layout"];
+        
+        const prefix = titlePrefixes[Math.floor(Math.random() * titlePrefixes.length)];
+        const suffix = titleSuffixes[Math.floor(Math.random() * titleSuffixes.length)];
+        
+        const title = `${prefix} ${searchTerm} ${suffix}`;
+        
+        // Select an image from the filtered pool
+        const imageIndex = i % DIAGRAM_IMAGES.length;
+        const imageSrc = DIAGRAM_IMAGES[imageIndex];
+        
+        // Generate tags from the search term
+        const tags = generateTags(searchTerm);
+        
+        // Select an author
+        const authorIndex = i % authors.length;
+        const author = authors[authorIndex];
+        
+        return {
+          id: `search-${Date.now()}-${i}`,
+          title,
+          imageSrc,
+          author,
+          authorUsername: author.toLowerCase().replace(/\s/g, ""),
+          tags,
+          sourceUrl: `https://example.com/diagram-${i}`
+        };
+      });
+      
+      return mockResults;
+    } catch (error) {
+      console.error("Error fetching diagrams:", error);
+      return SAMPLE_DIAGRAM_DATA;
+    }
   };
 
   // Function to generate diagrams using AI based on prompt
@@ -161,7 +153,7 @@ const Index = () => {
     console.log("Generating diagram for:", prompt);
     
     // Simulate AI processing delay
-    await new Promise(resolve => setTimeout(resolve, 2500));
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
     // For demonstration, we'll use the same images but mark them as AI-generated
     const imagePool = [...DIAGRAM_IMAGES];
