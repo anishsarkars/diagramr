@@ -34,7 +34,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
       transition: {
         duration: 8,
         repeat: Infinity,
-        repeatType: "reverse"
+        repeatType: "reverse" as const
       }
     }
   };
@@ -57,12 +57,12 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           animate={{ 
             scale: [1, 1.2, 1],
             opacity: [0.5, 0.6, 0.5],
-          }}
-          transition={{ 
-            duration: 10, 
-            repeat: Infinity,
-            repeatType: "reverse",
-            delay: 1 
+            transition: { 
+              duration: 10, 
+              repeat: Infinity,
+              repeatType: "reverse" as const,
+              delay: 1 
+            }
           }}
         />
       </div>
