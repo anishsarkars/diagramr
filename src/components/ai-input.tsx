@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useRef, useEffect } from "react";
-import { SearchIcon, Sparkles, Wand2 } from "lucide-react";
+import { SearchIcon, Sparkles, Wand2, LightbulbIcon, SendIcon, CornerRightDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AIInputProps {
@@ -22,7 +22,6 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
   const handleSubmit = () => {
     if (onSubmit && prompt.trim()) {
       onSubmit(prompt, mode);
-      // Don't clear the prompt immediately so users can see what they searched for
     }
   };
 
@@ -33,30 +32,31 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
   };
 
   useEffect(() => {
-    // Auto focus the input on component mount
     if (inputRef.current) {
       inputRef.current.focus();
     }
   }, []);
 
   return (
-    <div className={cn("relative transition-all duration-300", className)}>
+    <motion.div 
+      className={cn("relative transition-all duration-300 w-full max-w-3xl", className)}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+    >
       <AnimatePresence>
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3 }}
           className={cn(
-            "flex items-center w-full rounded-xl overflow-hidden",
-            "border border-border",
-            "bg-background/80 backdrop-blur-sm shadow-sm",
-            isFocused ? "ring-2 ring-primary/20 shadow-md" : "",
+            "flex items-center w-full rounded-2xl overflow-hidden",
+            "border border-border/50",
+            "bg-background/80 backdrop-blur-lg shadow-lg",
+            isFocused ? "ring-2 ring-primary/20 shadow-xl border-primary/30" : "",
             isLoading ? "opacity-80" : ""
           )}
+          whileTap={{ scale: 0.995 }}
         >
           <div className="flex-1 flex items-center relative">
-            <div className="absolute left-3 text-muted-foreground">
+            <div className="absolute left-4 text-muted-foreground/80">
               {mode === "search" ? (
                 <SearchIcon className="h-5 w-5" />
               ) : (
@@ -66,8 +66,10 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
             <Input
               ref={inputRef}
               type="text"
-              placeholder={placeholder || (mode === "search" ? "Search for diagrams (e.g., 'network diagram')..." : "Describe the diagram you want to generate...")}
-              className="pl-11 py-7 text-base border-0 shadow-none focus-visible:ring-0 bg-transparent"
+              placeholder={placeholder || (mode === "search" 
+                ? "Search for diagrams (e.g., 'network architecture')..." 
+                : "Describe the diagram you want to generate...")}
+              className="pl-12 py-8 text-base border-0 shadow-none focus-visible:ring-0 bg-transparent"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -77,51 +79,66 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
             />
           </div>
           
-          <div className="flex gap-2 mr-2">
+          <div className="flex gap-2 mr-3">
             <Button
               size="sm"
               variant={mode === "search" ? "default" : "outline"}
-              className="rounded-lg transition-all"
+              className="rounded-xl transition-all px-4 py-2.5"
               onClick={() => setMode("search")}
               disabled={isLoading}
             >
-              <SearchIcon className="h-3.5 w-3.5 mr-1.5" />
+              <SearchIcon className="h-4 w-4 mr-2" />
               <span>Search</span>
             </Button>
             <Button
               size="sm"
               variant={mode === "generate" ? "default" : "outline"}
-              className="rounded-lg transition-all"
+              className="rounded-xl transition-all px-4 py-2.5"
               onClick={() => setMode("generate")}
               disabled={isLoading}
             >
-              <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+              <Sparkles className="h-4 w-4 mr-2" />
               <span>Generate</span>
             </Button>
+            
+            <AnimatePresence>
+              {prompt.trim() && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                >
+                  <Button
+                    size="sm"
+                    className="rounded-xl px-4 py-2.5 bg-primary"
+                    onClick={handleSubmit}
+                    disabled={!prompt.trim() || isLoading}
+                  >
+                    {isLoading ? (
+                      <motion.div 
+                        className="h-4 w-4 border-2 border-white border-t-transparent rounded-full"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      />
+                    ) : (
+                      <CornerRightDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-          
-          <Button
-            size="sm"
-            className={cn(
-              "mr-2 gap-1.5 rounded-lg transition-all",
-              prompt.trim() ? "opacity-100" : "opacity-70"
-            )}
-            onClick={handleSubmit}
-            disabled={!prompt.trim() || isLoading}
-          >
-            <span>Go</span>
-          </Button>
         </motion.div>
       </AnimatePresence>
       
       {isLoading && (
         <motion.div 
-          className="absolute bottom-0 left-0 w-full h-1 bg-primary/20"
+          className="absolute bottom-0 left-0 h-1 bg-primary"
           initial={{ width: "0%" }}
           animate={{ width: "100%" }}
           transition={{ duration: 2.5, ease: "easeInOut" }}
         />
       )}
-    </div>
+    </motion.div>
   );
 }
