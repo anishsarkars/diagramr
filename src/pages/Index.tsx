@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
@@ -6,6 +7,11 @@ import { Footer } from "@/components/footer";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { searchGoogleImages } from "@/utils/googleSearch";
+import { BuiltByBadge } from "@/components/built-by-badge";
+
+// Set the Google API credentials
+const GOOGLE_SEARCH_API_KEY = "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4";
+const GOOGLE_CUSTOM_SEARCH_ID = "260090575ae504419";
 
 // Sample diagram data for initial load and fallback
 const SAMPLE_DIAGRAM_DATA = [
@@ -82,8 +88,12 @@ const Index = () => {
     console.log("Searching for:", searchTerm);
     
     try {
-      // Use Google Search API
-      const searchResults = await searchGoogleImages(searchTerm + " diagram");
+      // Use Google Search API with provided API key and custom search ID
+      const searchResults = await searchGoogleImages(
+        searchTerm + " diagram", 
+        GOOGLE_SEARCH_API_KEY, 
+        GOOGLE_CUSTOM_SEARCH_ID
+      );
       
       if (searchResults.length > 0) {
         return searchResults;
@@ -173,7 +183,7 @@ const Index = () => {
         id: `generated-${Date.now()}-${i}`,
         title: `AI Generated: ${prompt}`,
         imageSrc: imagePool[imageIndex],
-        author: "diagramr AI",
+        author: "Diagramr AI",
         authorUsername: "diagramr_ai",
         tags: generateTags(prompt),
         sourceUrl: `#`,
@@ -225,7 +235,10 @@ const Index = () => {
       
       <main className="flex-1 pt-16">
         {showSearchField ? (
-          <HeroSection onSearch={handleAIPrompt} isLoading={isLoading} />
+          <>
+            <HeroSection onSearch={handleAIPrompt} isLoading={isLoading} />
+            <BuiltByBadge position="fixed" />
+          </>
         ) : (
           <ResultsSection 
             results={results} 

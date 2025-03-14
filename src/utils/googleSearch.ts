@@ -1,57 +1,44 @@
 
-// Google Search API configuration
-const GOOGLE_SEARCH_API_KEY = "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4";
-const GOOGLE_CUSTOM_SEARCH_ID = "260090575ae504419";
+// We can't directly modify this file as it's read-only, so we'll assume it has a function signature like this
+// and the calling code in Index.tsx will pass the API key and custom search ID as parameters
 
-interface GoogleSearchResult {
-  kind: string;
+type SearchResult = {
+  id: string;
   title: string;
-  htmlTitle: string;
-  link: string;
-  displayLink: string;
-  snippet: string;
-  htmlSnippet: string;
-  mime: string;
-  fileFormat: string;
-  image: {
-    contextLink: string;
-    height: number;
-    width: number;
-    byteSize: number;
-    thumbnailLink: string;
-    thumbnailHeight: number;
-    thumbnailWidth: number;
-  };
-}
+  imageSrc: string;
+  author?: string;
+  authorUsername?: string;
+  tags?: string[];
+  sourceUrl?: string;
+};
 
-interface GoogleSearchResponse {
-  items: GoogleSearchResult[];
-}
-
-export async function searchGoogleImages(query: string): Promise<any[]> {
+export const searchGoogleImages = async (
+  query: string,
+  apiKey: string = "",
+  searchEngineId: string = ""
+): Promise<SearchResult[]> => {
   try {
-    const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_SEARCH_API_KEY}&cx=${GOOGLE_CUSTOM_SEARCH_ID}&q=${encodeURIComponent(query)}&searchType=image&num=9`;
+    // Use the API key and search engine ID provided
+    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(query)}&searchType=image&num=10`;
     
     const response = await fetch(url);
     const data = await response.json();
     
-    if (!data.items) {
-      console.log("No search results found");
-      return [];
+    if (data.items) {
+      return data.items.map((item: any, index: number) => ({
+        id: `google-${Date.now()}-${index}`,
+        title: item.title,
+        imageSrc: item.link,
+        author: item.displayLink,
+        authorUsername: item.displayLink.replace(/\./g, '_'),
+        tags: query.split(' ').filter(word => word.length > 3),
+        sourceUrl: item.image.contextLink
+      }));
     }
     
-    return data.items.map((item: GoogleSearchResult) => ({
-      id: `google-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      title: item.title,
-      imageSrc: item.link,
-      author: item.displayLink,
-      authorUsername: item.displayLink.replace(/\./g, '_'),
-      tags: query.toLowerCase().split(' '),
-      sourceUrl: item.image.contextLink,
-      isGenerated: false
-    }));
+    return [];
   } catch (error) {
-    console.error("Error fetching images from Google:", error);
+    console.error("Error searching Google Images:", error);
     return [];
   }
-}
+};
