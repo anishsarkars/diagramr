@@ -1,105 +1,186 @@
 
-import { useState } from "react";
-import { DiagramrLogo } from "./diagramr-logo";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useTheme } from "@/components/theme-provider";
-import { motion } from "framer-motion";
-import { Sun, Moon, Search, PlusCircle, Settings, User, Menu, X } from "lucide-react";
+import { DiagramrLogo } from "@/components/diagramr-logo";
+import { Search, Menu, X, LogIn, User, LogOut } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "./auth-context";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function Header() {
-  const { theme, setTheme } = useTheme();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, profile, signOut } = useAuth();
+
+  const handleScroll = () => {
+    const offset = window.scrollY;
+    setScrolled(offset > 10);
+  };
+
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
   return (
-    <motion.header 
-      className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50 py-3"
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
+    <header
+      className={cn(
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-200",
+        scrolled ? "bg-background/80 backdrop-blur-lg shadow-sm" : "bg-transparent"
+      )}
     >
-      <div className="container flex items-center justify-between">
-        <DiagramrLogo />
-        
-        <div className="hidden md:flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="gap-2">
-            <Search className="h-4 w-4" />
-            <span>Explore</span>
-          </Button>
-          <Button variant="ghost" size="sm" className="gap-2">
-            <PlusCircle className="h-4 w-4" />
-            <span>Create</span>
-          </Button>
-          
-          <div className="h-6 w-px bg-border/50 mx-2" />
-          
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="rounded-full"
-          >
-            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
-          
-          <Button variant="outline" size="icon" className="rounded-full">
-            <Settings className="h-4 w-4" />
-          </Button>
-          
-          <Button variant="outline" className="rounded-full ml-2 gap-2">
-            <User className="h-4 w-4" />
-            <span>Sign In</span>
-          </Button>
+      <div className="container flex h-16 items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
+            <DiagramrLogo className="h-7 w-auto" />
+          </Link>
         </div>
-        
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="md:hidden"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
-        
-        {isMenuOpen && (
-          <motion.div 
-            className="absolute top-full left-0 right-0 bg-background border-b border-border/50 py-4 px-6 md:hidden"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-6">
+          <Link
+            to="/"
+            className={cn(
+              "text-sm font-medium transition-colors hover:text-foreground/80",
+              location.pathname === "/"
+                ? "text-foreground"
+                : "text-foreground/60"
+            )}
           >
-            <div className="flex flex-col gap-2">
-              <Button variant="ghost" size="sm" className="justify-start gap-2">
-                <Search className="h-4 w-4" />
-                <span>Explore</span>
+            Home
+          </Link>
+          {profile?.is_premium && (
+            <Link
+              to="/favorites"
+              className={cn(
+                "text-sm font-medium transition-colors hover:text-foreground/80",
+                location.pathname === "/favorites"
+                  ? "text-foreground"
+                  : "text-foreground/60"
+              )}
+            >
+              Favorites
+            </Link>
+          )}
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <User className="h-4 w-4" />
+                  <span>Account</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem disabled>
+                  {profile?.username || user.email}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <span className="font-medium">
+                    Plan: {profile?.is_premium ? 'Premium' : 'Free'}
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/auth">
+              <Button size="sm" variant="ghost" className="gap-2">
+                <LogIn className="h-4 w-4" />
+                <span>Sign in</span>
               </Button>
-              <Button variant="ghost" size="sm" className="justify-start gap-2">
-                <PlusCircle className="h-4 w-4" />
-                <span>Create</span>
-              </Button>
-              <Button variant="ghost" size="sm" className="justify-start gap-2">
-                <Settings className="h-4 w-4" />
-                <span>Settings</span>
-              </Button>
-              <Button variant="ghost" size="sm" className="justify-start gap-2">
-                <User className="h-4 w-4" />
-                <span>Sign In</span>
-              </Button>
-              
-              <div className="h-px bg-border/50 my-2" />
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="justify-start gap-2"
-              >
-                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
-              </Button>
-            </div>
-          </motion.div>
-        )}
+            </Link>
+          )}
+        </nav>
+
+        {/* Mobile Menu Button */}
+        <button
+          className="md:hidden p-2 rounded-md hover:bg-accent"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          {mobileMenuOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
+        </button>
       </div>
-    </motion.header>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-border">
+          <div className="container p-4 space-y-4">
+            <Link
+              to="/"
+              className="block py-2 text-foreground/70 hover:text-foreground"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Home
+            </Link>
+            {profile?.is_premium && (
+              <Link
+                to="/favorites"
+                className="block py-2 text-foreground/70 hover:text-foreground"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Favorites
+              </Link>
+            )}
+            {user ? (
+              <>
+                <div className="py-2 text-sm text-muted-foreground">
+                  {profile?.username || user.email}
+                </div>
+                <div className="py-2 text-sm font-medium">
+                  Plan: {profile?.is_premium ? 'Premium' : 'Free'}
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-center"
+                  onClick={() => {
+                    handleSignOut();
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign out
+                </Button>
+              </>
+            ) : (
+              <Link 
+                to="/auth" 
+                className="w-full" 
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Button variant="default" className="w-full justify-center">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Sign in
+                </Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+    </header>
   );
 }

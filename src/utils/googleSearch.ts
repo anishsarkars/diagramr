@@ -19,7 +19,8 @@ export const searchGoogleImages = async (
   try {
     // Use the API key and search engine ID provided
     // Add imgSize=large and imgType=photo to get higher quality images
-    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(query)}&searchType=image&num=10&imgSize=large&imgType=photo&safe=active`;
+    // Also add highQuality=1 and imgColorType=color parameters for better results
+    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(query)}&searchType=image&num=10&imgSize=xlarge&imgType=photo&safe=active&highQuality=1&imgColorType=color`;
     
     console.log("Fetching images from Google with URL:", url);
     
@@ -46,4 +47,3 @@ export const searchGoogleImages = async (
     return [];
   }
 };
-
