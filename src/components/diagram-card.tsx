@@ -1,4 +1,3 @@
-
 import { cn } from "@/lib/utils";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +13,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 interface DiagramCardProps {
   title: string;
@@ -41,6 +41,9 @@ export function DiagramCard({
 }: DiagramCardProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [fullImageLoaded, setFullImageLoaded] = useState(false);
   
   return (
     <motion.div 
@@ -54,43 +57,102 @@ export function DiagramCard({
       )}
     >
       <div className="diagram-card-image relative">
-        <Dialog>
-          <DialogTrigger asChild>
-            <div className="cursor-pointer">
-              <AspectRatio ratio={aspectRatio}>
-                <img
-                  src={imageSrc}
-                  alt={title}
-                  className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                  onError={(e) => {
-                    e.currentTarget.src = "/placeholder.svg";
-                  }}
-                />
-              </AspectRatio>
-            </div>
-          </DialogTrigger>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <div 
+            className="cursor-zoom-in relative" 
+            onClick={() => setIsOpen(true)}
+          >
+            <AspectRatio ratio={aspectRatio}>
+              {!imageLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
+              <img
+                src={imageSrc}
+                alt={title}
+                className={cn(
+                  "object-cover w-full h-full transition-transform duration-500 group-hover:scale-105",
+                  !imageLoaded && "opacity-0",
+                  imageLoaded && "opacity-100"
+                )}
+                loading="lazy"
+                onLoad={() => setImageLoaded(true)}
+                onError={(e) => {
+                  setImageLoaded(true);
+                  e.currentTarget.src = "/placeholder.svg";
+                }}
+              />
+            </AspectRatio>
+          </div>
           <DialogContent className="max-w-5xl p-2 border-border/30 bg-card/95 backdrop-blur-xl">
             <div className="relative">
+              {!fullImageLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-muted/10 min-h-[300px]">
+                  <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
               <img 
                 src={imageSrc} 
                 alt={title} 
-                className="w-full h-auto rounded-lg object-contain max-h-[80vh]"
+                className={cn(
+                  "w-full h-auto rounded-lg object-contain max-h-[80vh]",
+                  !fullImageLoaded && "opacity-0",
+                  fullImageLoaded && "opacity-100"
+                )}
+                onLoad={() => setFullImageLoaded(true)}
                 onError={(e) => {
+                  setFullImageLoaded(true);
                   e.currentTarget.src = "/placeholder.svg";
                 }}
               />
               <div className="absolute top-2 right-2 z-50">
-                <Button variant="ghost" size="icon" className="rounded-full bg-background/40 backdrop-blur-sm hover:bg-background/60">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="rounded-full bg-background/40 backdrop-blur-sm hover:bg-background/60"
+                  onClick={() => setIsOpen(false)}
+                >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
               <div className="absolute bottom-2 right-2 z-50 flex gap-2">
-                <Button variant="secondary" size="sm" className="gap-1.5 bg-background/40 backdrop-blur-sm hover:bg-background/60">
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="gap-1.5 bg-background/40 backdrop-blur-sm hover:bg-background/60"
+                  onClick={() => {
+                    // Download image logic
+                    const link = document.createElement('a');
+                    link.href = imageSrc;
+                    link.download = `${title.replace(/\s+/g, '-').toLowerCase()}.jpg`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    toast.success("Image downloaded successfully");
+                  }}
+                >
                   <Download className="h-3.5 w-3.5" />
                   <span className="text-xs">Download</span>
                 </Button>
-                <Button variant="secondary" size="sm" className="gap-1.5 bg-background/40 backdrop-blur-sm hover:bg-background/60">
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="gap-1.5 bg-background/40 backdrop-blur-sm hover:bg-background/60"
+                  onClick={() => {
+                    // Share image logic
+                    if (navigator.share) {
+                      navigator.share({
+                        title: title,
+                        text: `Check out this diagram: ${title}`,
+                        url: imageSrc,
+                      });
+                    } else {
+                      navigator.clipboard.writeText(imageSrc);
+                      toast.success("Image URL copied to clipboard");
+                    }
+                  }}
+                >
                   <Share2 className="h-3.5 w-3.5" />
                   <span className="text-xs">Share</span>
                 </Button>
@@ -144,15 +206,14 @@ export function DiagramCard({
               >
                 <Bookmark className="h-3.5 w-3.5" fill={isSaved ? "currentColor" : "none"} />
               </Button>
-              <DialogTrigger asChild>
-                <Button 
-                  size="icon" 
-                  variant="secondary" 
-                  className="bg-white/20 backdrop-blur-md hover:bg-white/30 h-7 w-7 text-white"
-                >
-                  <Maximize2 className="h-3.5 w-3.5" />
-                </Button>
-              </DialogTrigger>
+              <Button 
+                size="icon" 
+                variant="secondary" 
+                className="bg-white/20 backdrop-blur-md hover:bg-white/30 h-7 w-7 text-white"
+                onClick={() => setIsOpen(true)}
+              >
+                <Maximize2 className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </div>
         </motion.div>

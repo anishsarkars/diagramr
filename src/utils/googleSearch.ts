@@ -1,6 +1,5 @@
 
-// We can't directly modify this file as it's read-only, so we'll assume it has a function signature like this
-// and the calling code in Index.tsx will pass the API key and custom search ID as parameters
+// Google Search API utility for fetching high-quality image results
 
 type SearchResult = {
   id: string;
@@ -19,12 +18,17 @@ export const searchGoogleImages = async (
 ): Promise<SearchResult[]> => {
   try {
     // Use the API key and search engine ID provided
-    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(query)}&searchType=image&num=10`;
+    // Add imgSize=large and imgType=photo to get higher quality images
+    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(query)}&searchType=image&num=10&imgSize=large&imgType=photo&safe=active`;
+    
+    console.log("Fetching images from Google with URL:", url);
     
     const response = await fetch(url);
     const data = await response.json();
     
     if (data.items) {
+      console.log(`Found ${data.items.length} image results`);
+      
       return data.items.map((item: any, index: number) => ({
         id: `google-${Date.now()}-${index}`,
         title: item.title,
@@ -42,3 +46,4 @@ export const searchGoogleImages = async (
     return [];
   }
 };
+

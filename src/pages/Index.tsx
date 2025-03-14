@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
@@ -53,7 +52,7 @@ const SAMPLE_DIAGRAM_DATA = [
   },
 ];
 
-// AI generation image sources
+// High-quality diagram image sources
 const DIAGRAM_IMAGES = [
   "https://miro.medium.com/v2/resize:fit:1400/1*Qwln63hihLxKZWQQCwYoMg.png", // Network diagram
   "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/networkdiagram.svg", // Another network diagram
@@ -82,6 +81,27 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showSearchField, setShowSearchField] = useState(true);
   const [lastAction, setLastAction] = useState<"search" | "generate">("search");
+  const [searchCount, setSearchCount] = useState(0);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+
+  // Initialize search count from localStorage
+  useEffect(() => {
+    const today = new Date().toDateString();
+    const storedData = localStorage.getItem('searchData');
+    
+    if (storedData) {
+      const data = JSON.parse(storedData);
+      if (data.date === today) {
+        setSearchCount(data.count);
+      } else {
+        // Reset for a new day
+        localStorage.setItem('searchData', JSON.stringify({ date: today, count: 0 }));
+      }
+    } else {
+      localStorage.setItem('searchData', JSON.stringify({ date: today, count: 0 }));
+    }
+  }, []);
 
   // Function to fetch diagrams from the web based on search term
   const fetchDiagramsFromWeb = async (searchTerm: string): Promise<DiagramData[]> => {
@@ -195,6 +215,24 @@ const Index = () => {
   };
 
   const handleAIPrompt = async (prompt: string, mode: "search" | "generate") => {
+    // Check if the user has reached the free tier limit
+    const today = new Date().toDateString();
+    const storedData = localStorage.getItem('searchData');
+    let currentCount = 0;
+    
+    if (storedData) {
+      const data = JSON.parse(storedData);
+      if (data.date === today) {
+        currentCount = data.count;
+      }
+    }
+    
+    // Free tier limit check
+    if (!isPremium && currentCount >= 20) {
+      showPremiumPopup();
+      return;
+    }
+    
     setAiPrompt(prompt);
     setIsLoading(true);
     setLastAction(mode);
@@ -207,6 +245,16 @@ const Index = () => {
         // Fetch diagrams based on search term
         searchResults = await fetchDiagramsFromWeb(prompt);
         toast.success(`Found ${searchResults.length} diagrams for "${prompt}"`);
+        
+        // Update search count
+        const newCount = currentCount + 1;
+        setSearchCount(newCount);
+        localStorage.setItem('searchData', JSON.stringify({ date: today, count: newCount }));
+        
+        // Check if they're approaching the limit
+        if (!isPremium && newCount === 17) {
+          toast.warning("You have 3 searches left today in the free plan!");
+        }
       } else {
         // Generate diagram based on prompt
         searchResults = await generateDiagramWithAI(prompt);
@@ -224,6 +272,23 @@ const Index = () => {
     }
   };
 
+  const showPremiumPopup = () => {
+    toast((
+      <div className="space-y-2">
+        <p className="font-medium">Free plan limit reached!</p>
+        <p className="text-sm text-muted-foreground">You've used all 20 daily searches.</p>
+        <button 
+          className="mt-2 bg-primary text-primary-foreground text-sm px-4 py-1.5 rounded-md w-full"
+          onClick={() => {}}
+        >
+          Upgrade to Premium
+        </button>
+      </div>
+    ), {
+      duration: 8000,
+    });
+  };
+
   const handleNewSearch = () => {
     setShowSearchField(true);
     setAiPrompt("");
@@ -237,6 +302,13 @@ const Index = () => {
         {showSearchField ? (
           <>
             <HeroSection onSearch={handleAIPrompt} isLoading={isLoading} />
+            {!isPremium && (
+              <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-background/80 backdrop-blur-md border border-border/50 rounded-full px-4 py-2 shadow-md">
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium">{20 - searchCount}</span> free searches remaining today
+                </p>
+              </div>
+            )}
             <BuiltByBadge position="fixed" />
           </>
         ) : (
