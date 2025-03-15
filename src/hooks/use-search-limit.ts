@@ -88,7 +88,8 @@ export function useSearchLimit(): SearchLimitState {
         // Update Supabase for logged-in users
         const today = new Date().toISOString().split('T')[0];
         
-        const { data, error } = await supabase
+        // Fixed upsert operation
+        const { error } = await supabase
           .from('user_search_logs')
           .upsert(
             {
@@ -97,8 +98,7 @@ export function useSearchLimit(): SearchLimitState {
               search_count: searchCount + 1
             },
             {
-              onConflict: 'user_id, search_date',
-              returning: 'minimal'
+              onConflict: 'user_id,search_date'
             }
           );
         
