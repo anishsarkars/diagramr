@@ -48,10 +48,9 @@ export function Logo({
         } : {}}
       >
         <img 
-          src="/lovable-uploads/6fded565-6442-486f-9eea-5259f0fe2811.png" 
+          src="/lovable-uploads/00280548-0e69-4df9-9d87-4dfdca65bb09.png" 
           alt="Diagramr Logo" 
           className="h-full w-full object-contain"
-          style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.15))" }}
         />
       </motion.div>
       

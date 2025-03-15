@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -81,7 +81,7 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false }: PremiumP
           <div className="col-span-3 sm:col-span-1">
             <div className="text-center p-4">
               <h3 className="font-medium">Free</h3>
-              <div className="mt-2 text-2xl font-bold">$0</div>
+              <div className="mt-2 text-2xl font-bold">₹0</div>
               <div className="text-xs text-muted-foreground">forever</div>
             </div>
           </div>
@@ -89,8 +89,8 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false }: PremiumP
           <div className="col-span-3 sm:col-span-2 rounded-lg border-2 border-primary p-4">
             <div className="text-center">
               <h3 className="font-medium">Premium</h3>
-              <div className="mt-2 text-2xl font-bold">$8</div>
-              <div className="text-sm text-muted-foreground">or ₹689 per month</div>
+              <div className="mt-2 text-2xl font-bold">₹299</div>
+              <div className="text-sm text-muted-foreground">per month</div>
             </div>
           </div>
           
@@ -131,9 +131,35 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false }: PremiumP
               Sign in / Sign up
             </Button>
           ) : (
-            <Button onClick={handleUpgrade} disabled={isLoading} className="sm:w-auto w-full">
-              {isLoading ? "Processing..." : "Upgrade now"}
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <Button 
+                asChild
+                className="gap-1.5 sm:w-auto w-full"
+              >
+                <a 
+                  href="https://rzp.io/rzp/KYo2irKm" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  <span>Monthly (₹299)</span>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </Button>
+              <Button 
+                asChild
+                variant="secondary"
+                className="gap-1.5 sm:w-auto w-full"
+              >
+                <a 
+                  href="https://rzp.io/rzp/PO66xQq" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  <span>Lifetime (₹899)</span>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </Button>
+            </div>
           )}
         </DialogFooter>
       </DialogContent>

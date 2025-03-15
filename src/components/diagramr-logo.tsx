@@ -21,7 +21,7 @@ export function DiagramrLogo({
     sm: "h-8 w-8",
     md: "h-10 w-10",
     lg: "h-14 w-14", 
-    xl: "h-20 w-20"
+    xl: "h-24 w-24"
   };
   
   const textSizeClasses = {
@@ -56,7 +56,7 @@ export function DiagramrLogo({
         }}
       >
         <img 
-          src="/lovable-uploads/6fded565-6442-486f-9eea-5259f0fe2811.png" 
+          src="/lovable-uploads/00280548-0e69-4df9-9d87-4dfdca65bb09.png" 
           alt="Diagramr Logo" 
           className="h-full w-full object-contain drop-shadow-md"
         />

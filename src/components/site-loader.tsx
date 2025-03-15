@@ -12,7 +12,13 @@ export function SiteLoader() {
       transition={{ duration: 0.3 }}
     >
       <div className="flex flex-col items-center">
-        <DiagramrLogo size="xl" isLoading={true} />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <DiagramrLogo size="xl" isLoading={true} />
+        </motion.div>
         <motion.p
           className="mt-6 text-sm text-muted-foreground"
           initial={{ opacity: 0 }}
