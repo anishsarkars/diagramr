@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Sparkles } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useSearchLimit } from "@/hooks/use-search-limit";
 import { PremiumPlanDialog } from "@/components/premium-plan-dialog";
 import { useAuth } from "@/components/auth-context";
@@ -58,24 +58,24 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
       transition={{ duration: 0.3 }}
     >
       <form onSubmit={handleSubmit} className="relative w-full">
-        <div className="flex flex-col md:flex-row items-stretch gap-3">
-          <div className="relative flex-1">
+        <div className="flex flex-col md:flex-row items-center gap-3">
+          <div className="relative flex-1 w-full">
             <Input
               type="text"
-              placeholder="Search for diagrams or describe what you need..."
+              placeholder={mode === "search" ? "Search for diagrams..." : "Describe the diagram you need..."}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="pl-10 py-6 text-base w-full bg-background/90 border-border/30 focus-visible:ring-1 focus-visible:ring-primary/30 shadow-sm"
+              className="pl-10 py-6 text-base w-full bg-background shadow-sm border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30"
               disabled={isLoading}
             />
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full md:w-auto">
             <Button 
               type="submit" 
               disabled={!query.trim() || isLoading}
-              className="h-11 gap-2 px-5"
+              className="h-12 gap-2 px-5 w-full md:w-auto"
             >
               {isLoading ? (
                 <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -94,24 +94,28 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
             
             <Button
               type="button" 
-              variant="outline"
-              size="icon"
-              className="h-11 w-11 bg-background"
+              variant={mode === "search" ? "outline" : "default"}
+              className="h-12 gap-2 w-full md:w-auto"
               onClick={() => setMode(mode === "search" ? "generate" : "search")}
-              title={mode === "search" ? "Switch to Generate" : "Switch to Search"}
             >
               {mode === "search" ? (
-                <Sparkles className="h-4 w-4" />
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  <span>Switch to Generate</span>
+                </>
               ) : (
-                <Search className="h-4 w-4" />
+                <>
+                  <Search className="h-4 w-4" />
+                  <span>Switch to Search</span>
+                </>
               )}
             </Button>
           </div>
         </div>
       </form>
       
-      <div className="mt-2 flex justify-end">
-        <SearchLimitIndicator compact={true} className="opacity-80" />
+      <div className="mt-2">
+        <SearchLimitIndicator compact={true} className="opacity-70 scale-90" />
       </div>
       
       <PremiumPlanDialog

@@ -1,37 +1,40 @@
 
+import { Badge } from "@/components/ui/badge";
+import { LinkedinIcon } from "lucide-react";
 import { motion } from "framer-motion";
-import { ExternalLink } from "lucide-react";
 
 interface BuiltByBadgeProps {
   className?: string;
-  position?: "top-right" | "bottom-right" | "top-left" | "bottom-left" | "fixed";
+  position?: "bottom-right" | "bottom-left" | "fixed";
 }
 
 export function BuiltByBadge({ className, position = "bottom-right" }: BuiltByBadgeProps) {
   const positionClasses = {
-    "top-right": "top-4 right-4",
-    "bottom-right": "bottom-4 right-4",
-    "top-left": "top-4 left-4",
-    "bottom-left": "bottom-4 left-4",
+    "bottom-right": "absolute bottom-4 right-4",
+    "bottom-left": "absolute bottom-4 left-4", 
     "fixed": "fixed bottom-4 right-4 z-50"
   };
 
   return (
-    <motion.div 
-      className={`${position === "fixed" ? "fixed" : "absolute"} ${positionClasses[position]} z-10 ${className}`}
+    <motion.div
+      className={position === "fixed" ? positionClasses.fixed : positionClasses[position]}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.5, duration: 0.3 }}
+      transition={{ delay: 1, duration: 0.3 }}
     >
       <a 
-        href="https://www.linkedin.com/in/anishsarkar-/"
-        target="_blank"
+        href="https://www.linkedin.com/in/anishsarkar-/" 
+        target="_blank" 
         rel="noopener noreferrer"
-        className="flex items-center gap-1.5 bg-background/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-border/30 shadow-sm hover:shadow-md transition-all duration-300"
+        className="no-underline"
       >
-        <p className="text-xs text-muted-foreground">Built by</p>
-        <span className="text-xs font-medium text-foreground">@Anish</span>
-        <ExternalLink className="h-3 w-3 text-muted-foreground" />
+        <Badge 
+          variant="secondary" 
+          className="gap-1.5 py-1.5 px-2.5 shadow-md backdrop-blur-sm bg-background/70 hover:bg-accent border border-border/30 transition-all group"
+        >
+          <span className="text-xs">Built by @Anish</span>
+          <LinkedinIcon className="h-3 w-3 text-[#0077B5] group-hover:text-[#0077B5]/80 transition-colors" />
+        </Badge>
       </a>
     </motion.div>
   );

@@ -48,7 +48,7 @@ export function Logo({
         } : {}}
       >
         <img 
-          src="/lovable-uploads/00280548-0e69-4df9-9d87-4dfdca65bb09.png" 
+          src="/lovable-uploads/a6ccf758-c406-414d-8f2e-e5e6d69439ff.png" 
           alt="Diagramr Logo" 
           className="h-full w-full object-contain"
         />

@@ -17,7 +17,7 @@ export function SiteLoader() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <DiagramrLogo size="xl" isLoading={true} />
+          <DiagramrLogo showText={false} size="xl" isLoading={true} />
         </motion.div>
         <motion.p
           className="mt-6 text-sm text-muted-foreground"

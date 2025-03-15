@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { DiagramrLogo } from "@/components/diagramr-logo";
-import { Search, Menu, X, LogIn, User, LogOut, Moon, Sun } from "lucide-react";
+import { Search, Menu, X, LogIn, User, LogOut, Moon, Sun, Bookmark, CreditCard } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
 import { useTheme } from "./theme-provider";
@@ -51,7 +51,7 @@ export function Header() {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2">
-            <DiagramrLogo className="h-7 w-auto" />
+            <DiagramrLogo size="sm" className="h-7 w-auto" />
           </Link>
         </div>
 
@@ -60,7 +60,7 @@ export function Header() {
           <Link
             to="/"
             className={cn(
-              "text-sm font-medium transition-colors hover:text-foreground/80",
+              "text-sm font-medium transition-colors hover:text-primary",
               location.pathname === "/"
                 ? "text-foreground"
                 : "text-foreground/60"
@@ -68,11 +68,24 @@ export function Header() {
           >
             Home
           </Link>
+          
+          <Link
+            to="/pricing"
+            className={cn(
+              "text-sm font-medium transition-colors hover:text-primary",
+              location.pathname === "/pricing"
+                ? "text-foreground"
+                : "text-foreground/60"
+            )}
+          >
+            Pricing
+          </Link>
+          
           {profile?.is_premium && (
             <Link
               to="/favorites"
               className={cn(
-                "text-sm font-medium transition-colors hover:text-foreground/80",
+                "text-sm font-medium transition-colors hover:text-primary",
                 location.pathname === "/favorites"
                   ? "text-foreground"
                   : "text-foreground/60"
@@ -89,9 +102,9 @@ export function Header() {
             className="mr-2"
           >
             {theme === 'dark' ? (
-              <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Sun className="h-[1.2rem] w-[1.2rem]" />
             ) : (
-              <Moon className="h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <Moon className="h-[1.2rem] w-[1.2rem]" />
             )}
             <span className="sr-only">Toggle theme</span>
           </Button>
@@ -114,6 +127,18 @@ export function Header() {
                     Plan: {profile?.is_premium ? 'Premium' : 'Free'}
                   </span>
                 </DropdownMenuItem>
+                {!profile?.is_premium && (
+                  <DropdownMenuItem onClick={() => navigate('/pricing')}>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    <span>Upgrade to Premium</span>
+                  </DropdownMenuItem>
+                )}
+                {profile?.is_premium && (
+                  <DropdownMenuItem onClick={() => navigate('/favorites')}>
+                    <Bookmark className="mr-2 h-4 w-4" />
+                    <span>My Favorites</span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
@@ -175,6 +200,13 @@ export function Header() {
             >
               Home
             </Link>
+            <Link
+              to="/pricing"
+              className="block py-2 text-foreground/70 hover:text-foreground"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Pricing
+            </Link>
             {profile?.is_premium && (
               <Link
                 to="/favorites"
@@ -192,6 +224,15 @@ export function Header() {
                 <div className="py-2 text-sm font-medium">
                   Plan: {profile?.is_premium ? 'Premium' : 'Free'}
                 </div>
+                {!profile?.is_premium && (
+                  <Link 
+                    to="/pricing" 
+                    className="block py-2 text-foreground/70 hover:text-foreground"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Upgrade to Premium
+                  </Link>
+                )}
                 <Button 
                   variant="outline" 
                   className="w-full justify-center"
