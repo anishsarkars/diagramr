@@ -9,9 +9,10 @@ import { PremiumPlanDialog } from "@/components/premium-plan-dialog";
 
 interface SearchLimitIndicatorProps {
   className?: string;
+  compact?: boolean;
 }
 
-export function SearchLimitIndicator({ className }: SearchLimitIndicatorProps) {
+export function SearchLimitIndicator({ className, compact = false }: SearchLimitIndicatorProps) {
   const { remainingSearches, hasReachedLimit, requiresLogin } = useSearchLimit();
   const { user, profile } = useAuth();
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
@@ -23,38 +24,40 @@ export function SearchLimitIndicator({ className }: SearchLimitIndicatorProps) {
   return (
     <>
       <motion.div 
-        className={`${className} bg-background/80 backdrop-blur-md border border-border/50 rounded-full px-4 py-2 shadow-md`}
+        className={`${className} bg-background/80 backdrop-blur-md border border-border/50 rounded-full px-3 py-1.5 shadow-sm ${compact ? 'scale-90' : ''}`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         {hasReachedLimit ? (
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-sm text-muted-foreground">
-              You've reached your {user ? "daily" : "free trial"} search limit
+          <div className={`flex ${compact ? 'flex-row' : 'flex-col'} items-center gap-2`}>
+            <p className="text-xs text-muted-foreground">
+              {user ? "Daily search limit reached" : "Free trial ended"}
             </p>
             <Button 
               size="sm" 
               onClick={() => setShowPremiumDialog(true)}
-              className="text-xs gap-1.5"
+              className="text-xs h-7 px-2 gap-1"
             >
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Upgrade to Premium</span>
+              <Sparkles className="h-3 w-3" />
+              <span>Upgrade</span>
             </Button>
           </div>
         ) : (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <p className="text-xs text-muted-foreground">
-              <span className="font-medium">{Math.max(0, remainingSearches)}</span> {user ? "free" : "trial"} searches remaining
+              <span className="font-medium">{Math.max(0, remainingSearches)}</span> {user ? "free" : "trial"} searches left
             </p>
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              onClick={() => setShowPremiumDialog(true)}
-              className="text-xs h-6 px-2"
-            >
-              Upgrade
-            </Button>
+            {!compact && (
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={() => setShowPremiumDialog(true)}
+                className="text-xs h-5 px-2"
+              >
+                Upgrade
+              </Button>
+            )}
           </div>
         )}
       </motion.div>

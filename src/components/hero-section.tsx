@@ -50,11 +50,11 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
       {/* Simplified background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div 
-          className="absolute -top-20 -right-20 w-96 h-96 bg-[#FF6347]/5 rounded-full blur-3xl"
+          className="absolute -top-20 -right-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl"
           animate={backgroundBlobVariants.animate}
         />
         <motion.div 
-          className="absolute -bottom-40 -left-20 w-[30rem] h-[30rem] bg-[#001934]/5 rounded-full blur-3xl"
+          className="absolute -bottom-40 -left-20 w-[30rem] h-[30rem] bg-primary/5 rounded-full blur-3xl"
           animate={{ 
             scale: [1, 1.2, 1],
             opacity: [0.5, 0.6, 0.5],
@@ -69,26 +69,26 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
       </div>
       
       <motion.div 
-        className="mb-8 flex flex-col items-center text-center max-w-2xl mx-auto z-10"
+        className="mb-10 flex flex-col items-center text-center max-w-2xl mx-auto z-10"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
       >
-        <DiagramrLogo className="mb-6 scale-125" />
+        <DiagramrLogo className="mb-8" size="lg" />
         
         <motion.h1 
-          className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-3"
+          className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4"
           custom={1}
           initial="hidden"
           animate="visible"
           variants={fadeInUpVariants}
         >
-          Find and learn from
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#FF6347] to-[#001934]"> diagrams</span>
+          Find & Learn from
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70 ml-2">Diagrams</span>
         </motion.h1>
         
         <motion.p 
-          className="text-md text-muted-foreground mb-6 max-w-xl"
+          className="text-lg text-muted-foreground mb-8 max-w-xl"
           custom={2}
           initial="hidden"
           animate="visible"
@@ -113,13 +113,13 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
       </motion.div>
       
       <motion.div 
-        className="mt-6 text-center z-10"
+        className="mt-8 text-center z-10"
         custom={4}
         initial="hidden"
         animate="visible"
         variants={fadeInUpVariants}
       >
-        <h3 className="text-xs font-medium mb-2 text-muted-foreground">Study topics</h3>
+        <h3 className="text-xs font-medium mb-3 text-muted-foreground">Popular searches</h3>
         <div className="flex flex-wrap gap-2 justify-center">
           {["UML Class Diagram", "Network Architecture", "Data Structures", 
             "System Design", "ER Diagram", "Cloud Infrastructure"].map((type, i) => (
@@ -153,8 +153,8 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           className="flex flex-col items-center text-center"
           whileHover={{ y: -3, transition: { duration: 0.2 } }}
         >
-          <div className="w-10 h-10 rounded-full bg-[#FF6347]/10 flex items-center justify-center mb-3">
-            <GraduationCap className="h-5 w-5 text-[#FF6347]" />
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+            <GraduationCap className="h-6 w-6 text-primary" />
           </div>
           <h3 className="text-sm font-medium mb-1">Study Aid</h3>
           <p className="text-xs text-muted-foreground">Find diagrams to help study for exams and assignments.</p>
@@ -164,8 +164,8 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           className="flex flex-col items-center text-center"
           whileHover={{ y: -3, transition: { duration: 0.2 } }}
         >
-          <div className="w-10 h-10 rounded-full bg-[#FF6347]/10 flex items-center justify-center mb-3">
-            <Sparkles className="h-5 w-5 text-[#FF6347]" />
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+            <Sparkles className="h-6 w-6 text-primary" />
           </div>
           <h3 className="text-sm font-medium mb-1">AI Generation</h3>
           <p className="text-xs text-muted-foreground">Request custom diagrams to understand any concept.</p>
@@ -175,15 +175,13 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           className="flex flex-col items-center text-center"
           whileHover={{ y: -3, transition: { duration: 0.2 } }}
         >
-          <div className="w-10 h-10 rounded-full bg-[#FF6347]/10 flex items-center justify-center mb-3">
-            <ScrollText className="h-5 w-5 text-[#FF6347]" />
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+            <ScrollText className="h-6 w-6 text-primary" />
           </div>
           <h3 className="text-sm font-medium mb-1">Quick Reference</h3>
           <p className="text-xs text-muted-foreground">Save time with visual references for complex topics.</p>
         </motion.div>
       </motion.div>
-      
-      <SearchLimitIndicator className="fixed bottom-16 left-1/2 transform -translate-x-1/2 z-10" />
     </motion.div>
   );
 }

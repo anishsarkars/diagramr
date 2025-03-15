@@ -18,7 +18,7 @@ export function BuiltByBadge({ className, position = "bottom-right" }: BuiltByBa
 
   return (
     <motion.div 
-      className={`absolute ${positionClasses[position]} z-10 ${className}`}
+      className={`${position === "fixed" ? "fixed" : "absolute"} ${positionClasses[position]} z-10 ${className}`}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.5, duration: 0.3 }}
@@ -27,7 +27,7 @@ export function BuiltByBadge({ className, position = "bottom-right" }: BuiltByBa
         href="https://www.linkedin.com/in/anishsarkar-/"
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-1.5 bg-background/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-border/30 shadow-sm hover:shadow-md transition-all duration-300"
+        className="flex items-center gap-1.5 bg-background/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-border/30 shadow-sm hover:shadow-md transition-all duration-300"
       >
         <p className="text-xs text-muted-foreground">Built by</p>
         <span className="text-xs font-medium text-foreground">@Anish</span>

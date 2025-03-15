@@ -6,16 +6,54 @@ interface DiagramrLogoProps {
   showText?: boolean;
   className?: string;
   textClassName?: string;
+  size?: "sm" | "md" | "lg" | "xl";
+  isLoading?: boolean;
 }
 
-export function DiagramrLogo({ showText = true, className, textClassName }: DiagramrLogoProps) {
+export function DiagramrLogo({ 
+  showText = true, 
+  className, 
+  textClassName,
+  size = "md",
+  isLoading = false
+}: DiagramrLogoProps) {
+  const sizeClasses = {
+    sm: "h-8 w-8",
+    md: "h-10 w-10",
+    lg: "h-14 w-14", 
+    xl: "h-20 w-20"
+  };
+  
+  const textSizeClasses = {
+    sm: "text-xl",
+    md: "text-2xl",
+    lg: "text-3xl", 
+    xl: "text-4xl"
+  };
+  
   return (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div className={cn("flex items-center gap-3", className)}>
       <motion.div 
-        className="relative h-10 w-10"
+        className={cn("relative", sizeClasses[size])}
         initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
+        animate={isLoading ? {
+          opacity: 1,
+          scale: 1,
+          rotate: 360,
+          transition: { 
+            opacity: { duration: 0.5 },
+            scale: { duration: 0.5 },
+            rotate: { 
+              duration: 2, 
+              ease: "linear", 
+              repeat: Infinity 
+            }
+          }
+        } : { 
+          opacity: 1, 
+          scale: 1,
+          transition: { duration: 0.5 }
+        }}
       >
         <img 
           src="/lovable-uploads/6fded565-6442-486f-9eea-5259f0fe2811.png" 
@@ -26,7 +64,7 @@ export function DiagramrLogo({ showText = true, className, textClassName }: Diag
       
       {showText && (
         <motion.span 
-          className={cn("text-2xl font-bold text-foreground", textClassName)}
+          className={cn("font-bold text-foreground", textSizeClasses[size], textClassName)}
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}

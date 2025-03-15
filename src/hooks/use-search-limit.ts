@@ -12,8 +12,9 @@ interface SearchLimitState {
   requiresLogin: boolean;
 }
 
+// Define constants for search limits
 const FREE_TIER_LIMIT = 20;
-const DEMO_LIMIT = 4;
+const DEMO_LIMIT = 3; // Anonymous users get 3 searches before requiring login
 
 export function useSearchLimit(): SearchLimitState {
   const { user, profile } = useAuth();
@@ -21,15 +22,23 @@ export function useSearchLimit(): SearchLimitState {
   const [isLoading, setIsLoading] = useState(true);
   
   const isPremium = profile?.is_premium || false;
+  
+  // Different logic based on authentication status
   const hasReachedLimit = !isPremium && (
     user ? searchCount >= FREE_TIER_LIMIT : searchCount >= DEMO_LIMIT
   );
+  
+  // Require login after trial limit is reached for anonymous users
   const requiresLogin = !user && searchCount >= DEMO_LIMIT;
-  const remainingSearches = user ? (FREE_TIER_LIMIT - searchCount) : (DEMO_LIMIT - searchCount);
+  
+  // Calculate remaining searches
+  const remainingSearches = user 
+    ? (FREE_TIER_LIMIT - searchCount) 
+    : (DEMO_LIMIT - searchCount);
 
   useEffect(() => {
     if (!user) {
-      // If not logged in, use localStorage
+      // If not logged in, use localStorage for tracking anonymous usage
       const today = new Date().toDateString();
       const storedData = localStorage.getItem('searchData');
       
