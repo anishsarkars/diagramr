@@ -9,9 +9,11 @@ interface SearchLimitState {
   isLoading: boolean;
   incrementCount: () => Promise<boolean>;
   remainingSearches: number;
+  requiresLogin: boolean;
 }
 
 const FREE_TIER_LIMIT = 20;
+const DEMO_LIMIT = 4;
 
 export function useSearchLimit(): SearchLimitState {
   const { user, profile } = useAuth();
@@ -19,8 +21,11 @@ export function useSearchLimit(): SearchLimitState {
   const [isLoading, setIsLoading] = useState(true);
   
   const isPremium = profile?.is_premium || false;
-  const hasReachedLimit = !isPremium && searchCount >= FREE_TIER_LIMIT;
-  const remainingSearches = FREE_TIER_LIMIT - searchCount;
+  const hasReachedLimit = !isPremium && (
+    user ? searchCount >= FREE_TIER_LIMIT : searchCount >= DEMO_LIMIT
+  );
+  const requiresLogin = !user && searchCount >= DEMO_LIMIT;
+  const remainingSearches = user ? (FREE_TIER_LIMIT - searchCount) : (DEMO_LIMIT - searchCount);
 
   useEffect(() => {
     if (!user) {
@@ -119,6 +124,7 @@ export function useSearchLimit(): SearchLimitState {
     hasReachedLimit,
     isLoading,
     incrementCount,
-    remainingSearches
+    remainingSearches,
+    requiresLogin
   };
 }

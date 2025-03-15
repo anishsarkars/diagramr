@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
@@ -6,53 +7,15 @@ import { Footer } from "@/components/footer";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { searchGoogleImages } from "@/utils/googleSearch";
-import { BuiltByBadge } from "@/components/built-by-badge";
 import { useAuth } from "@/components/auth-context";
 import { useSearchLimit } from "@/hooks/use-search-limit";
 import { PremiumPlanDialog } from "@/components/premium-plan-dialog";
+import { useNavigate } from "react-router-dom";
 
 const GOOGLE_SEARCH_API_KEY = "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4";
 const GOOGLE_CUSTOM_SEARCH_ID = "260090575ae504419";
 
-const SAMPLE_DIAGRAM_DATA = [
-  {
-    id: 1,
-    title: "Cloud Computing Architecture",
-    imageSrc: "/lovable-uploads/0bd711da-9830-4f71-ad4b-5b7325223770.png",
-    author: "Anish Sarkar",
-    authorUsername: "anishsarkar",
-    tags: ["cloud", "architecture", "infrastructure"],
-    sourceUrl: "https://example.com/cloud-architecture"
-  },
-  {
-    id: 2,
-    title: "Cloud Computing Diagram",
-    imageSrc: "/lovable-uploads/0bd711da-9830-4f71-ad4b-5b7325223770.png",
-    author: "Anish",
-    authorUsername: "anish",
-    tags: ["cloud", "computing", "saas"],
-    sourceUrl: "https://example.com/cloud-computing"
-  },
-  {
-    id: 3,
-    title: "Cloud Infrastructure Components",
-    imageSrc: "/lovable-uploads/0bd711da-9830-4f71-ad4b-5b7325223770.png",
-    author: "GFG",
-    authorUsername: "GFG",
-    tags: ["cloud", "paas", "iaas"],
-    sourceUrl: "https://geeksforgeeks.org/cloud-infrastructure"
-  },
-  {
-    id: 4,
-    title: "Service Layers Diagram",
-    imageSrc: "/lovable-uploads/0bd711da-9830-4f71-ad4b-5b7325223770.png",
-    author: "Sarkar",
-    authorUsername: "sarkar",
-    tags: ["service", "layers", "cloud"],
-    sourceUrl: "https://example.com/service-layers"
-  },
-];
-
+// Sample diagrams to use as fallback
 const DIAGRAM_IMAGES = [
   "https://miro.medium.com/v2/resize:fit:1400/1*Qwln63hihLxKZWQQCwYoMg.png",
   "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/networkdiagram.svg",
@@ -82,13 +45,16 @@ const Index = () => {
   const [showSearchField, setShowSearchField] = useState(true);
   const [lastAction, setLastAction] = useState<"search" | "generate">("search");
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [showLoginRequired, setShowLoginRequired] = useState(false);
   
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const { 
     searchCount,
     hasReachedLimit, 
     incrementCount, 
-    remainingSearches 
+    remainingSearches,
+    requiresLogin
   } = useSearchLimit();
   
   const isPremium = profile?.is_premium || false;
@@ -148,13 +114,14 @@ const Index = () => {
       return mockResults;
     } catch (error) {
       console.error("Error fetching diagrams:", error);
-      return SAMPLE_DIAGRAM_DATA;
+      throw error;
     }
   };
 
   const generateDiagramWithAI = async (prompt: string): Promise<DiagramData[]> => {
     console.log("Generating diagram for:", prompt);
     
+    // For a real implementation, this would connect to an AI service like OpenAI
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     const imagePool = [...DIAGRAM_IMAGES];
@@ -189,12 +156,17 @@ const Index = () => {
       return;
     }
     
+    if (requiresLogin) {
+      setShowLoginRequired(true);
+      return;
+    }
+    
+    if (hasReachedLimit) {
+      setShowPremiumDialog(true);
+      return;
+    }
+    
     if (mode === "search") {
-      if (hasReachedLimit) {
-        setShowPremiumDialog(true);
-        return;
-      }
-      
       const success = await incrementCount();
       if (!success) {
         setShowPremiumDialog(true);
@@ -225,7 +197,6 @@ const Index = () => {
       setResults(searchResults);
     } catch (error) {
       console.error(`Error ${mode === "search" ? "fetching" : "generating"} diagrams:`, error);
-      setResults(SAMPLE_DIAGRAM_DATA);
       toast.error(`Error ${mode === "search" ? "searching for" : "generating"} diagrams. Please try again.`);
     } finally {
       setIsLoading(false);
@@ -237,6 +208,13 @@ const Index = () => {
     setAiPrompt("");
   };
 
+  // Check if the user needs to be prompted for login
+  useEffect(() => {
+    if (requiresLogin && !user) {
+      setShowLoginRequired(true);
+    }
+  }, [requiresLogin, user]);
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
@@ -245,14 +223,6 @@ const Index = () => {
         {showSearchField ? (
           <>
             <HeroSection onSearch={handleAIPrompt} isLoading={isLoading} />
-            {!isPremium && (
-              <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-background/80 backdrop-blur-md border border-border/50 rounded-full px-4 py-2 shadow-md">
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-medium">{Math.max(0, 20 - searchCount)}</span> free searches remaining today
-                </p>
-              </div>
-            )}
-            <BuiltByBadge position="fixed" />
           </>
         ) : (
           <ResultsSection 
@@ -270,6 +240,13 @@ const Index = () => {
       <PremiumPlanDialog
         open={showPremiumDialog}
         onClose={() => setShowPremiumDialog(false)}
+        showLogin={requiresLogin}
+      />
+      
+      <PremiumPlanDialog
+        open={showLoginRequired}
+        onClose={() => setShowLoginRequired(false)}
+        showLogin={true}
       />
     </div>
   );

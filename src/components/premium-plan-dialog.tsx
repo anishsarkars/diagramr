@@ -6,16 +6,27 @@ import { CheckCircle, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/components/auth-context";
 
 interface PremiumPlanDialogProps {
   open: boolean;
   onClose: () => void;
+  showLogin?: boolean;
 }
 
-export function PremiumPlanDialog({ open, onClose }: PremiumPlanDialogProps) {
+export function PremiumPlanDialog({ open, onClose, showLogin = false }: PremiumPlanDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleUpgrade = async () => {
+    if (!user && showLogin) {
+      navigate('/auth');
+      onClose();
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
@@ -41,6 +52,11 @@ export function PremiumPlanDialog({ open, onClose }: PremiumPlanDialogProps) {
     }
   };
 
+  const handleSignIn = () => {
+    navigate('/auth');
+    onClose();
+  };
+
   const features = [
     { title: "Unlimited searches", premium: true, free: false },
     { title: "High-quality diagram images", premium: true, free: true },
@@ -55,7 +71,9 @@ export function PremiumPlanDialog({ open, onClose }: PremiumPlanDialogProps) {
         <DialogHeader>
           <DialogTitle className="text-xl">Upgrade to Premium</DialogTitle>
           <DialogDescription>
-            Unlock unlimited searches and advanced features to enhance your learning experience.
+            {showLogin && !user 
+              ? "Create an account and unlock unlimited searches and advanced features."
+              : "Unlock unlimited searches and advanced features to enhance your learning experience."}
           </DialogDescription>
         </DialogHeader>
 
@@ -71,8 +89,8 @@ export function PremiumPlanDialog({ open, onClose }: PremiumPlanDialogProps) {
           <div className="col-span-3 sm:col-span-2 rounded-lg border-2 border-primary p-4">
             <div className="text-center">
               <h3 className="font-medium">Premium</h3>
-              <div className="mt-2 text-2xl font-bold">$9.99</div>
-              <div className="text-xs text-muted-foreground">per month</div>
+              <div className="mt-2 text-2xl font-bold">$8</div>
+              <div className="text-sm text-muted-foreground">or ₹689 per month</div>
             </div>
           </div>
           
@@ -83,7 +101,7 @@ export function PremiumPlanDialog({ open, onClose }: PremiumPlanDialogProps) {
                 className="grid grid-cols-3 items-center text-sm"
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
+                transition={{ delay: 0.1 * i }}
               >
                 <div className="col-span-1">{feature.title}</div>
                 <div className="col-span-1 text-center">
@@ -107,9 +125,16 @@ export function PremiumPlanDialog({ open, onClose }: PremiumPlanDialogProps) {
           <Button variant="outline" onClick={onClose} className="sm:w-auto w-full">
             Maybe later
           </Button>
-          <Button onClick={handleUpgrade} disabled={isLoading} className="sm:w-auto w-full">
-            {isLoading ? "Processing..." : "Upgrade now"}
-          </Button>
+          
+          {showLogin && !user ? (
+            <Button onClick={handleSignIn} className="sm:w-auto w-full">
+              Sign in / Sign up
+            </Button>
+          ) : (
+            <Button onClick={handleUpgrade} disabled={isLoading} className="sm:w-auto w-full">
+              {isLoading ? "Processing..." : "Upgrade now"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

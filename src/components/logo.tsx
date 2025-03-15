@@ -1,7 +1,6 @@
 
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { Network } from "lucide-react";
 
 interface LogoProps {
   className?: string;
@@ -13,15 +12,17 @@ interface LogoProps {
 export function Logo({ className, iconOnly = false, showText = true, children }: LogoProps) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-md bg-gradient-to-br from-primary/80 via-primary to-primary/80 p-[2px] transition-all shadow-md">
-        <div className="z-10 flex h-full w-full items-center justify-center rounded-[5px] bg-card text-xl font-bold">
-          <Network size={20} className="text-primary" />
-        </div>
+      <div className="relative h-8 w-8">
+        <img 
+          src="/lovable-uploads/6fded565-6442-486f-9eea-5259f0fe2811.png" 
+          alt="Diagramr Logo" 
+          className="h-full w-full object-contain"
+        />
       </div>
       
       {showText && !iconOnly && (
         <span className="text-lg font-semibold text-foreground">
-          diagramr
+          Diagramr
         </span>
       )}
       
