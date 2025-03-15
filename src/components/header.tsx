@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { DiagramrLogo } from "@/components/diagramr-logo";
-import { Search, Menu, X, LogIn, User, LogOut } from "lucide-react";
+import { Search, Menu, X, LogIn, User, LogOut, Moon, Sun } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
+import { useTheme } from "./theme-provider";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { motion } from "framer-motion";
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -20,6 +22,7 @@ export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   const handleScroll = () => {
     const offset = window.scrollY;
@@ -78,6 +81,21 @@ export function Header() {
               Favorites
             </Link>
           )}
+          
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="mr-2"
+          >
+            {theme === 'dark' ? (
+              <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            ) : (
+              <Moon className="h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            )}
+            <span className="sr-only">Toggle theme</span>
+          </Button>
+          
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -105,7 +123,7 @@ export function Header() {
             </DropdownMenu>
           ) : (
             <Link to="/auth">
-              <Button size="sm" variant="ghost" className="gap-2">
+              <Button size="sm" variant="default" className="gap-2">
                 <LogIn className="h-4 w-4" />
                 <span>Sign in</span>
               </Button>
@@ -114,21 +132,41 @@ export function Header() {
         </nav>
 
         {/* Mobile Menu Button */}
-        <button
-          className="md:hidden p-2 rounded-md hover:bg-accent"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          {mobileMenuOpen ? (
-            <X className="h-5 w-5" />
-          ) : (
-            <Menu className="h-5 w-5" />
-          )}
-        </button>
+        <div className="md:hidden flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          >
+            {theme === 'dark' ? (
+              <Sun className="h-[1.2rem] w-[1.2rem]" />
+            ) : (
+              <Moon className="h-[1.2rem] w-[1.2rem]" />
+            )}
+          </Button>
+          
+          <button
+            className="md:hidden p-2 rounded-md hover:bg-accent"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-border">
+        <motion.div 
+          className="md:hidden border-t border-border"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.2 }}
+        >
           <div className="container p-4 space-y-4">
             <Link
               to="/"
@@ -179,7 +217,7 @@ export function Header() {
               </Link>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
     </header>
   );

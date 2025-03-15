@@ -57,7 +57,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
       transition={{ duration: 0.3 }}
     >
       <form onSubmit={handleSubmit} className="relative w-full">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col md:flex-row items-stretch gap-3">
           <div className="relative flex-1">
             <Input
               type="text"
@@ -70,28 +70,50 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           </div>
           
-          <div className="flex gap-2">
-            <Button 
-              type="button"
-              variant={mode === "search" ? "default" : "outline"}
-              onClick={() => setMode("search")}
-              disabled={isLoading}
-              className="gap-2 py-6"
-            >
-              <Search className="h-4 w-4" />
-              <span>Search</span>
-            </Button>
-            
-            <Button 
-              type="button"
-              variant={mode === "generate" ? "default" : "outline"}
-              onClick={() => setMode("generate")}
-              disabled={isLoading}
-              className="gap-2 py-6"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span>Generate</span>
-            </Button>
+          <div className="flex justify-end">
+            <div className="flex gap-1 rounded-lg p-1 bg-secondary/80 backdrop-blur-sm">
+              <Button 
+                type="button"
+                variant={mode === "search" ? "default" : "ghost"}
+                onClick={() => setMode("search")}
+                disabled={isLoading}
+                className="gap-2 relative"
+                size="sm"
+              >
+                <Search className="h-4 w-4" />
+                <span>Search</span>
+                {mode === "search" && (
+                  <motion.div 
+                    layoutId="pill-indicator"
+                    className="absolute inset-0 bg-primary rounded-md -z-10"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                  />
+                )}
+              </Button>
+              
+              <Button 
+                type="button"
+                variant={mode === "generate" ? "default" : "ghost"}
+                onClick={() => setMode("generate")}
+                disabled={isLoading}
+                className="gap-2 relative"
+                size="sm"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>Generate</span>
+                {mode === "generate" && (
+                  <motion.div 
+                    layoutId="pill-indicator"
+                    className="absolute inset-0 bg-primary rounded-md -z-10"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                  />
+                )}
+              </Button>
+            </div>
           </div>
         </div>
         
@@ -99,14 +121,15 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
           {query.trim() && (
             <motion.div 
               className="mt-3 flex justify-end"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
             >
               <Button 
                 type="submit" 
                 disabled={!query.trim() || isLoading}
-                className="gap-2"
+                className="gap-2 px-6"
               >
                 {isLoading ? (
                   <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

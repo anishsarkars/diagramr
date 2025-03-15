@@ -92,6 +92,7 @@
 
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
 
@@ -133,4 +134,32 @@
 
 .animate-float {
   animation: float 4s ease-in-out infinite;
+}
+
+/* Glassmorphism effects */
+.glass {
+  @apply bg-background/70 backdrop-blur-md border border-border/30 shadow-sm;
+}
+
+.glass-card {
+  @apply bg-card/80 backdrop-blur-md border border-border/50 shadow-sm;
+}
+
+/* Improved focus styles */
+button:focus-visible, a:focus-visible, input:focus-visible {
+  @apply outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-background transition-shadow;
+}
+
+/* Theme transition */
+.theme-transition {
+  @apply transition-colors duration-300;
+}
+
+/* Common components */
+.pills {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors;
+}
+
+.form-group {
+  @apply space-y-2;
 }

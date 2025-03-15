@@ -20,13 +20,13 @@ export function DiagramrLogo({ showText = true, className, textClassName }: Diag
         <img 
           src="/lovable-uploads/6fded565-6442-486f-9eea-5259f0fe2811.png" 
           alt="Diagramr Logo" 
-          className="h-full w-full object-contain"
+          className="h-full w-full object-contain drop-shadow-md"
         />
       </motion.div>
       
       {showText && (
         <motion.span 
-          className={cn("text-2xl font-bold text-[#001934]", textClassName)}
+          className={cn("text-2xl font-bold text-foreground", textClassName)}
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}

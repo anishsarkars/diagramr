@@ -10,12 +10,13 @@ import Index from "./pages/Index";
 import Auth from "./pages/auth";
 import Favorites from "./pages/Favorites";
 import NotFound from "./pages/NotFound";
+import { BuiltByBadge } from "./components/built-by-badge";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="dark">
+    <ThemeProvider defaultTheme="system">
       <AuthProvider>
         <TooltipProvider>
           <Toaster />
@@ -29,6 +30,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
+          <BuiltByBadge position="fixed" />
         </TooltipProvider>
       </AuthProvider>
     </ThemeProvider>
