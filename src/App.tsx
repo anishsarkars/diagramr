@@ -64,7 +64,7 @@ function AppContent() {
           <Toaster />
           <Sonner />
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<Index onLoginClick={handleLoginClick} />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/pricing" element={<Pricing />} />
@@ -73,7 +73,7 @@ function AppContent() {
           </Routes>
           <BuiltByBadge position="fixed" />
           <Suspense fallback={null}>
-            <PremiumPlanDialog open={false} onClose={() => {}} onLoginClick={handleLoginClick} showLogin={false} />
+            <PremiumPlanDialog open={false} onClose={() => {}} onLoginClick={handleLoginClick} />
           </Suspense>
         </>
       )}
