@@ -14,17 +14,37 @@ import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import { BuiltByBadge } from "./components/built-by-badge";
 import { SiteLoader } from "./components/site-loader";
+import { lazy, Suspense } from "react";
 
-const queryClient = new QueryClient();
+// Create a query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
+// Lazy load the premium plan dialog to improve initial load time
+const PremiumPlanDialog = lazy(() => import("./components/premium-plan-dialog").then(module => ({ 
+  default: module.PremiumPlanDialog 
+})));
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // Simulate loading time for a better UX
+    // Check if user has already visited
+    const hasVisited = localStorage.getItem("hasVisited");
+    
+    // Simulate loading time for first-time visitors
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 1200);
+      if (!hasVisited) {
+        localStorage.setItem("hasVisited", "true");
+      }
+    }, hasVisited ? 800 : 1500);
     
     return () => clearTimeout(timer);
   }, []);
@@ -51,6 +71,9 @@ const App = () => {
                   </Routes>
                 </BrowserRouter>
                 <BuiltByBadge position="fixed" />
+                <Suspense fallback={null}>
+                  <PremiumPlanDialog open={false} onClose={() => {}} />
+                </Suspense>
               </>
             )}
           </TooltipProvider>

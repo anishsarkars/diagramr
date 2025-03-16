@@ -1,188 +1,237 @@
 
-import { useState } from "react";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { CheckCircle, ExternalLink } from "lucide-react";
+import { CheckCircle2, Sparkles, Infinity, Star, Zap } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { DiagramrLogo } from "@/components/diagramr-logo";
 import { useAuth } from "@/components/auth-context";
-import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 export default function Pricing() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
-  const [yearlyBilling, setYearlyBilling] = useState(false);
-  
-  const handleSubscribe = (plan: "monthly" | "lifetime") => {
-    if (!user) {
-      toast.info("Please sign in to subscribe");
-      navigate("/auth", { state: { returnUrl: "/pricing" } });
-      return;
-    }
-    
-    // In a real app, you would redirect to your payment processor
-    // For now we just open the external payment links
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
   };
-  
-  const features = [
-    { name: "Searches per day", free: "3", premium: "Unlimited" },
-    { name: "High-quality diagrams", free: "✓", premium: "✓" },
-    { name: "AI-generated diagrams", free: "✗", premium: "✓" },
-    { name: "Save favorites", free: "✗", premium: "✓" },
-    { name: "Export diagrams", free: "✗", premium: "✓" },
-    { name: "Study mode", free: "✗", premium: "✓" },
-    { name: "Priority support", free: "✗", premium: "✓" },
-  ];
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 },
+  };
+
+  // Direct to payment links
+  const redirectToPayment = (url: string) => {
+    window.open(url, "_blank");
+  };
+
+  // Navigate to auth page if user is not logged in
+  const handleUpgradeClick = (paymentUrl: string) => {
+    if (!user) {
+      navigate("/auth", { state: { returnTo: "/pricing", paymentUrl } });
+    } else {
+      redirectToPayment(paymentUrl);
+    }
+  };
+
+  useEffect(() => {
+    // Scroll to top on component mount
+    window.scrollTo(0, 0);
+  }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Header />
-      
-      <main className="flex-1 container py-16 px-4">
-        <motion.div 
-          className="max-w-5xl mx-auto"
+    <div className="min-h-screen bg-background">
+      <div className="container max-w-7xl mx-auto py-10 px-4 sm:px-6">
+        <div className="flex justify-between items-center mb-12">
+          <DiagramrLogo size="md" />
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={() => navigate("/")}>
+              Home
+            </Button>
+            {user ? (
+              <Button onClick={() => navigate("/favorites")}>My Favorites</Button>
+            ) : (
+              <Button onClick={() => navigate("/auth")}>Sign in</Button>
+            )}
+          </div>
+        </div>
+
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
+          className="text-center mb-16"
         >
-          <div className="text-center mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Choose the plan that's right for you and start discovering and learning from diagrams today.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-8 my-8">
-            {/* Free Plan */}
-            <motion.div 
-              className="border border-border rounded-xl p-6 bg-card"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              whileHover={{ y: -5, transition: { duration: 0.2 } }}
-            >
-              <div className="text-center pb-4 border-b border-border mb-6">
-                <h2 className="text-lg font-medium mb-1">Free</h2>
-                <p className="text-3xl font-bold">₹0<span className="text-muted-foreground text-base font-normal">/forever</span></p>
-                <p className="text-sm text-muted-foreground mt-2">Perfect for casual users</p>
-              </div>
-              
-              <ul className="space-y-4 mb-8">
-                {features.map((feature) => (
-                  <li key={feature.name} className="flex items-center gap-2 text-sm">
-                    <span className={feature.free === "✓" ? "text-green-500" : 
-                                    feature.free === "✗" ? "text-muted-foreground" : ""}>
-                      {feature.free}
-                    </span>
-                    <span>{feature.name}</span>
-                  </li>
-                ))}
-              </ul>
-              
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => navigate("/")}
-              >
-                Get Started
-              </Button>
-            </motion.div>
-            
-            {/* Premium Plan */}
-            <motion.div 
-              className="border-2 border-primary rounded-xl p-6 bg-card relative overflow-hidden shadow-lg"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              whileHover={{ y: -5, transition: { duration: 0.2 } }}
-            >
-              <div className="absolute -right-12 top-6 bg-primary text-primary-foreground py-1 px-10 rotate-45">
-                Popular
-              </div>
-              
-              <div className="text-center pb-4 border-b border-border mb-6">
-                <h2 className="text-lg font-medium mb-1">Premium</h2>
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <p className="text-3xl font-bold">₹299<span className="text-muted-foreground text-base font-normal">/month</span></p>
-                    <p className="text-sm text-muted-foreground">Billed monthly</p>
-                  </div>
-                  <div>
-                    <p className="text-3xl font-bold">₹899<span className="text-muted-foreground text-base font-normal">/lifetime</span></p>
-                    <p className="text-sm text-muted-foreground">One-time payment</p>
-                  </div>
-                </div>
-              </div>
-              
-              <ul className="space-y-4 mb-8">
-                {features.map((feature) => (
-                  <li key={feature.name} className="flex items-center gap-2 text-sm">
-                    <span className="text-primary">{feature.premium}</span>
-                    <span>{feature.name}</span>
-                  </li>
-                ))}
-              </ul>
-              
-              <div className="space-y-3">
-                <Button 
-                  asChild
-                  variant="default" 
-                  className="w-full gap-1.5"
-                >
-                  <a 
-                    href="https://rzp.io/rzp/KYo2irKm" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    <span>Monthly (₹299)</span>
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                </Button>
-                
-                <Button 
-                  asChild
-                  variant="secondary" 
-                  className="w-full gap-1.5"
-                >
-                  <a 
-                    href="https://rzp.io/rzp/PO66xQq" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    <span>Lifetime (₹899)</span>
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                </Button>
-              </div>
-            </motion.div>
-          </div>
-          
-          <div className="bg-muted/30 rounded-xl p-8 mt-12">
-            <h3 className="text-xl font-medium mb-4">Frequently Asked Questions</h3>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-medium mb-2">What's included in the free plan?</h4>
-                <p className="text-sm text-muted-foreground">The free plan includes 3 searches per day and access to high-quality diagram results.</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">Can I upgrade anytime?</h4>
-                <p className="text-sm text-muted-foreground">Yes, you can upgrade to Premium at any time to unlock all features.</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">What payment methods do you accept?</h4>
-                <p className="text-sm text-muted-foreground">We accept all major credit cards, UPI, and net banking through our payment processor.</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">How does the lifetime plan work?</h4>
-                <p className="text-sm text-muted-foreground">The lifetime plan is a one-time payment that gives you unlimited access to all premium features forever.</p>
-              </div>
-            </div>
-          </div>
+          <Badge variant="outline" className="mb-4 px-3 py-1">
+            <Sparkles className="h-3.5 w-3.5 mr-1" />
+            <span>Beta Launch Offer</span>
+          </Badge>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+            Simple, transparent pricing
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Get unlimited access to educational diagrams with our early adopter pricing.
+            Lock in these special rates during our beta period.
+          </p>
         </motion.div>
-      </main>
-      
-      <Footer />
+
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto"
+        >
+          {/* Free Plan */}
+          <motion.div variants={item}>
+            <Card className="h-full transition-all hover:shadow-md border-border">
+              <CardHeader>
+                <CardTitle className="flex justify-between items-center">
+                  <span>Free Plan</span>
+                  <Badge variant="secondary">Standard</Badge>
+                </CardTitle>
+                <div className="flex items-baseline mt-3">
+                  <span className="text-3xl font-bold">₹0</span>
+                  <span className="ml-1 text-muted-foreground">/forever</span>
+                </div>
+                <CardDescription className="mt-2">
+                  Perfect for casual learners and students.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 mt-4">
+                  <li className="flex items-start">
+                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
+                    <span>Access to high-quality educational diagrams</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
+                    <span>30 searches per day</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
+                    <span>Save favorites</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
+                    <span>Basic filter options</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
+                    <span>Study mode</span>
+                  </li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full" variant="outline" onClick={() => navigate("/auth")}>
+                  {user ? "Current Plan" : "Sign Up Free"}
+                </Button>
+              </CardFooter>
+            </Card>
+          </motion.div>
+
+          {/* Premium Plan */}
+          <motion.div variants={item}>
+            <Card className="h-full transition-all hover:shadow-md relative overflow-hidden border-primary/20">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 rounded-full -translate-y-20 translate-x-20 blur-2xl pointer-events-none" />
+              
+              <CardHeader>
+                <CardTitle className="flex justify-between items-center">
+                  <span>Premium</span>
+                  <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-500 hover:to-orange-600">
+                    <Star className="h-3 w-3 mr-1 fill-white" />
+                    Best Value
+                  </Badge>
+                </CardTitle>
+                <div className="flex items-baseline gap-2 mt-3">
+                  <span className="text-3xl font-bold">₹399</span>
+                  <span className="text-muted-foreground font-medium line-through">₹1199</span>
+                  <span className="ml-1 text-muted-foreground">/lifetime</span>
+                </div>
+                <CardDescription className="mt-2">
+                  Early beta special offer, limited time only.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 mt-4">
+                  <li className="flex items-start">
+                    <Infinity className="h-5 w-5 text-primary shrink-0 mr-2" />
+                    <span className="font-medium">Unlimited searches forever</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Zap className="h-5 w-5 text-primary shrink-0 mr-2" />
+                    <span className="font-medium">Priority search results</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
+                    <span>Advanced filters and sorting</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
+                    <span>Unlimited bookmarks and collections</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
+                    <span>Enhanced study mode with notes</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
+                    <span>Early access to new features</span>
+                  </li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  className="w-full relative group overflow-hidden"
+                  onClick={() => handleUpgradeClick("https://rzp.io/rzp/PO66xQq")}
+                >
+                  <span className="relative z-10">Get Lifetime Access</span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-primary/20 group-hover:opacity-80 opacity-0 transition-opacity duration-300"></span>
+                </Button>
+              </CardFooter>
+            </Card>
+          </motion.div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8, duration: 0.5 }}
+          className="mt-16 text-center"
+        >
+          <h2 className="text-xl font-semibold mb-3">Need monthly access instead?</h2>
+          <Button 
+            variant="outline" 
+            className="mx-auto"
+            onClick={() => handleUpgradeClick("https://rzp.io/rzp/KYo2irKm")}
+          >
+            Get Monthly Plan (₹299/month)
+          </Button>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Lifetime access is a one-time payment, not a subscription.
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1, duration: 0.5 }}
+          className="mt-24 text-center max-w-2xl mx-auto"
+        >
+          <h2 className="text-2xl font-bold mb-4">100% Satisfaction Guarantee</h2>
+          <p className="text-muted-foreground">
+            If you're not satisfied with Diagramr within 7 days of purchase, we'll refund your payment.
+            No questions asked. We're that confident in the value we provide.
+          </p>
+        </motion.div>
+      </div>
     </div>
   );
 }

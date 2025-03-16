@@ -2,6 +2,7 @@
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
 
 interface LogoProps {
   className?: string;
@@ -10,6 +11,7 @@ interface LogoProps {
   children?: ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
   isLoading?: boolean;
+  showBeta?: boolean;
 }
 
 export function Logo({ 
@@ -18,7 +20,8 @@ export function Logo({
   showText = true, 
   children, 
   size = "md",
-  isLoading = false 
+  isLoading = false,
+  showBeta = true
 }: LogoProps) {
   const sizeClasses = {
     sm: "h-6 w-6",
@@ -48,21 +51,32 @@ export function Logo({
         } : {}}
       >
         <img 
-          src="/lovable-uploads/a6ccf758-c406-414d-8f2e-e5e6d69439ff.png" 
+          src="/lovable-uploads/14b933d8-4bc5-478d-a61d-0f37bd0404b1.png" 
           alt="Diagramr Logo" 
           className="h-full w-full object-contain"
         />
       </motion.div>
       
       {showText && !iconOnly && (
-        <motion.span 
-          className={cn("font-bold text-foreground transition-colors", textSizeClasses[size])}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          Diagramr
-        </motion.span>
+        <div className="flex items-center">
+          <motion.span 
+            className={cn("font-bold text-foreground transition-colors", textSizeClasses[size])}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            Diagramr
+          </motion.span>
+          
+          {showBeta && (
+            <Badge 
+              variant="outline" 
+              className="ml-2 text-[0.6rem] px-1.5 py-0 h-auto border-primary/30 text-primary-foreground/70"
+            >
+              BETA
+            </Badge>
+          )}
+        </div>
       )}
       
       {children}

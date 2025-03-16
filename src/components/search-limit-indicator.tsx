@@ -30,7 +30,7 @@ export function SearchLimitIndicator({ className, compact = false }: SearchLimit
         transition={{ duration: 0.5 }}
       >
         {hasReachedLimit ? (
-          <div className={`flex ${compact ? 'flex-row' : 'flex-col'} items-center gap-2`}>
+          <div className="flex items-center gap-2">
             <p className="text-xs text-muted-foreground">
               {user ? "Daily search limit reached" : "Free trial ended"}
             </p>
