@@ -36,6 +36,30 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_diagrams: {
+        Row: {
+          created_at: string
+          diagram_data: Json
+          diagram_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          diagram_data: Json
+          diagram_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          diagram_data?: Json
+          diagram_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_search_logs: {
         Row: {
           created_at: string

@@ -18,7 +18,7 @@ export function SiteLoader() {
           transition={{ duration: 0.5 }}
           className="relative"
         >
-          <DiagramrLogo showText={false} size="xl" isLoading={true} />
+          <DiagramrLogo size="xl" isLoading={true} />
           <motion.div 
             className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/20 to-primary/10 blur-xl"
             initial={{ opacity: 0 }}

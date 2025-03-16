@@ -88,7 +88,7 @@ const Index = () => {
     try {
       const diagramToSave = results.find(r => r.id === diagramId);
       if (diagramToSave) {
-        // Save diagram logic
+        // Check if already saved
         const isSaved = savedDiagrams.has(String(diagramId));
         
         if (isSaved) {
