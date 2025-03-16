@@ -4,16 +4,14 @@ import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 
 interface DiagramrLogoProps {
-  showText?: boolean;
   className?: string;
   textClassName?: string;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
   isLoading?: boolean;
   showBeta?: boolean;
 }
 
 export function DiagramrLogo({ 
-  showText = false, 
   className, 
   textClassName,
   size = "md",
@@ -22,16 +20,10 @@ export function DiagramrLogo({
 }: DiagramrLogoProps) {
   const sizeClasses = {
     sm: "h-8 w-8",
-    md: "h-10 w-10",
-    lg: "h-14 w-14", 
-    xl: "h-24 w-24"
-  };
-  
-  const textSizeClasses = {
-    sm: "text-xl",
-    md: "text-2xl",
-    lg: "text-3xl", 
-    xl: "text-4xl"
+    md: "h-12 w-12",
+    lg: "h-16 w-16", 
+    xl: "h-24 w-24",
+    "2xl": "h-32 w-32"
   };
   
   return (
@@ -59,16 +51,16 @@ export function DiagramrLogo({
         }}
       >
         <img 
-          src="/lovable-uploads/1fcd5d05-8fe4-4a85-a06e-0797163cce27.png" 
+          src="/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png" 
           alt="Diagramr Logo" 
-          className="h-full w-full object-contain drop-shadow-md dark:brightness-100 dark:drop-opacity-0"
+          className="h-full w-full object-contain drop-shadow-lg" 
         />
       </motion.div>
       
-      {showText && showBeta && (
+      {showBeta && (
         <Badge 
           variant="outline" 
-          className="ml-2 text-[0.6rem] px-1.5 py-0 h-auto border-primary/30 text-primary"
+          className="ml-2 text-xs px-2 py-0.5 h-auto border-primary/50 text-primary font-medium bg-primary/5"
         >
           BETA
         </Badge>

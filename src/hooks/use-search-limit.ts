@@ -13,7 +13,7 @@ interface SearchLimitState {
 }
 
 // Define constants for search limits
-const FREE_TIER_LIMIT = 30; // Updated to 30 searches per day for registered users
+const FREE_TIER_LIMIT = 50; // Updated to 50 searches per day for registered users during beta
 const DEMO_LIMIT = 3; // Anonymous users get 3 searches before requiring login
 
 export function useSearchLimit(): SearchLimitState {
@@ -23,8 +23,11 @@ export function useSearchLimit(): SearchLimitState {
   
   const isPremium = profile?.is_premium || false;
   
+  // During beta, all signed-in users get premium features
+  const isBetaPeriod = true;
+  
   // Different logic based on authentication status
-  const hasReachedLimit = !isPremium && (
+  const hasReachedLimit = !isBetaPeriod && !isPremium && (
     user ? searchCount >= FREE_TIER_LIMIT : searchCount >= DEMO_LIMIT
   );
   
@@ -87,6 +90,9 @@ export function useSearchLimit(): SearchLimitState {
   };
 
   const incrementCount = async (): Promise<boolean> => {
+    // During beta period, users with accounts get unlimited searches
+    if (isBetaPeriod && user) return true;
+    
     if (isPremium) return true; // Premium users have unlimited searches
     
     if (hasReachedLimit) return false; // Free tier users who reached limit

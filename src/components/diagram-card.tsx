@@ -27,6 +27,7 @@ interface DiagramCardProps {
   className?: string;
   aspectRatio?: number;
   isGenerated?: boolean;
+  isSaved?: boolean;
   onClick?: () => void;
   onSave?: () => void;
 }
@@ -41,17 +42,16 @@ export function DiagramCard({
   className,
   aspectRatio = 16 / 9,
   isGenerated = false,
+  isSaved = false,
   onClick,
   onSave,
 }: DiagramCardProps) {
   const [isLiked, setIsLiked] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [fullImageLoaded, setFullImageLoaded] = useState(false);
   
   const handleSave = () => {
-    setIsSaved(!isSaved);
     if (onSave) {
       onSave();
     }
@@ -212,6 +212,7 @@ export function DiagramCard({
                 className={cn("bg-white/20 backdrop-blur-md hover:bg-white/30 h-7 w-7", 
                   isLiked ? "text-red-500 hover:text-red-400" : "text-white")}
                 onClick={() => setIsLiked(!isLiked)}
+                title="Like"
               >
                 <Heart className="h-3.5 w-3.5" fill={isLiked ? "currentColor" : "none"} />
               </Button>
@@ -221,6 +222,7 @@ export function DiagramCard({
                 className={cn("bg-white/20 backdrop-blur-md hover:bg-white/30 h-7 w-7", 
                   isSaved ? "text-primary hover:text-primary/90" : "text-white")}
                 onClick={handleSave}
+                title="Bookmark"
               >
                 <Bookmark className="h-3.5 w-3.5" fill={isSaved ? "currentColor" : "none"} />
               </Button>
@@ -235,6 +237,7 @@ export function DiagramCard({
                     setIsOpen(true);
                   }
                 }}
+                title="Expand"
               >
                 <Maximize2 className="h-3.5 w-3.5" />
               </Button>

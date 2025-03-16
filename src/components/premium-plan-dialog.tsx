@@ -2,11 +2,12 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, ExternalLink } from "lucide-react";
+import { CheckCircle, XCircle, ExternalLink, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth-context";
+import { useNavigate } from "react-router-dom";
 
 interface PremiumPlanDialogProps {
   open: boolean;
@@ -18,11 +19,14 @@ interface PremiumPlanDialogProps {
 export function PremiumPlanDialog({ open, onClose, showLogin = false, onLoginClick }: PremiumPlanDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleUpgrade = async () => {
     if (!user && showLogin) {
       if (onLoginClick) {
         onLoginClick();
+      } else {
+        navigate("/auth");
       }
       onClose();
       return;
@@ -31,23 +35,11 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false, onLoginCli
     setIsLoading(true);
     
     try {
-      // In a real app, this would connect to Stripe or another payment processor
-      // For demo purposes, we'll just update the user's profile
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) throw new Error("User not authenticated");
-      
-      const { error } = await supabase
-        .from("profiles")
-        .update({ is_premium: true })
-        .eq("id", user.id);
-        
-      if (error) throw error;
-      
-      toast.success("You've been upgraded to Premium!");
+      window.open("https://diagramr.lemonsqueezy.com/buy/5c0b7ecd-65a5-4e74-95c3-fa001496e2e2", "_blank");
+      toast.success("Redirecting to payment page");
       onClose();
     } catch (error: any) {
-      toast.error(error.message || "Failed to upgrade");
+      toast.error(error.message || "Failed to open payment page");
     } finally {
       setIsLoading(false);
     }
@@ -56,16 +48,19 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false, onLoginCli
   const handleSignIn = () => {
     if (onLoginClick) {
       onLoginClick();
+    } else {
+      navigate("/auth");
     }
     onClose();
   };
 
   const features = [
-    { title: "Unlimited searches", premium: true, free: false },
+    { title: "Unlimited searches & generations", premium: true, free: false },
     { title: "High-quality diagram images", premium: true, free: true },
-    { title: "AI-generated diagrams", premium: true, free: false },
-    { title: "Export diagrams", premium: true, free: false },
-    { title: "Save favorite diagrams", premium: true, free: false },
+    { title: "AI-generated diagrams (Gemini powered)", premium: true, free: false },
+    { title: "Bookmark favorite diagrams", premium: true, free: false },
+    { title: "Advanced filters & sorting", premium: true, free: false },
+    { title: "Priority support", premium: true, free: false },
   ];
 
   return (
@@ -89,11 +84,14 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false, onLoginCli
             </div>
           </div>
           
-          <div className="col-span-3 sm:col-span-2 rounded-lg border-2 border-primary p-4">
+          <div className="col-span-3 sm:col-span-2 rounded-lg border-2 border-primary p-4 relative overflow-hidden">
+            <div className="absolute -right-10 -top-10 rotate-45 bg-primary text-white text-xs py-1 px-10 shadow-md">
+              Beta Special
+            </div>
             <div className="text-center">
               <h3 className="font-medium">Premium</h3>
-              <div className="mt-2 text-2xl font-bold">₹399</div>
-              <div className="text-sm text-muted-foreground">lifetime</div>
+              <div className="mt-2 text-2xl font-bold">₹89</div>
+              <div className="text-sm text-muted-foreground">monthly</div>
             </div>
           </div>
           
@@ -124,6 +122,15 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false, onLoginCli
           </div>
         </div>
 
+        <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-lg mb-3">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 shrink-0 mt-0.5" />
+            <p className="text-sm text-yellow-800 dark:text-yellow-400">
+              <span className="font-semibold">Beta Special:</span> All features are free during beta testing. Premium subscription will activate after beta period ends.
+            </p>
+          </div>
+        </div>
+
         <DialogFooter className="flex flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={onClose} className="sm:w-auto w-full">
             Maybe later
@@ -134,35 +141,20 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false, onLoginCli
               Sign in / Sign up
             </Button>
           ) : (
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <Button 
-                asChild
-                className="gap-1.5 sm:w-auto w-full"
-              >
-                <a 
-                  href="https://rzp.io/rzp/KYo2irKm" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                >
-                  <span>Monthly (₹299)</span>
+            <Button 
+              onClick={handleUpgrade}
+              className="gap-1.5 sm:w-auto w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <span>Premium Subscription (₹89/month)</span>
                   <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-              </Button>
-              <Button 
-                asChild
-                variant="secondary"
-                className="gap-1.5 sm:w-auto w-full"
-              >
-                <a 
-                  href="https://rzp.io/rzp/PO66xQq" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                >
-                  <span>Lifetime (₹399)</span>
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-              </Button>
-            </div>
+                </>
+              )}
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>

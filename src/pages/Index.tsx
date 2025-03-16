@@ -1,173 +1,63 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useRef, useCallback } from "react";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { toast } from "sonner";
-import { motion } from "framer-motion";
-import { searchGoogleImages } from "@/utils/googleSearch";
 import { useAuth } from "@/components/auth-context";
 import { useSearchLimit } from "@/hooks/use-search-limit";
 import { PremiumPlanDialog } from "@/components/premium-plan-dialog";
 import { useNavigate } from "react-router-dom";
+import { useInfiniteSearch, DiagramResult } from "@/hooks/use-infinite-search";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-const GOOGLE_SEARCH_API_KEY = "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4";
-const GOOGLE_CUSTOM_SEARCH_ID = "260090575ae504419";
-
-// Sample high-quality educational diagrams to use as fallback
-const DIAGRAM_IMAGES = [
-  "https://www.researchgate.net/profile/Emanuele-Bellini-4/publication/343545097/figure/fig2/AS:923460958752769@1597050767735/An-example-of-a-binary-search-tree.png",
-  "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/discovery-page/UML-class-diagram/UML-class-diagram-example.png",
-  "https://miro.medium.com/v2/resize:fit:1400/1*Qwln63hihLxKZWQQCwYoMg.png",
-  "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/networkdiagram.svg",
-  "https://www.researchgate.net/profile/Jukka-Kiljander/publication/269932936/figure/fig1/AS:668517535866888@1536398532674/IoT-reference-architecture.png",
-  "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/flowchart.svg",
-  "https://media.geeksforgeeks.org/wp-content/uploads/20220217151648/UndirectedGraph3.png",
-  "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/ER-diagram-tutorial/erd_2_LI.jpg",
-];
-
-interface DiagramData {
-  id: number | string;
-  title: string;
-  imageSrc: string;
-  author?: string;
-  authorUsername?: string;
-  tags?: string[];
-  sourceUrl?: string;
-  isGenerated?: boolean;
-}
-
-interface IndexProps {
-  onLoginClick?: () => void;
-}
-
-const Index = ({ onLoginClick }: IndexProps) => {
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [results, setResults] = useState<DiagramData[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+const Index = () => {
   const [showSearchField, setShowSearchField] = useState(true);
-  const [lastAction, setLastAction] = useState<"search" | "generate">("search");
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showLoginRequired, setShowLoginRequired] = useState(false);
+  const [savedDiagrams, setSavedDiagrams] = useState<Set<string>>(new Set());
   
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { 
-    searchCount,
     hasReachedLimit, 
     incrementCount, 
-    remainingSearches,
     requiresLogin
   } = useSearchLimit();
   
-  const isPremium = profile?.is_premium || false;
+  const { 
+    results,
+    isLoading,
+    hasMore,
+    loadMore,
+    searchTerm,
+    searchFor,
+    lastAction,
+    resetSearch
+  } = useInfiniteSearch();
 
-  const fetchDiagramsFromWeb = async (searchTerm: string): Promise<DiagramData[]> => {
-    console.log("Searching for educational diagrams:", searchTerm);
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastResultRef = useCallback((node: HTMLDivElement | null) => {
+    if (isLoading) return;
+    if (observer.current) observer.current.disconnect();
     
-    try {
-      // Enhance search term to focus on educational content
-      const enhancedSearchTerm = `${searchTerm} educational diagram high quality`;
-      
-      const searchResults = await searchGoogleImages(
-        enhancedSearchTerm, 
-        GOOGLE_SEARCH_API_KEY, 
-        GOOGLE_CUSTOM_SEARCH_ID
-      );
-      
-      if (searchResults.length > 0) {
-        return searchResults;
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        loadMore();
       }
-      
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const generateTags = (term: string) => {
-        const words = term.toLowerCase().split(" ");
-        const baseTags = words.filter(word => word.length > 3);
-        return [...new Set([...baseTags, "educational", "study", "research", "diagram"])];
-      };
-      
-      const educationalSources = ["ResearchGate", "AcademicLab", "StudyDiagrams", "EducationalResources", "LearningVisuals", "TeachingMaterials"];
-      
-      const mockResults: DiagramData[] = Array.from({ length: 8 }, (_, i) => {
-        const titlePrefixes = ["Educational", "Research", "Academic", "Comprehensive", "Detailed", "Learning"];
-        const titleSuffixes = ["Diagram", "Visualization", "Model", "Concept", "Framework", "Structure"];
-        
-        const prefix = titlePrefixes[Math.floor(Math.random() * titlePrefixes.length)];
-        const suffix = titleSuffixes[Math.floor(Math.random() * titleSuffixes.length)];
-        
-        const title = `${prefix} ${searchTerm} ${suffix} for Students`;
-        
-        const imageIndex = i % DIAGRAM_IMAGES.length;
-        const imageSrc = DIAGRAM_IMAGES[imageIndex];
-        
-        const tags = generateTags(searchTerm);
-        
-        const authorIndex = i % educationalSources.length;
-        const author = educationalSources[authorIndex];
-        
-        return {
-          id: `search-${Date.now()}-${i}`,
-          title,
-          imageSrc,
-          author,
-          authorUsername: author.toLowerCase().replace(/\s/g, ""),
-          tags,
-          sourceUrl: `https://example.com/diagram-${i}`
-        };
-      });
-      
-      return mockResults;
-    } catch (error) {
-      console.error("Error fetching educational diagrams:", error);
-      throw error;
-    }
-  };
-
-  const generateDiagramWithAI = async (prompt: string): Promise<DiagramData[]> => {
-    console.log("Generating educational diagram for:", prompt);
-    
-    // For a real implementation, this would connect to an AI service like OpenAI
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const imagePool = [...DIAGRAM_IMAGES];
-    
-    const generateTags = (term: string) => {
-      const words = term.toLowerCase().split(" ");
-      const baseTags = words.filter(word => word.length > 3);
-      return [...new Set([...baseTags, "ai-generated", "educational", "study", "research"])];
-    };
-    
-    const mockResults: DiagramData[] = Array.from({ length: 3 }, (_, i) => {
-      const imageIndex = i % imagePool.length;
-      
-      return {
-        id: `generated-${Date.now()}-${i}`,
-        title: `Educational Diagram: ${prompt} for Study and Research`,
-        imageSrc: imagePool[imageIndex],
-        author: "Diagramr AI",
-        authorUsername: "diagramr_ai",
-        tags: generateTags(prompt),
-        sourceUrl: `#`,
-        isGenerated: true
-      };
     });
     
-    return mockResults;
-  };
+    if (node) observer.current.observe(node);
+  }, [isLoading, hasMore, loadMore]);
 
   const handleAIPrompt = async (prompt: string, mode: "search" | "generate") => {
-    if (mode === "generate" && !isPremium) {
-      setShowPremiumDialog(true);
-      return;
-    }
-    
     if (requiresLogin) {
       setShowLoginRequired(true);
       return;
     }
     
-    if (hasReachedLimit) {
+    if (hasReachedLimit && mode !== 'generate') {
       setShowPremiumDialog(true);
       return;
     }
@@ -180,65 +70,96 @@ const Index = ({ onLoginClick }: IndexProps) => {
       }
     }
     
-    setAiPrompt(prompt);
-    setIsLoading(true);
-    setLastAction(mode);
     setShowSearchField(false);
-    
-    try {
-      let searchResults: DiagramData[] = [];
-      
-      if (mode === "search") {
-        searchResults = await fetchDiagramsFromWeb(prompt);
-        toast.success(`Found ${searchResults.length} educational diagrams for "${prompt}"`);
-        
-        if (!isPremium && remainingSearches <= 3 && remainingSearches > 0) {
-          toast.warning(`You have ${remainingSearches} searches left today in the free plan!`);
-        }
-      } else {
-        searchResults = await generateDiagramWithAI(prompt);
-        toast.success(`Generated ${searchResults.length} educational diagrams for "${prompt}"`);
-      }
-      
-      setResults(searchResults);
-    } catch (error) {
-      console.error(`Error ${mode === "search" ? "fetching" : "generating"} educational diagrams:`, error);
-      toast.error(`Error ${mode === "search" ? "searching for" : "generating"} educational diagrams. Please try again.`);
-    } finally {
-      setIsLoading(false);
-    }
+    await searchFor(prompt, mode);
   };
 
   const handleNewSearch = () => {
     setShowSearchField(true);
-    setAiPrompt("");
+    resetSearch();
   };
 
-  const handleSaveDiagram = (diagramId: string | number) => {
+  const handleSaveDiagram = async (diagramId: string | number) => {
     if (!user) {
       setShowLoginRequired(true);
       return;
     }
     
-    if (!isPremium) {
-      setShowPremiumDialog(true);
-      return;
-    }
-    
-    const diagramToSave = results.find(r => r.id === diagramId);
-    if (diagramToSave) {
-      // In a real implementation, this would save to the database
-      toast.success(`"${diagramToSave.title}" saved to your favorites!`);
+    try {
+      const diagramToSave = results.find(r => r.id === diagramId);
+      if (diagramToSave) {
+        // Save diagram logic
+        const isSaved = savedDiagrams.has(String(diagramId));
+        
+        if (isSaved) {
+          // Remove from saved
+          const { error } = await supabase
+            .from('saved_diagrams')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('diagram_id', String(diagramId));
+          
+          if (error) throw error;
+          
+          // Update local state
+          const newSaved = new Set(savedDiagrams);
+          newSaved.delete(String(diagramId));
+          setSavedDiagrams(newSaved);
+          
+          toast.success(`"${diagramToSave.title}" removed from your bookmarks`);
+        } else {
+          // Add to saved
+          const { error } = await supabase
+            .from('saved_diagrams')
+            .insert({
+              user_id: user.id,
+              diagram_id: String(diagramId),
+              diagram_data: diagramToSave
+            });
+          
+          if (error) throw error;
+          
+          // Update local state
+          const newSaved = new Set(savedDiagrams);
+          newSaved.add(String(diagramId));
+          setSavedDiagrams(newSaved);
+          
+          toast.success(`"${diagramToSave.title}" saved to your bookmarks!`);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving diagram:', error);
+      toast.error('Failed to save diagram. Please try again.');
     }
   };
 
-  const handleLoginRedirect = () => {
-    if (onLoginClick) {
-      onLoginClick();
-    } else {
-      navigate('/auth');
+  const fetchSavedDiagrams = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('saved_diagrams')
+        .select('diagram_id')
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      if (data) {
+        const savedIds = new Set(data.map(item => item.diagram_id));
+        setSavedDiagrams(savedIds);
+      }
+    } catch (error) {
+      console.error('Error fetching saved diagrams:', error);
     }
+  }, [user]);
+
+  const handleLoginRedirect = () => {
+    navigate('/auth');
   };
+
+  useEffect(() => {
+    fetchSavedDiagrams();
+  }, [fetchSavedDiagrams]);
 
   useEffect(() => {
     if (requiresLogin && !user) {
@@ -252,17 +173,17 @@ const Index = ({ onLoginClick }: IndexProps) => {
       
       <main className="flex-1 pt-16">
         {showSearchField ? (
-          <>
-            <HeroSection onSearch={handleAIPrompt} isLoading={isLoading} />
-          </>
+          <HeroSection onSearch={handleAIPrompt} isLoading={isLoading} />
         ) : (
           <ResultsSection 
             results={results} 
-            searchTerm={aiPrompt} 
+            searchTerm={searchTerm} 
             onNewSearch={handleNewSearch} 
             isLoading={isLoading}
             lastAction={lastAction}
             onSaveDiagram={handleSaveDiagram}
+            savedDiagrams={savedDiagrams}
+            lastResultRef={lastResultRef}
           />
         )}
       </main>

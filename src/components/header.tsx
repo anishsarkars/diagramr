@@ -3,7 +3,20 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { DiagramrLogo } from "@/components/diagramr-logo";
-import { Search, Menu, X, LogIn, User, LogOut, Moon, Sun, Bookmark, CreditCard } from "lucide-react";
+import { 
+  Search, 
+  Menu, 
+  X, 
+  LogIn, 
+  User, 
+  LogOut, 
+  Moon, 
+  Sun, 
+  Bookmark, 
+  Heart, 
+  Settings,
+  BadgeCheck
+} from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
 import { useTheme } from "./theme-provider";
@@ -11,6 +24,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -51,7 +65,7 @@ export function Header() {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2">
-            <DiagramrLogo size="sm" className="h-7 w-auto" />
+            <DiagramrLogo size="sm" className="h-8 w-auto" />
           </Link>
         </div>
 
@@ -81,7 +95,7 @@ export function Header() {
             Pricing
           </Link>
           
-          {profile?.is_premium && (
+          {user && (
             <Link
               to="/favorites"
               className={cn(
@@ -117,29 +131,33 @@ export function Header() {
                   <span>Account</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem disabled>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
                   {profile?.username || user.email}
-                </DropdownMenuItem>
+                  <div className="text-xs font-normal text-muted-foreground mt-1 flex items-center">
+                    <BadgeCheck className="h-3 w-3 mr-1 text-primary" />
+                    <span>Beta Tester</span>
+                  </div>
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <span className="font-medium">
-                    Plan: {profile?.is_premium ? 'Premium' : 'Free'}
-                  </span>
+                
+                <DropdownMenuItem onClick={() => navigate('/favorites')}>
+                  <Bookmark className="mr-2 h-4 w-4 text-blue-500" />
+                  <span>My Bookmarks</span>
                 </DropdownMenuItem>
-                {!profile?.is_premium && (
-                  <DropdownMenuItem onClick={() => navigate('/pricing')}>
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    <span>Upgrade to Premium</span>
-                  </DropdownMenuItem>
-                )}
-                {profile?.is_premium && (
-                  <DropdownMenuItem onClick={() => navigate('/favorites')}>
-                    <Bookmark className="mr-2 h-4 w-4" />
-                    <span>My Favorites</span>
-                  </DropdownMenuItem>
-                )}
+                
+                <DropdownMenuItem onClick={() => navigate('/liked')}>
+                  <Heart className="mr-2 h-4 w-4 text-rose-500" />
+                  <span>Liked Diagrams</span>
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem onClick={() => navigate('/account')}>
+                  <Settings className="mr-2 h-4 w-4 text-slate-500" />
+                  <span>Account Settings</span>
+                </DropdownMenuItem>
+                
                 <DropdownMenuSeparator />
+                
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Sign out</span>
@@ -207,32 +225,40 @@ export function Header() {
             >
               Pricing
             </Link>
-            {profile?.is_premium && (
-              <Link
-                to="/favorites"
-                className="block py-2 text-foreground/70 hover:text-foreground"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Favorites
-              </Link>
+            {user && (
+              <>
+                <Link
+                  to="/favorites"
+                  className="block py-2 text-foreground/70 hover:text-foreground"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Bookmark className="h-4 w-4 inline mr-2 text-blue-500" />
+                  Bookmarks
+                </Link>
+                <Link
+                  to="/liked"
+                  className="block py-2 text-foreground/70 hover:text-foreground"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Heart className="h-4 w-4 inline mr-2 text-rose-500" />
+                  Liked Diagrams
+                </Link>
+                <Link
+                  to="/account"
+                  className="block py-2 text-foreground/70 hover:text-foreground"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Settings className="h-4 w-4 inline mr-2 text-slate-500" />
+                  Account Settings
+                </Link>
+              </>
             )}
             {user ? (
               <>
-                <div className="py-2 text-sm text-muted-foreground">
-                  {profile?.username || user.email}
+                <div className="py-2 text-sm font-medium flex items-center gap-2">
+                  <BadgeCheck className="h-4 w-4 text-primary" />
+                  <span>Beta Tester</span>
                 </div>
-                <div className="py-2 text-sm font-medium">
-                  Plan: {profile?.is_premium ? 'Premium' : 'Free'}
-                </div>
-                {!profile?.is_premium && (
-                  <Link 
-                    to="/pricing" 
-                    className="block py-2 text-foreground/70 hover:text-foreground"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Upgrade to Premium
-                  </Link>
-                )}
                 <Button 
                   variant="outline" 
                   className="w-full justify-center"

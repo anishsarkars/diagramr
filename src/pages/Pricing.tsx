@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { CheckCircle2, Sparkles, Infinity, Star, Zap } from "lucide-react";
+import { CheckCircle2, Sparkles, Infinity, Star, Zap, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DiagramrLogo } from "@/components/diagramr-logo";
 import { useAuth } from "@/components/auth-context";
@@ -29,16 +29,16 @@ export default function Pricing() {
   };
 
   // Direct to payment links
-  const redirectToPayment = (url: string) => {
-    window.open(url, "_blank");
+  const redirectToPayment = () => {
+    window.open("https://diagramr.lemonsqueezy.com/buy/5c0b7ecd-65a5-4e74-95c3-fa001496e2e2", "_blank");
   };
 
   // Navigate to auth page if user is not logged in
-  const handleUpgradeClick = (paymentUrl: string) => {
+  const handleUpgradeClick = () => {
     if (!user) {
-      navigate("/auth", { state: { returnTo: "/pricing", paymentUrl } });
+      navigate("/auth", { state: { returnTo: "/pricing" } });
     } else {
-      redirectToPayment(paymentUrl);
+      redirectToPayment();
     }
   };
 
@@ -79,7 +79,7 @@ export default function Pricing() {
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Get unlimited access to educational diagrams with our early adopter pricing.
-            Lock in these special rates during our beta period.
+            All features are free during beta testing.
           </p>
         </motion.div>
 
@@ -113,11 +113,11 @@ export default function Pricing() {
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>30 searches per day</span>
+                    <span>50 searches per day</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>Save favorites</span>
+                    <span>Save favorites (during beta)</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
@@ -147,27 +147,36 @@ export default function Pricing() {
                   <span>Premium</span>
                   <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-500 hover:to-orange-600">
                     <Star className="h-3 w-3 mr-1 fill-white" />
-                    Best Value
+                    Beta Special
                   </Badge>
                 </CardTitle>
                 <div className="flex items-baseline gap-2 mt-3">
-                  <span className="text-3xl font-bold">₹399</span>
-                  <span className="text-muted-foreground font-medium line-through">₹1199</span>
-                  <span className="ml-1 text-muted-foreground">/lifetime</span>
+                  <span className="text-3xl font-bold">₹89</span>
+                  <span className="text-muted-foreground font-medium line-through">₹599</span>
+                  <span className="ml-1 text-muted-foreground">/month</span>
                 </div>
                 <CardDescription className="mt-2">
                   Early beta special offer, limited time only.
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-lg mb-4">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 shrink-0 mt-0.5" />
+                    <p className="text-sm text-yellow-800 dark:text-yellow-400">
+                      <span className="font-semibold">Beta Special:</span> All premium features are free during beta testing!
+                    </p>
+                  </div>
+                </div>
+                
                 <ul className="space-y-3 mt-4">
                   <li className="flex items-start">
                     <Infinity className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span className="font-medium">Unlimited searches forever</span>
+                    <span className="font-medium">Unlimited searches & generations</span>
                   </li>
                   <li className="flex items-start">
                     <Zap className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span className="font-medium">Priority search results</span>
+                    <span className="font-medium">AI-generated diagrams (Gemini powered)</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
@@ -190,9 +199,9 @@ export default function Pricing() {
               <CardFooter>
                 <Button 
                   className="w-full relative group overflow-hidden"
-                  onClick={() => handleUpgradeClick("https://rzp.io/rzp/PO66xQq")}
+                  onClick={handleUpgradeClick}
                 >
-                  <span className="relative z-10">Get Lifetime Access</span>
+                  <span className="relative z-10">Coming Soon</span>
                   <span className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-primary/20 group-hover:opacity-80 opacity-0 transition-opacity duration-300"></span>
                 </Button>
               </CardFooter>
@@ -206,10 +215,10 @@ export default function Pricing() {
           transition={{ delay: 1, duration: 0.5 }}
           className="mt-24 text-center max-w-2xl mx-auto"
         >
-          <h2 className="text-2xl font-bold mb-4">100% Satisfaction Guarantee</h2>
+          <h2 className="text-2xl font-bold mb-4">Join Our Beta Program</h2>
           <p className="text-muted-foreground">
-            If you're not satisfied with Diagramr within 7 days of purchase, we'll refund your payment.
-            No questions asked. We're that confident in the value we provide.
+            During our beta testing phase, all premium features are available to all users for free. 
+            Sign up now to get early access and provide feedback to help us improve Diagramr.
           </p>
         </motion.div>
       </div>

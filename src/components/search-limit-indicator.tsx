@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import { PremiumPlanDialog } from "@/components/premium-plan-dialog";
+import { useNavigate } from "react-router-dom";
 
 interface SearchLimitIndicatorProps {
   className?: string;
@@ -16,10 +17,14 @@ export function SearchLimitIndicator({ className, compact = false }: SearchLimit
   const { remainingSearches, hasReachedLimit, requiresLogin } = useSearchLimit();
   const { user, profile } = useAuth();
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const navigate = useNavigate();
   
   const isPremium = profile?.is_premium || false;
   
-  if (isPremium) return null;
+  // During beta, everyone gets the premium features
+  const isBetaPeriod = true;
+  
+  if (isBetaPeriod && user) return null;
   
   return (
     <>
@@ -36,11 +41,17 @@ export function SearchLimitIndicator({ className, compact = false }: SearchLimit
             </p>
             <Button 
               size="sm" 
-              onClick={() => setShowPremiumDialog(true)}
+              onClick={() => user ? setShowPremiumDialog(true) : navigate("/auth")}
               className="text-xs h-7 px-2 gap-1"
             >
-              <Sparkles className="h-3 w-3" />
-              <span>Upgrade</span>
+              {user ? (
+                <>
+                  <Sparkles className="h-3 w-3" />
+                  <span>Upgrade</span>
+                </>
+              ) : (
+                <span>Sign in</span>
+              )}
             </Button>
           </div>
         ) : (
@@ -48,7 +59,7 @@ export function SearchLimitIndicator({ className, compact = false }: SearchLimit
             <p className="text-xs text-muted-foreground">
               <span className="font-medium">{Math.max(0, remainingSearches)}</span> {user ? "free" : "trial"} searches left
             </p>
-            {!compact && (
+            {!compact && user && !isBetaPeriod && (
               <Button 
                 size="sm" 
                 variant="ghost" 
@@ -56,6 +67,16 @@ export function SearchLimitIndicator({ className, compact = false }: SearchLimit
                 className="text-xs h-5 px-2"
               >
                 Upgrade
+              </Button>
+            )}
+            {!user && (
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={() => navigate("/auth")}
+                className="text-xs h-5 px-2"
+              >
+                Sign in
               </Button>
             )}
           </div>
@@ -66,6 +87,7 @@ export function SearchLimitIndicator({ className, compact = false }: SearchLimit
         open={showPremiumDialog} 
         onClose={() => setShowPremiumDialog(false)} 
         showLogin={requiresLogin}
+        onLoginClick={() => navigate("/auth")}
       />
     </>
   );

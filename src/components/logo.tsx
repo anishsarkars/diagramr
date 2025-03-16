@@ -9,7 +9,7 @@ interface LogoProps {
   iconOnly?: boolean;
   showText?: boolean;
   children?: ReactNode;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
   isLoading?: boolean;
   showBeta?: boolean;
 }
@@ -26,15 +26,9 @@ export function Logo({
   const sizeClasses = {
     sm: "h-6 w-6",
     md: "h-8 w-8",
-    lg: "h-10 w-10", 
-    xl: "h-14 w-14"
-  };
-  
-  const textSizeClasses = {
-    sm: "text-sm",
-    md: "text-lg",
-    lg: "text-xl",
-    xl: "text-3xl"
+    lg: "h-12 w-12", 
+    xl: "h-16 w-16",
+    "2xl": "h-20 w-20"
   };
   
   return (
@@ -51,23 +45,19 @@ export function Logo({
         } : {}}
       >
         <img 
-          src="/lovable-uploads/1fcd5d05-8fe4-4a85-a06e-0797163cce27.png" 
+          src="/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png" 
           alt="Diagramr Logo" 
-          className="h-full w-full object-contain dark:brightness-100 dark:drop-opacity-0"
+          className="h-full w-full object-contain drop-shadow-md" 
         />
       </motion.div>
       
-      {showText && !iconOnly && (
-        <div className="flex items-center">
-          {showBeta && (
-            <Badge 
-              variant="outline" 
-              className="ml-2 text-[0.6rem] px-1.5 py-0 h-auto border-primary/30 text-primary-foreground/70"
-            >
-              BETA
-            </Badge>
-          )}
-        </div>
+      {showBeta && (
+        <Badge 
+          variant="outline" 
+          className="ml-1 text-[0.6rem] px-1.5 py-0 h-auto border-primary/30 text-primary-foreground/70"
+        >
+          BETA
+        </Badge>
       )}
       
       {children}
