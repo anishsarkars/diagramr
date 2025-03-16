@@ -1,3 +1,4 @@
+
 import { cn } from "@/lib/utils";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,8 @@ interface DiagramCardProps {
   className?: string;
   aspectRatio?: number;
   isGenerated?: boolean;
+  onClick?: () => void;
+  onSave?: () => void;
 }
 
 export function DiagramCard({
@@ -38,12 +41,21 @@ export function DiagramCard({
   className,
   aspectRatio = 16 / 9,
   isGenerated = false,
+  onClick,
+  onSave,
 }: DiagramCardProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [fullImageLoaded, setFullImageLoaded] = useState(false);
+  
+  const handleSave = () => {
+    setIsSaved(!isSaved);
+    if (onSave) {
+      onSave();
+    }
+  };
   
   return (
     <motion.div 
@@ -60,7 +72,13 @@ export function DiagramCard({
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <div 
             className="cursor-zoom-in relative" 
-            onClick={() => setIsOpen(true)}
+            onClick={() => {
+              if (onClick) {
+                onClick();
+              } else {
+                setIsOpen(true);
+              }
+            }}
           >
             <AspectRatio ratio={aspectRatio}>
               {!imageLoaded && (
@@ -202,7 +220,7 @@ export function DiagramCard({
                 variant="secondary" 
                 className={cn("bg-white/20 backdrop-blur-md hover:bg-white/30 h-7 w-7", 
                   isSaved ? "text-primary hover:text-primary/90" : "text-white")}
-                onClick={() => setIsSaved(!isSaved)}
+                onClick={handleSave}
               >
                 <Bookmark className="h-3.5 w-3.5" fill={isSaved ? "currentColor" : "none"} />
               </Button>
@@ -210,7 +228,13 @@ export function DiagramCard({
                 size="icon" 
                 variant="secondary" 
                 className="bg-white/20 backdrop-blur-md hover:bg-white/30 h-7 w-7 text-white"
-                onClick={() => setIsOpen(true)}
+                onClick={() => {
+                  if (onClick) {
+                    onClick();
+                  } else {
+                    setIsOpen(true);
+                  }
+                }}
               >
                 <Maximize2 className="h-3.5 w-3.5" />
               </Button>
