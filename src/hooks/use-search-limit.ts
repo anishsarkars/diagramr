@@ -13,7 +13,7 @@ interface SearchLimitState {
 }
 
 // Define constants for search limits
-const FREE_TIER_LIMIT = 20;
+const FREE_TIER_LIMIT = 30; // Updated to 30 searches per day for registered users
 const DEMO_LIMIT = 3; // Anonymous users get 3 searches before requiring login
 
 export function useSearchLimit(): SearchLimitState {

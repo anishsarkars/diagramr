@@ -59,9 +59,9 @@ export function DiagramrLogo({
         }}
       >
         <img 
-          src="/lovable-uploads/14b933d8-4bc5-478d-a61d-0f37bd0404b1.png" 
+          src={size === "xl" ? "/lovable-uploads/1fcd5d05-8fe4-4a85-a06e-0797163cce27.png" : "/lovable-uploads/1fcd5d05-8fe4-4a85-a06e-0797163cce27.png"} 
           alt="Diagramr Logo" 
-          className="h-full w-full object-contain drop-shadow-md"
+          className="h-full w-full object-contain drop-shadow-md dark:invert-0 dark:brightness-100"
         />
       </motion.div>
       
@@ -79,7 +79,7 @@ export function DiagramrLogo({
           {showBeta && (
             <Badge 
               variant="outline" 
-              className="ml-2 text-[0.6rem] px-1.5 py-0 h-auto border-primary/30 text-primary-foreground/70"
+              className="ml-2 text-[0.6rem] px-1.5 py-0 h-auto border-primary/30 text-primary"
             >
               BETA
             </Badge>

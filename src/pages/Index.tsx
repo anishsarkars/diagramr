@@ -38,7 +38,11 @@ interface DiagramData {
   isGenerated?: boolean;
 }
 
-const Index = () => {
+interface IndexProps {
+  onLoginClick?: () => void;
+}
+
+const Index = ({ onLoginClick }: IndexProps) => {
   const [aiPrompt, setAiPrompt] = useState("");
   const [results, setResults] = useState<DiagramData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -208,6 +212,28 @@ const Index = () => {
     setAiPrompt("");
   };
 
+  const handleSaveDiagram = (diagramId: string | number) => {
+    if (!user) {
+      setShowLoginRequired(true);
+      return;
+    }
+    
+    if (!isPremium) {
+      setShowPremiumDialog(true);
+      return;
+    }
+    
+    toast.success("Diagram saved to favorites!");
+  };
+
+  const handleLoginRedirect = () => {
+    if (onLoginClick) {
+      onLoginClick();
+    } else {
+      navigate('/auth');
+    }
+  };
+
   // Check if the user needs to be prompted for login
   useEffect(() => {
     if (requiresLogin && !user) {
@@ -231,6 +257,7 @@ const Index = () => {
             onNewSearch={handleNewSearch} 
             isLoading={isLoading}
             lastAction={lastAction}
+            onSaveDiagram={handleSaveDiagram}
           />
         )}
       </main>
@@ -241,12 +268,14 @@ const Index = () => {
         open={showPremiumDialog}
         onClose={() => setShowPremiumDialog(false)}
         showLogin={requiresLogin}
+        onLoginClick={handleLoginRedirect}
       />
       
       <PremiumPlanDialog
         open={showLoginRequired}
         onClose={() => setShowLoginRequired(false)}
         showLogin={true}
+        onLoginClick={handleLoginRedirect}
       />
     </div>
   );

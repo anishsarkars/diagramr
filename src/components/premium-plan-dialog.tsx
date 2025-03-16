@@ -6,23 +6,24 @@ import { CheckCircle, XCircle, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth-context";
 
 interface PremiumPlanDialogProps {
   open: boolean;
   onClose: () => void;
   showLogin?: boolean;
+  onLoginClick?: () => void;
 }
 
-export function PremiumPlanDialog({ open, onClose, showLogin = false }: PremiumPlanDialogProps) {
+export function PremiumPlanDialog({ open, onClose, showLogin = false, onLoginClick }: PremiumPlanDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
   const { user } = useAuth();
 
   const handleUpgrade = async () => {
     if (!user && showLogin) {
-      navigate('/auth');
+      if (onLoginClick) {
+        onLoginClick();
+      }
       onClose();
       return;
     }
@@ -53,7 +54,9 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false }: PremiumP
   };
 
   const handleSignIn = () => {
-    navigate('/auth');
+    if (onLoginClick) {
+      onLoginClick();
+    }
     onClose();
   };
 
@@ -89,8 +92,8 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false }: PremiumP
           <div className="col-span-3 sm:col-span-2 rounded-lg border-2 border-primary p-4">
             <div className="text-center">
               <h3 className="font-medium">Premium</h3>
-              <div className="mt-2 text-2xl font-bold">₹299</div>
-              <div className="text-sm text-muted-foreground">per month</div>
+              <div className="mt-2 text-2xl font-bold">₹399</div>
+              <div className="text-sm text-muted-foreground">lifetime</div>
             </div>
           </div>
           
@@ -155,7 +158,7 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false }: PremiumP
                   target="_blank" 
                   rel="noopener noreferrer"
                 >
-                  <span>Lifetime (₹899)</span>
+                  <span>Lifetime (₹399)</span>
                   <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               </Button>

@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth-context";
 import { useState, useEffect } from "react";
@@ -26,13 +26,10 @@ const queryClient = new QueryClient({
   },
 });
 
-// Lazy load the premium plan dialog to improve initial load time
-const PremiumPlanDialog = lazy(() => import("./components/premium-plan-dialog").then(module => ({ 
-  default: module.PremiumPlanDialog 
-})));
-
-const App = () => {
+// App content separated to use router hooks
+function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
   
   useEffect(() => {
     // Check if user has already visited
@@ -48,34 +45,51 @@ const App = () => {
     
     return () => clearTimeout(timer);
   }, []);
+
+  const handleLoginClick = () => {
+    navigate('/auth');
+  };
   
+  // Lazy load components for better performance
+  const PremiumPlanDialog = lazy(() => import("./components/premium-plan-dialog").then(module => ({ 
+    default: module.PremiumPlanDialog 
+  })));
+  
+  return (
+    <>
+      {isLoading ? (
+        <SiteLoader />
+      ) : (
+        <>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route path="/" element={<Index onLoginClick={handleLoginClick} />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/favorites" element={<Favorites />} />
+            <Route path="/pricing" element={<Pricing />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <BuiltByBadge position="fixed" />
+          <Suspense fallback={null}>
+            <PremiumPlanDialog open={false} onClose={() => {}} onLoginClick={handleLoginClick} />
+          </Suspense>
+        </>
+      )}
+    </>
+  );
+}
+
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="system">
         <AuthProvider>
           <TooltipProvider>
-            {isLoading ? (
-              <SiteLoader />
-            ) : (
-              <>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/favorites" element={<Favorites />} />
-                    <Route path="/pricing" element={<Pricing />} />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </BrowserRouter>
-                <BuiltByBadge position="fixed" />
-                <Suspense fallback={null}>
-                  <PremiumPlanDialog open={false} onClose={() => {}} />
-                </Suspense>
-              </>
-            )}
+            <BrowserRouter>
+              <AppContent />
+            </BrowserRouter>
           </TooltipProvider>
         </AuthProvider>
       </ThemeProvider>
