@@ -13,7 +13,7 @@ interface DiagramrLogoProps {
 }
 
 export function DiagramrLogo({ 
-  showText = true, 
+  showText = false, 
   className, 
   textClassName,
   size = "md",
@@ -59,32 +59,19 @@ export function DiagramrLogo({
         }}
       >
         <img 
-          src={size === "xl" ? "/lovable-uploads/1fcd5d05-8fe4-4a85-a06e-0797163cce27.png" : "/lovable-uploads/1fcd5d05-8fe4-4a85-a06e-0797163cce27.png"} 
+          src="/lovable-uploads/1fcd5d05-8fe4-4a85-a06e-0797163cce27.png" 
           alt="Diagramr Logo" 
-          className="h-full w-full object-contain drop-shadow-md dark:invert-0 dark:brightness-100"
+          className="h-full w-full object-contain drop-shadow-md dark:brightness-100 dark:drop-opacity-0"
         />
       </motion.div>
       
-      {showText && (
-        <div className="flex items-center">
-          <motion.span 
-            className={cn("font-bold text-foreground", textSizeClasses[size], textClassName)}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-          >
-            Diagramr
-          </motion.span>
-          
-          {showBeta && (
-            <Badge 
-              variant="outline" 
-              className="ml-2 text-[0.6rem] px-1.5 py-0 h-auto border-primary/30 text-primary"
-            >
-              BETA
-            </Badge>
-          )}
-        </div>
+      {showText && showBeta && (
+        <Badge 
+          variant="outline" 
+          className="ml-2 text-[0.6rem] px-1.5 py-0 h-auto border-primary/30 text-primary"
+        >
+          BETA
+        </Badge>
       )}
     </div>
   );

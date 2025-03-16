@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { DiagramCard } from "./diagram-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,33 +33,29 @@ interface ResultsSectionProps {
   onNewSearch: () => void;
   isLoading: boolean;
   lastAction: "search" | "generate";
+  onSaveDiagram: (diagramId: string | number) => void;
 }
 
-export function ResultsSection({ results, searchTerm, onNewSearch, isLoading, lastAction }: ResultsSectionProps) {
+export function ResultsSection({ results, searchTerm, onNewSearch, isLoading, lastAction, onSaveDiagram }: ResultsSectionProps) {
   const [viewType, setViewType] = useState<"grid" | "list">("grid");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [studyMode, setStudyMode] = useState(false);
   const [selectedDiagram, setSelectedDiagram] = useState<DiagramData | null>(null);
   
-  // Extract all unique tags from results
   const allTags = results.flatMap(result => result.tags || []);
   const uniqueTags = [...new Set(allTags)];
   
-  // Filter results by selected tag
   const filteredResults = selectedTag 
     ? results.filter(result => result.tags?.includes(selectedTag))
     : results;
 
   const handleBookmark = (diagram: DiagramData) => {
+    onSaveDiagram(diagram.id);
     toast.success(`Added "${diagram.title}" to favorites`);
-    // In a real app, this would save to the database
   };
   
   const handleSaveImage = (diagram: DiagramData) => {
     toast.success(`Downloaded "${diagram.title}"`);
-    // In a real app, this would download the image
-    
-    // Create temporary anchor element for download
     const anchor = document.createElement('a');
     anchor.href = diagram.imageSrc;
     anchor.download = `${diagram.title.replace(/\s+/g, '-').toLowerCase()}.png`;
@@ -96,7 +91,6 @@ export function ResultsSection({ results, searchTerm, onNewSearch, isLoading, la
     );
   }
   
-  // Study mode UI
   if (studyMode && selectedDiagram) {
     return (
       <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 overflow-y-auto py-20 px-4">

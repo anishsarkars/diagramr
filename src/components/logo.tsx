@@ -16,8 +16,8 @@ interface LogoProps {
 
 export function Logo({ 
   className, 
-  iconOnly = false, 
-  showText = true, 
+  iconOnly = true, 
+  showText = false, 
   children, 
   size = "md",
   isLoading = false,
@@ -51,23 +51,14 @@ export function Logo({
         } : {}}
       >
         <img 
-          src="/lovable-uploads/14b933d8-4bc5-478d-a61d-0f37bd0404b1.png" 
+          src="/lovable-uploads/1fcd5d05-8fe4-4a85-a06e-0797163cce27.png" 
           alt="Diagramr Logo" 
-          className="h-full w-full object-contain"
+          className="h-full w-full object-contain dark:brightness-100 dark:drop-opacity-0"
         />
       </motion.div>
       
       {showText && !iconOnly && (
         <div className="flex items-center">
-          <motion.span 
-            className={cn("font-bold text-foreground transition-colors", textSizeClasses[size])}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            Diagramr
-          </motion.span>
-          
           {showBeta && (
             <Badge 
               variant="outline" 

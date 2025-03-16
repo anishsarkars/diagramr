@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
@@ -15,14 +14,14 @@ import { useNavigate } from "react-router-dom";
 const GOOGLE_SEARCH_API_KEY = "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4";
 const GOOGLE_CUSTOM_SEARCH_ID = "260090575ae504419";
 
-// Sample diagrams to use as fallback
+// Sample high-quality educational diagrams to use as fallback
 const DIAGRAM_IMAGES = [
+  "https://www.researchgate.net/profile/Emanuele-Bellini-4/publication/343545097/figure/fig2/AS:923460958752769@1597050767735/An-example-of-a-binary-search-tree.png",
+  "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/discovery-page/UML-class-diagram/UML-class-diagram-example.png",
   "https://miro.medium.com/v2/resize:fit:1400/1*Qwln63hihLxKZWQQCwYoMg.png",
   "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/networkdiagram.svg",
   "https://www.researchgate.net/profile/Jukka-Kiljander/publication/269932936/figure/fig1/AS:668517535866888@1536398532674/IoT-reference-architecture.png",
   "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/flowchart.svg",
-  "https://www.researchgate.net/profile/Emanuele-Bellini-4/publication/343545097/figure/fig2/AS:923460958752769@1597050767735/An-example-of-a-binary-search-tree.png",
-  "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/discovery-page/UML-class-diagram/UML-class-diagram-example.png",
   "https://media.geeksforgeeks.org/wp-content/uploads/20220217151648/UndirectedGraph3.png",
   "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/ER-diagram-tutorial/erd_2_LI.jpg",
 ];
@@ -64,11 +63,14 @@ const Index = ({ onLoginClick }: IndexProps) => {
   const isPremium = profile?.is_premium || false;
 
   const fetchDiagramsFromWeb = async (searchTerm: string): Promise<DiagramData[]> => {
-    console.log("Searching for:", searchTerm);
+    console.log("Searching for educational diagrams:", searchTerm);
     
     try {
+      // Enhance search term to focus on educational content
+      const enhancedSearchTerm = `${searchTerm} educational diagram high quality`;
+      
       const searchResults = await searchGoogleImages(
-        searchTerm + " diagram high quality", 
+        enhancedSearchTerm, 
         GOOGLE_SEARCH_API_KEY, 
         GOOGLE_CUSTOM_SEARCH_ID
       );
@@ -82,27 +84,27 @@ const Index = ({ onLoginClick }: IndexProps) => {
       const generateTags = (term: string) => {
         const words = term.toLowerCase().split(" ");
         const baseTags = words.filter(word => word.length > 3);
-        return [...new Set([...baseTags, "ai-generated", "custom"])];
+        return [...new Set([...baseTags, "educational", "study", "research", "diagram"])];
       };
       
-      const authors = ["DiagramHub", "DiagramExpert", "VisualDocs", "Mermaid", "DrawIO", "LucidChart"];
+      const educationalSources = ["ResearchGate", "AcademicLab", "StudyDiagrams", "EducationalResources", "LearningVisuals", "TeachingMaterials"];
       
       const mockResults: DiagramData[] = Array.from({ length: 8 }, (_, i) => {
-        const titlePrefixes = ["Complete", "Detailed", "Professional", "Simple", "Modern", "Comprehensive"];
-        const titleSuffixes = ["Diagram", "Chart", "Visualization", "Model", "Representation", "Layout"];
+        const titlePrefixes = ["Educational", "Research", "Academic", "Comprehensive", "Detailed", "Learning"];
+        const titleSuffixes = ["Diagram", "Visualization", "Model", "Concept", "Framework", "Structure"];
         
         const prefix = titlePrefixes[Math.floor(Math.random() * titlePrefixes.length)];
         const suffix = titleSuffixes[Math.floor(Math.random() * titleSuffixes.length)];
         
-        const title = `${prefix} ${searchTerm} ${suffix}`;
+        const title = `${prefix} ${searchTerm} ${suffix} for Students`;
         
         const imageIndex = i % DIAGRAM_IMAGES.length;
         const imageSrc = DIAGRAM_IMAGES[imageIndex];
         
         const tags = generateTags(searchTerm);
         
-        const authorIndex = i % authors.length;
-        const author = authors[authorIndex];
+        const authorIndex = i % educationalSources.length;
+        const author = educationalSources[authorIndex];
         
         return {
           id: `search-${Date.now()}-${i}`,
@@ -117,13 +119,13 @@ const Index = ({ onLoginClick }: IndexProps) => {
       
       return mockResults;
     } catch (error) {
-      console.error("Error fetching diagrams:", error);
+      console.error("Error fetching educational diagrams:", error);
       throw error;
     }
   };
 
   const generateDiagramWithAI = async (prompt: string): Promise<DiagramData[]> => {
-    console.log("Generating diagram for:", prompt);
+    console.log("Generating educational diagram for:", prompt);
     
     // For a real implementation, this would connect to an AI service like OpenAI
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -133,7 +135,7 @@ const Index = ({ onLoginClick }: IndexProps) => {
     const generateTags = (term: string) => {
       const words = term.toLowerCase().split(" ");
       const baseTags = words.filter(word => word.length > 3);
-      return [...new Set([...baseTags, "ai-generated", "custom"])];
+      return [...new Set([...baseTags, "ai-generated", "educational", "study", "research"])];
     };
     
     const mockResults: DiagramData[] = Array.from({ length: 3 }, (_, i) => {
@@ -141,7 +143,7 @@ const Index = ({ onLoginClick }: IndexProps) => {
       
       return {
         id: `generated-${Date.now()}-${i}`,
-        title: `AI Generated: ${prompt}`,
+        title: `Educational Diagram: ${prompt} for Study and Research`,
         imageSrc: imagePool[imageIndex],
         author: "Diagramr AI",
         authorUsername: "diagramr_ai",
@@ -188,20 +190,20 @@ const Index = ({ onLoginClick }: IndexProps) => {
       
       if (mode === "search") {
         searchResults = await fetchDiagramsFromWeb(prompt);
-        toast.success(`Found ${searchResults.length} diagrams for "${prompt}"`);
+        toast.success(`Found ${searchResults.length} educational diagrams for "${prompt}"`);
         
         if (!isPremium && remainingSearches <= 3 && remainingSearches > 0) {
           toast.warning(`You have ${remainingSearches} searches left today in the free plan!`);
         }
       } else {
         searchResults = await generateDiagramWithAI(prompt);
-        toast.success(`Generated ${searchResults.length} diagrams for "${prompt}"`);
+        toast.success(`Generated ${searchResults.length} educational diagrams for "${prompt}"`);
       }
       
       setResults(searchResults);
     } catch (error) {
-      console.error(`Error ${mode === "search" ? "fetching" : "generating"} diagrams:`, error);
-      toast.error(`Error ${mode === "search" ? "searching for" : "generating"} diagrams. Please try again.`);
+      console.error(`Error ${mode === "search" ? "fetching" : "generating"} educational diagrams:`, error);
+      toast.error(`Error ${mode === "search" ? "searching for" : "generating"} educational diagrams. Please try again.`);
     } finally {
       setIsLoading(false);
     }
@@ -223,7 +225,11 @@ const Index = ({ onLoginClick }: IndexProps) => {
       return;
     }
     
-    toast.success("Diagram saved to favorites!");
+    const diagramToSave = results.find(r => r.id === diagramId);
+    if (diagramToSave) {
+      // In a real implementation, this would save to the database
+      toast.success(`"${diagramToSave.title}" saved to your favorites!`);
+    }
   };
 
   const handleLoginRedirect = () => {
@@ -234,7 +240,6 @@ const Index = ({ onLoginClick }: IndexProps) => {
     }
   };
 
-  // Check if the user needs to be prompted for login
   useEffect(() => {
     if (requiresLogin && !user) {
       setShowLoginRequired(true);
