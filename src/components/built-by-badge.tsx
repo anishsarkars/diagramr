@@ -5,19 +5,20 @@ import { motion } from "framer-motion";
 
 interface BuiltByBadgeProps {
   className?: string;
-  position?: "bottom-right" | "bottom-left" | "fixed";
+  position?: "bottom-right" | "bottom-left" | "fixed-left" | "fixed-right";
 }
 
-export function BuiltByBadge({ className, position = "bottom-right" }: BuiltByBadgeProps) {
+export function BuiltByBadge({ className, position = "bottom-left" }: BuiltByBadgeProps) {
   const positionClasses = {
     "bottom-right": "absolute bottom-4 right-4",
     "bottom-left": "absolute bottom-4 left-4", 
-    "fixed": "fixed bottom-4 right-4 z-50"
+    "fixed-right": "fixed bottom-4 right-4 z-50",
+    "fixed-left": "fixed bottom-4 left-4 z-50"
   };
 
   return (
     <motion.div
-      className={position === "fixed" ? positionClasses.fixed : positionClasses[position]}
+      className={position.startsWith("fixed") ? positionClasses[position] : positionClasses[position]}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 1, duration: 0.3 }}

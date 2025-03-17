@@ -15,7 +15,9 @@ import {
   Bookmark, 
   Heart, 
   Settings,
-  BadgeCheck
+  BadgeCheck,
+  Home,
+  CreditCard
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
@@ -29,6 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -53,6 +56,12 @@ export function Header() {
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
+    toast.success("Signed out successfully");
+  };
+
+  const handleMenuClick = (path: string) => {
+    navigate(path);
+    setMobileMenuOpen(false);
   };
 
   return (
@@ -96,17 +105,30 @@ export function Header() {
           </Link>
           
           {user && (
-            <Link
-              to="/favorites"
-              className={cn(
-                "text-sm font-medium transition-colors hover:text-primary",
-                location.pathname === "/favorites"
-                  ? "text-foreground"
-                  : "text-foreground/60"
-              )}
-            >
-              Favorites
-            </Link>
+            <>
+              <Link
+                to="/favorites"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary",
+                  location.pathname === "/favorites"
+                    ? "text-foreground"
+                    : "text-foreground/60"
+                )}
+              >
+                Bookmarks
+              </Link>
+              <Link
+                to="/liked"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary",
+                  location.pathname === "/liked"
+                    ? "text-foreground"
+                    : "text-foreground/60"
+                )}
+              >
+                Liked
+              </Link>
+            </>
           )}
           
           <Button 
@@ -136,7 +158,7 @@ export function Header() {
                   {profile?.username || user.email}
                   <div className="text-xs font-normal text-muted-foreground mt-1 flex items-center">
                     <BadgeCheck className="h-3 w-3 mr-1 text-primary" />
-                    <span>Beta Tester</span>
+                    <span>{profile?.is_premium ? "Premium" : "Free Account"}</span>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -155,6 +177,13 @@ export function Header() {
                   <Settings className="mr-2 h-4 w-4 text-slate-500" />
                   <span>Account Settings</span>
                 </DropdownMenuItem>
+                
+                {!profile?.is_premium && (
+                  <DropdownMenuItem onClick={() => navigate('/pricing')}>
+                    <CreditCard className="mr-2 h-4 w-4 text-green-500" />
+                    <span>Upgrade to Premium</span>
+                  </DropdownMenuItem>
+                )}
                 
                 <DropdownMenuSeparator />
                 
@@ -211,53 +240,55 @@ export function Header() {
           transition={{ duration: 0.2 }}
         >
           <div className="container p-4 space-y-4">
-            <Link
-              to="/"
-              className="block py-2 text-foreground/70 hover:text-foreground"
-              onClick={() => setMobileMenuOpen(false)}
+            <button
+              className="flex items-center w-full py-2 text-foreground/70 hover:text-foreground"
+              onClick={() => handleMenuClick('/')}
             >
+              <Home className="h-4 w-4 inline mr-2" />
               Home
-            </Link>
-            <Link
-              to="/pricing"
-              className="block py-2 text-foreground/70 hover:text-foreground"
-              onClick={() => setMobileMenuOpen(false)}
+            </button>
+            
+            <button
+              className="flex items-center w-full py-2 text-foreground/70 hover:text-foreground"
+              onClick={() => handleMenuClick('/pricing')}
             >
+              <CreditCard className="h-4 w-4 inline mr-2" />
               Pricing
-            </Link>
+            </button>
+            
             {user && (
               <>
-                <Link
-                  to="/favorites"
-                  className="block py-2 text-foreground/70 hover:text-foreground"
-                  onClick={() => setMobileMenuOpen(false)}
+                <button
+                  className="flex items-center w-full py-2 text-foreground/70 hover:text-foreground"
+                  onClick={() => handleMenuClick('/favorites')}
                 >
                   <Bookmark className="h-4 w-4 inline mr-2 text-blue-500" />
                   Bookmarks
-                </Link>
-                <Link
-                  to="/liked"
-                  className="block py-2 text-foreground/70 hover:text-foreground"
-                  onClick={() => setMobileMenuOpen(false)}
+                </button>
+                
+                <button
+                  className="flex items-center w-full py-2 text-foreground/70 hover:text-foreground"
+                  onClick={() => handleMenuClick('/liked')}
                 >
                   <Heart className="h-4 w-4 inline mr-2 text-rose-500" />
                   Liked Diagrams
-                </Link>
-                <Link
-                  to="/account"
-                  className="block py-2 text-foreground/70 hover:text-foreground"
-                  onClick={() => setMobileMenuOpen(false)}
+                </button>
+                
+                <button
+                  className="flex items-center w-full py-2 text-foreground/70 hover:text-foreground"
+                  onClick={() => handleMenuClick('/account')}
                 >
                   <Settings className="h-4 w-4 inline mr-2 text-slate-500" />
                   Account Settings
-                </Link>
+                </button>
               </>
             )}
+            
             {user ? (
               <>
                 <div className="py-2 text-sm font-medium flex items-center gap-2">
                   <BadgeCheck className="h-4 w-4 text-primary" />
-                  <span>Beta Tester</span>
+                  <span>{profile?.is_premium ? "Premium Account" : "Free Account"}</span>
                 </div>
                 <Button 
                   variant="outline" 
@@ -272,16 +303,14 @@ export function Header() {
                 </Button>
               </>
             ) : (
-              <Link 
-                to="/auth" 
-                className="w-full" 
-                onClick={() => setMobileMenuOpen(false)}
+              <Button 
+                variant="default" 
+                className="w-full justify-center"
+                onClick={() => handleMenuClick('/auth')}
               >
-                <Button variant="default" className="w-full justify-center">
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Sign in
-                </Button>
-              </Link>
+                <LogIn className="mr-2 h-4 w-4" />
+                Sign in
+              </Button>
             )}
           </div>
         </motion.div>

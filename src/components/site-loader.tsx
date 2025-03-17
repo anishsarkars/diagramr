@@ -1,59 +1,63 @@
 
-import { motion } from "framer-motion";
 import { DiagramrLogo } from "./diagramr-logo";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
-export function SiteLoader() {
+export function SiteLoader({ className }: { className?: string }) {
   return (
-    <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="flex flex-col items-center">
+    <div className={cn("fixed inset-0 flex flex-col items-center justify-center bg-background", className)}>
+      <div className="flex flex-col items-center space-y-4">
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="relative"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{
+            duration: 0.5,
+            ease: [0.22, 1, 0.36, 1]
+          }}
         >
-          <DiagramrLogo size="xl" isLoading={true} showBeta={false} />
+          <DiagramrLogo size="xl" isLoading showBeta={false} />
+        </motion.div>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: 0.3,
+            duration: 0.5
+          }}
+        >
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Diagramr
+          </h1>
+        </motion.div>
+        
+        <motion.div 
+          className="w-40 h-1.5 bg-muted rounded-full overflow-hidden mt-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
           <motion.div 
-            className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/20 to-primary/10 blur-xl"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0.5, 0] }}
+            className="h-full bg-primary rounded-full"
+            initial={{ width: "0%" }}
+            animate={{ width: "100%" }}
             transition={{ 
-              duration: 2,
-              repeat: Infinity,
-              repeatType: "loop"
+              delay: 0.6,
+              duration: 1.2, 
+              ease: "easeInOut" 
             }}
           />
         </motion.div>
-        <motion.div
-          className="mt-8 space-y-2 text-center"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
+        
+        <motion.p
+          className="text-sm text-muted-foreground"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
         >
-          <motion.p
-            className="text-xl font-bold text-foreground"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.5 }}
-          >
-            Diagramr
-          </motion.p>
-          <motion.p
-            className="text-sm text-muted-foreground"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.9, duration: 0.5 }}
-          >
-            Loading your educational diagrams...
-          </motion.p>
-        </motion.div>
+          Visualize knowledge instantly
+        </motion.p>
       </div>
-    </motion.div>
+    </div>
   );
 }

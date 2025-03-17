@@ -2,6 +2,7 @@
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { useTheme } from "@/components/theme-provider";
 
 interface DiagramrLogoProps {
   className?: string;
@@ -18,6 +19,7 @@ export function DiagramrLogo({
   isLoading = false,
   showBeta = true
 }: DiagramrLogoProps) {
+  const { theme } = useTheme();
   const sizeClasses = {
     sm: "h-8 w-8",
     md: "h-12 w-12",
@@ -51,7 +53,9 @@ export function DiagramrLogo({
         }}
       >
         <img 
-          src="/lovable-uploads/ca791211-179d-415b-87a8-97ea4fcfa0cd.png" 
+          src={theme === 'dark' 
+            ? "/lovable-uploads/d13f2dfc-b974-424f-83a2-a060b3a74cb5.png" 
+            : "/lovable-uploads/29c6874b-2503-4a4a-ac77-228929a96128.png"}
           alt="Diagramr Logo" 
           className="h-full w-full object-contain drop-shadow-lg" 
         />

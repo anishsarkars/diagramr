@@ -111,7 +111,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
         } else {
           // Add to saved - Convert diagramToSave to a proper JSON object
           const diagramData = {
-            id: diagramToSave.id,
+            id: String(diagramToSave.id),
             title: diagramToSave.title,
             imageSrc: diagramToSave.imageSrc,
             author: diagramToSave.author || "",
@@ -119,14 +119,14 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
             tags: diagramToSave.tags || [],
             sourceUrl: diagramToSave.sourceUrl || "",
             isGenerated: diagramToSave.isGenerated || false
-          } as unknown as Json;
+          };
           
           const { error } = await supabase
             .from('saved_diagrams')
             .insert({
               user_id: user.id,
               diagram_id: String(diagramId),
-              diagram_data: diagramData
+              diagram_data: diagramData as Json
             });
           
           if (error) throw error;

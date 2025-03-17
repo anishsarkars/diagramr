@@ -10,6 +10,8 @@ import { useState, useEffect } from "react";
 import Index from "./pages/Index";
 import Auth from "./pages/auth";
 import Favorites from "./pages/Favorites";
+import Liked from "./pages/Liked";
+import Account from "./pages/Account";
 import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import { BuiltByBadge } from "./components/built-by-badge";
@@ -67,6 +69,8 @@ function AppContent() {
             <Route path="/" element={<Index onLoginClick={handleLoginClick} />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/favorites" element={<Favorites />} />
+            <Route path="/liked" element={<Liked />} />
+            <Route path="/account" element={<Account />} />
             <Route path="/pricing" element={<Pricing />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
