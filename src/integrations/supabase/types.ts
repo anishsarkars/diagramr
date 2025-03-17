@@ -63,6 +63,7 @@ export type Database = {
       user_search_logs: {
         Row: {
           created_at: string
+          generation_count: number
           id: string
           search_count: number
           search_date: string
@@ -70,6 +71,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          generation_count?: number
           id?: string
           search_count?: number
           search_date?: string
@@ -77,6 +79,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          generation_count?: number
           id?: string
           search_count?: number
           search_date?: string

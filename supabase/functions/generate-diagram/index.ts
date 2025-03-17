@@ -25,12 +25,22 @@ serve(async (req) => {
       );
     }
 
+    // Enhance the prompt to generate higher quality, more relevant diagrams
     const enhancedPrompt = detailedPrompt 
-      ? `Create a clear, educational diagram illustrating: "${prompt}". 
-         Make it visually appealing and easy to understand for students and researchers. 
-         Include appropriate labels, arrows, and visual elements that help explain the concept effectively.
-         The diagram should be professional and suitable for educational purposes.
-         Please respond only with a clear and concise diagram that can be directly displayed as an image.`
+      ? `Create a high-quality, educational diagram illustrating: "${prompt}". 
+         Create this as a professional-looking, visually appealing diagram that would be suitable for
+         educational materials, presentations, or research papers.
+         
+         Make the diagram:
+         1. Clear and precise - focus exactly on what is being asked
+         2. Visually attractive with appropriate colors and styling
+         3. Well-structured with logical flow
+         4. Properly labeled with detailed annotations
+         5. High resolution (at least 1200px width)
+         
+         The diagram must be extremely relevant to the specific request and contain appropriate technical details.
+         Please respond only with a clear, high-quality diagram image that can be directly displayed.
+         No additional text explanations are needed in the response.`
       : prompt;
     
     console.log("Generating diagram with Gemini:", enhancedPrompt);
@@ -47,9 +57,9 @@ serve(async (req) => {
           }]
         }],
         generationConfig: {
-          temperature: 0.4,
-          topK: 32,
-          topP: 1,
+          temperature: 0.2, // Lower temperature for more focused results
+          topK: 40,
+          topP: 0.95,
           maxOutputTokens: 4096,
         }
       })
@@ -73,14 +83,20 @@ serve(async (req) => {
         const imgMatch = textPart.text.match(/https:\/\/[^)\s]+\.(png|jpg|jpeg|gif)/i);
         if (imgMatch) {
           return new Response(
-            JSON.stringify({ imageUrl: imgMatch[0] }),
+            JSON.stringify({ 
+              imageUrl: imgMatch[0],
+              success: true
+            }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
         
         // No direct image URL, return the text for processing
         return new Response(
-          JSON.stringify({ text: textPart.text }),
+          JSON.stringify({ 
+            text: textPart.text,
+            success: true
+          }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -90,7 +106,10 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error generating diagram:", error.message);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        success: false
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

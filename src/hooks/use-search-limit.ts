@@ -112,10 +112,17 @@ export function useSearchLimit(): SearchLimitState {
       
       if (error) throw error;
       
-      setSearchCount(data?.search_count || 0);
-      setGenerationCount(data?.generation_count || 0);
+      if (data) {
+        setSearchCount(data.search_count || 0);
+        setGenerationCount(data.generation_count || 0);
+      } else {
+        setSearchCount(0);
+        setGenerationCount(0);
+      }
     } catch (error) {
       console.error('Error fetching usage counts:', error);
+      setSearchCount(0);
+      setGenerationCount(0);
     } finally {
       setIsLoading(false);
     }
@@ -149,7 +156,7 @@ export function useSearchLimit(): SearchLimitState {
         // Update Supabase for logged-in users
         const today = new Date().toISOString().split('T')[0];
         
-        // Fixed upsert operation
+        // Use upsert operation
         const { error } = await supabase
           .from('user_search_logs')
           .upsert(
