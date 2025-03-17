@@ -11,8 +11,9 @@ import { useNavigate } from "react-router-dom";
 import { useInfiniteSearch, DiagramResult } from "@/hooks/use-infinite-search";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 
-const Index = () => {
+const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   const [showSearchField, setShowSearchField] = useState(true);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showLoginRequired, setShowLoginRequired] = useState(false);
@@ -108,13 +109,24 @@ const Index = () => {
           
           toast.success(`"${diagramToSave.title}" removed from your bookmarks`);
         } else {
-          // Add to saved
+          // Add to saved - Convert diagramToSave to a proper JSON object
+          const diagramData = {
+            id: diagramToSave.id,
+            title: diagramToSave.title,
+            imageSrc: diagramToSave.imageSrc,
+            author: diagramToSave.author || "",
+            authorUsername: diagramToSave.authorUsername || "",
+            tags: diagramToSave.tags || [],
+            sourceUrl: diagramToSave.sourceUrl || "",
+            isGenerated: diagramToSave.isGenerated || false
+          } as unknown as Json;
+          
           const { error } = await supabase
             .from('saved_diagrams')
             .insert({
               user_id: user.id,
               diagram_id: String(diagramId),
-              diagram_data: diagramToSave
+              diagram_data: diagramData
             });
           
           if (error) throw error;
@@ -154,7 +166,11 @@ const Index = () => {
   }, [user]);
 
   const handleLoginRedirect = () => {
-    navigate('/auth');
+    if (onLoginClick) {
+      onLoginClick();
+    } else {
+      navigate('/auth');
+    }
   };
 
   useEffect(() => {

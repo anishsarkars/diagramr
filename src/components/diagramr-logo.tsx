@@ -51,7 +51,7 @@ export function DiagramrLogo({
         }}
       >
         <img 
-          src="/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png" 
+          src="/lovable-uploads/ca791211-179d-415b-87a8-97ea4fcfa0cd.png" 
           alt="Diagramr Logo" 
           className="h-full w-full object-contain drop-shadow-lg" 
         />

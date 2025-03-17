@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { searchGoogleImages } from '@/utils/googleSearch';
 import { generateDiagramWithGemini } from '@/utils/geminiImageGenerator';
 import { toast } from 'sonner';
+import { useSearchLimit } from '@/hooks/use-search-limit';
 
 export interface DiagramResult {
   id: string | number;
@@ -48,6 +49,8 @@ export function useInfiniteSearch({
   const [searchTerm, setSearchTerm] = useState(initialQuery);
   const [lastAction, setLastAction] = useState<'search' | 'generate'>('search');
   
+  const { incrementGenerationCount } = useSearchLimit();
+  
   const cachedResults = useRef<Map<string, DiagramResult[]>>(new Map());
   const allResults = useRef<DiagramResult[]>([]);
   
@@ -80,6 +83,16 @@ export function useInfiniteSearch({
           searchResults = cachedResults.current.get(cacheKey) || [];
         } else {
           searchResults = await searchGoogleImages(query, searchKey, searchId);
+          
+          // Sort results by relevance - we'll use a simple heuristic based on
+          // how many of the query terms appear in the title and tags
+          const queryTerms = query.toLowerCase().split(' ');
+          searchResults.sort((a, b) => {
+            const aRelevance = calculateRelevance(a, queryTerms);
+            const bRelevance = calculateRelevance(b, queryTerms);
+            return bRelevance - aRelevance;
+          });
+          
           cachedResults.current.set(cacheKey, searchResults);
         }
         
@@ -89,7 +102,15 @@ export function useInfiniteSearch({
         
         toast.success(`Found ${searchResults.length} educational diagrams`);
       } else {
-        const result = await generateDiagramWithGemini({ prompt: query });
+        // Increment generation count (this is already checked in the UI)
+        await incrementGenerationCount();
+        
+        // Generate diagram with Gemini
+        const result = await generateDiagramWithGemini({ 
+          prompt: query,
+          detailedPrompt: true,
+          highQuality: true
+        });
         
         if (result) {
           // If the result is a URL
@@ -100,7 +121,9 @@ export function useInfiniteSearch({
               imageSrc: result,
               author: 'Diagramr AI',
               authorUsername: 'diagramr_ai',
-              tags: query.split(' ').filter(w => w.length > 3).map(w => w.toLowerCase()),
+              tags: query.split(' ')
+                .filter(w => w.length > 3)
+                .map(w => w.toLowerCase()),
               sourceUrl: '#',
               isGenerated: true
             }];
@@ -108,15 +131,16 @@ export function useInfiniteSearch({
             allResults.current = generatedResults;
             setResults(generatedResults);
             setHasMore(false);
+            
+            toast.success('Diagram generated successfully!');
           } else {
             // If the result is text, we need to extract information from it
-            // For now, just show an error
             toast.error('Generated content is not an image. Please try a different prompt.');
             setResults([]);
             setHasMore(false);
           }
         } else {
-          toast.error('Failed to generate diagram');
+          toast.error('Failed to generate diagram. Please try again with a clearer description.');
           setResults([]);
           setHasMore(false);
         }
@@ -128,7 +152,39 @@ export function useInfiniteSearch({
     } finally {
       setIsLoading(false);
     }
-  }, [pageSize, searchKey, searchId]);
+  }, [pageSize, searchKey, searchId, incrementGenerationCount]);
+  
+  // Helper function to calculate relevance score
+  const calculateRelevance = (result: DiagramResult, queryTerms: string[]): number => {
+    let score = 0;
+    
+    // Check title relevance
+    const title = result.title.toLowerCase();
+    queryTerms.forEach(term => {
+      if (title.includes(term)) score += 3;
+    });
+    
+    // Check tags relevance
+    if (result.tags) {
+      queryTerms.forEach(term => {
+        if (result.tags?.some(tag => tag.includes(term))) score += 2;
+      });
+    }
+    
+    // Educational keywords boost
+    const educationalKeywords = ['education', 'concept', 'diagram', 'study', 'learn', 'research'];
+    educationalKeywords.forEach(keyword => {
+      if (title.includes(keyword)) score += 1;
+    });
+    
+    // Image quality heuristic (assuming URLs with 'high' or 'quality' are better)
+    const imageSrc = result.imageSrc.toLowerCase();
+    if (imageSrc.includes('high') || imageSrc.includes('quality') || imageSrc.includes('hd')) {
+      score += 1;
+    }
+    
+    return score;
+  };
   
   const loadMore = useCallback(() => {
     if (isLoading || !hasMore) return;

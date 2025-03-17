@@ -20,7 +20,16 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
   const [mode, setMode] = useState<"search" | "generate">("search");
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   
-  const { hasReachedLimit, incrementCount, requiresLogin, remainingSearches } = useSearchLimit();
+  const { 
+    hasReachedLimit, 
+    incrementCount, 
+    requiresLogin, 
+    remainingSearches,
+    hasReachedGenerationLimit,
+    incrementGenerationCount,
+    remainingGenerations
+  } = useSearchLimit();
+  
   const { profile } = useAuth();
   const isPremium = profile?.is_premium || false;
 
@@ -29,17 +38,23 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
     
     if (!query.trim()) return;
     
-    if (mode === "generate" && !isPremium) {
-      setShowPremiumDialog(true);
-      return;
-    }
-    
-    if (hasReachedLimit) {
-      setShowPremiumDialog(true);
-      return;
-    }
-    
-    if (mode === "search") {
+    if (mode === "generate") {
+      if (hasReachedGenerationLimit) {
+        setShowPremiumDialog(true);
+        return;
+      }
+      
+      const success = await incrementGenerationCount();
+      if (!success) {
+        setShowPremiumDialog(true);
+        return;
+      }
+    } else {
+      if (hasReachedLimit) {
+        setShowPremiumDialog(true);
+        return;
+      }
+      
       const success = await incrementCount();
       if (!success) {
         setShowPremiumDialog(true);
@@ -62,13 +77,17 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
           <div className="relative flex-1">
             <Input
               type="text"
-              placeholder="Search for educational diagrams..."
+              placeholder={mode === "search" ? "Search for educational diagrams..." : "Describe a diagram to generate..."}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="pl-10 py-6 text-base w-full bg-background shadow-sm border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30"
               disabled={isLoading}
             />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            {mode === "search" ? (
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            ) : (
+              <Sparkles className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            )}
           </div>
           
           <Button 
@@ -107,8 +126,16 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
         </div>
       </form>
       
-      <div className="mt-2">
+      <div className="mt-2 flex justify-between items-center">
         <SearchLimitIndicator compact={true} className="opacity-70 scale-90" />
+        
+        <div className="text-xs text-muted-foreground">
+          {mode === "search" ? (
+            <span>{remainingSearches} searches left</span>
+          ) : (
+            <span>{remainingGenerations} generations left</span>
+          )}
+        </div>
       </div>
       
       <PremiumPlanDialog

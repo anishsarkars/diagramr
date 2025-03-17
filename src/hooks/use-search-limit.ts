@@ -10,34 +10,54 @@ interface SearchLimitState {
   incrementCount: () => Promise<boolean>;
   remainingSearches: number;
   requiresLogin: boolean;
+  generationCount: number;
+  remainingGenerations: number;
+  hasReachedGenerationLimit: boolean;
+  incrementGenerationCount: () => Promise<boolean>;
 }
 
 // Define constants for search limits
-const FREE_TIER_LIMIT = 50; // Updated to 50 searches per day for registered users during beta
+const FREE_TIER_LIMIT = 50; // Registered users get 50 searches per day during beta
 const DEMO_LIMIT = 3; // Anonymous users get 3 searches before requiring login
+const FREE_GENERATION_LIMIT = 5; // Registered users get 5 generations per day
+const DEMO_GENERATION_LIMIT = 1; // Anonymous users get 1 generation before requiring login
+const PREMIUM_GENERATION_LIMIT = 20; // Premium users get 20 generations per day
 
 export function useSearchLimit(): SearchLimitState {
   const { user, profile } = useAuth();
   const [searchCount, setSearchCount] = useState(0);
+  const [generationCount, setGenerationCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   
   const isPremium = profile?.is_premium || false;
   
-  // During beta, all signed-in users get premium features
+  // During beta, all signed-in users get premium search features
   const isBetaPeriod = true;
   
   // Different logic based on authentication status
-  const hasReachedLimit = !isBetaPeriod && !isPremium && (
-    user ? searchCount >= FREE_TIER_LIMIT : searchCount >= DEMO_LIMIT
-  );
+  const hasReachedLimit = !user 
+    ? searchCount >= DEMO_LIMIT
+    : searchCount >= FREE_TIER_LIMIT;
+  
+  const hasReachedGenerationLimit = !user
+    ? generationCount >= DEMO_GENERATION_LIMIT
+    : isPremium
+      ? generationCount >= PREMIUM_GENERATION_LIMIT
+      : generationCount >= FREE_GENERATION_LIMIT;
   
   // Require login after trial limit is reached for anonymous users
-  const requiresLogin = !user && searchCount >= DEMO_LIMIT;
+  const requiresLogin = !user && (searchCount >= DEMO_LIMIT || generationCount >= DEMO_GENERATION_LIMIT);
   
-  // Calculate remaining searches
+  // Calculate remaining searches and generations
   const remainingSearches = user 
     ? (FREE_TIER_LIMIT - searchCount) 
     : (DEMO_LIMIT - searchCount);
+    
+  const remainingGenerations = user
+    ? isPremium
+      ? (PREMIUM_GENERATION_LIMIT - generationCount)
+      : (FREE_GENERATION_LIMIT - generationCount)
+    : (DEMO_GENERATION_LIMIT - generationCount);
 
   useEffect(() => {
     if (!user) {
@@ -48,24 +68,35 @@ export function useSearchLimit(): SearchLimitState {
       if (storedData) {
         const data = JSON.parse(storedData);
         if (data.date === today) {
-          setSearchCount(data.count);
+          setSearchCount(data.searchCount || 0);
+          setGenerationCount(data.generationCount || 0);
         } else {
           // Reset for a new day
-          localStorage.setItem('searchData', JSON.stringify({ date: today, count: 0 }));
+          localStorage.setItem('searchData', JSON.stringify({ 
+            date: today, 
+            searchCount: 0, 
+            generationCount: 0 
+          }));
           setSearchCount(0);
+          setGenerationCount(0);
         }
       } else {
-        localStorage.setItem('searchData', JSON.stringify({ date: today, count: 0 }));
+        localStorage.setItem('searchData', JSON.stringify({ 
+          date: today, 
+          searchCount: 0, 
+          generationCount: 0 
+        }));
         setSearchCount(0);
+        setGenerationCount(0);
       }
       setIsLoading(false);
     } else {
       // If logged in, fetch from Supabase
-      fetchSearchCount();
+      fetchUsageCounts();
     }
   }, [user]);
 
-  const fetchSearchCount = async () => {
+  const fetchUsageCounts = async () => {
     if (!user) return;
     
     try {
@@ -74,7 +105,7 @@ export function useSearchLimit(): SearchLimitState {
       
       const { data, error } = await supabase
         .from('user_search_logs')
-        .select('search_count')
+        .select('search_count, generation_count')
         .eq('user_id', user.id)
         .eq('search_date', today)
         .maybeSingle();
@@ -82,27 +113,37 @@ export function useSearchLimit(): SearchLimitState {
       if (error) throw error;
       
       setSearchCount(data?.search_count || 0);
+      setGenerationCount(data?.generation_count || 0);
     } catch (error) {
-      console.error('Error fetching search count:', error);
+      console.error('Error fetching usage counts:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const incrementCount = async (): Promise<boolean> => {
-    // During beta period, users with accounts get unlimited searches
+    // During beta period, users with accounts don't have search limits
     if (isBetaPeriod && user) return true;
     
-    if (isPremium) return true; // Premium users have unlimited searches
-    
-    if (hasReachedLimit) return false; // Free tier users who reached limit
+    if (hasReachedLimit) return false; // Users who reached limit
     
     try {
       if (!user) {
         // Update localStorage for non-logged-in users
         const today = new Date().toDateString();
-        const newCount = searchCount + 1;
-        localStorage.setItem('searchData', JSON.stringify({ date: today, count: newCount }));
+        const storedData = localStorage.getItem('searchData');
+        const data = storedData ? JSON.parse(storedData) : { date: today, searchCount: 0, generationCount: 0 };
+        
+        if (data.date !== today) {
+          data.date = today;
+          data.searchCount = 0;
+          data.generationCount = 0;
+        }
+        
+        const newCount = (data.searchCount || 0) + 1;
+        data.searchCount = newCount;
+        
+        localStorage.setItem('searchData', JSON.stringify(data));
         setSearchCount(newCount);
       } else {
         // Update Supabase for logged-in users
@@ -115,7 +156,8 @@ export function useSearchLimit(): SearchLimitState {
             {
               user_id: user.id,
               search_date: today,
-              search_count: searchCount + 1
+              search_count: searchCount + 1,
+              generation_count: generationCount
             },
             {
               onConflict: 'user_id,search_date'
@@ -133,6 +175,57 @@ export function useSearchLimit(): SearchLimitState {
       return false;
     }
   };
+  
+  const incrementGenerationCount = async (): Promise<boolean> => {
+    if (hasReachedGenerationLimit) return false;
+    
+    try {
+      if (!user) {
+        // Update localStorage for non-logged-in users
+        const today = new Date().toDateString();
+        const storedData = localStorage.getItem('searchData');
+        const data = storedData ? JSON.parse(storedData) : { date: today, searchCount: 0, generationCount: 0 };
+        
+        if (data.date !== today) {
+          data.date = today;
+          data.searchCount = 0;
+          data.generationCount = 0;
+        }
+        
+        const newCount = (data.generationCount || 0) + 1;
+        data.generationCount = newCount;
+        
+        localStorage.setItem('searchData', JSON.stringify(data));
+        setGenerationCount(newCount);
+      } else {
+        // Update Supabase for logged-in users
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { error } = await supabase
+          .from('user_search_logs')
+          .upsert(
+            {
+              user_id: user.id,
+              search_date: today,
+              search_count: searchCount,
+              generation_count: generationCount + 1
+            },
+            {
+              onConflict: 'user_id,search_date'
+            }
+          );
+        
+        if (error) throw error;
+        
+        setGenerationCount(prev => prev + 1);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error incrementing generation count:', error);
+      return false;
+    }
+  };
 
   return {
     searchCount,
@@ -140,6 +233,10 @@ export function useSearchLimit(): SearchLimitState {
     isLoading,
     incrementCount,
     remainingSearches,
-    requiresLogin
+    requiresLogin,
+    generationCount,
+    remainingGenerations,
+    hasReachedGenerationLimit,
+    incrementGenerationCount
   };
 }

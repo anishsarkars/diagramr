@@ -7,18 +7,22 @@ const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-
 interface GenerateImageOptions {
   prompt: string;
   detailedPrompt?: boolean;
+  highQuality?: boolean;
 }
 
 export const generateDiagramWithGemini = async (
-  { prompt, detailedPrompt = true }: GenerateImageOptions
+  { prompt, detailedPrompt = true, highQuality = true }: GenerateImageOptions
 ): Promise<string | null> => {
   try {
     const enhancedPrompt = detailedPrompt 
-      ? `Create a clear, educational diagram illustrating: "${prompt}". 
-         Make it visually appealing and easy to understand for students and researchers. 
-         Include appropriate labels, arrows, and visual elements that help explain the concept effectively.
-         The diagram should be professional and suitable for educational purposes.`
-      : prompt;
+      ? `Create a stunning, high-quality educational diagram illustrating: "${prompt}". 
+         Make it visually appealing with bold colors, clear labels, and professional design.
+         Include appropriate arrows, visual elements, and detailed annotations that help explain the concept effectively.
+         The diagram should be very high resolution (at least 1920x1080), suitable for educational presentations.
+         Use a clean, modern design style with strong visual hierarchy and professional typography.
+         The diagram should be comprehensive yet easy to understand, with a clear flow of information.
+         Make sure text is legible and important elements stand out.`
+      : `Create a high quality diagram about: ${prompt}`;
     
     console.log("Generating diagram with Gemini:", enhancedPrompt);
     
@@ -34,9 +38,9 @@ export const generateDiagramWithGemini = async (
           }]
         }],
         generationConfig: {
-          temperature: 0.4,
+          temperature: 0.3,  // Lower temperature for more focused outputs
           topK: 32,
-          topP: 1,
+          topP: 0.95,
           maxOutputTokens: 4096,
         }
       })
