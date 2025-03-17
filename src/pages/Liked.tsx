@@ -10,11 +10,22 @@ import { useNavigate } from "react-router-dom";
 import { Bookmark, Search, Loader2, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-interface LikedDiagram {
+interface DiagramData {
   id: string;
   title: string;
-  image_url: string;
+  imageSrc: string;
+  author?: string;
+  authorUsername?: string;
+  tags?: string[];
+  sourceUrl?: string;
+  isGenerated?: boolean;
+}
+
+interface LikedDiagram {
+  id: string;
   user_id: string;
+  diagram_id: string;
+  diagram_data: DiagramData;
   created_at: string;
 }
 
@@ -51,15 +62,7 @@ export default function Liked() {
         if (error) throw error;
         
         if (data) {
-          const formattedData = data.map(item => ({
-            id: item.id,
-            title: item.diagram_data?.title || "Untitled Diagram",
-            image_url: item.diagram_data?.imageSrc || "",
-            user_id: item.user_id,
-            created_at: item.created_at
-          }));
-          
-          setLikedDiagrams(formattedData);
+          setLikedDiagrams(data as LikedDiagram[]);
         }
       } catch (error) {
         console.error('Error fetching liked diagrams:', error);
@@ -116,10 +119,14 @@ export default function Liked() {
                 transition={{ delay: index * 0.1 }}
               >
                 <div className="diagram-card-image">
-                  <img src={diagram.image_url} alt={diagram.title} className="w-full aspect-video object-cover" />
+                  <img 
+                    src={diagram.diagram_data.imageSrc} 
+                    alt={diagram.diagram_data.title} 
+                    className="w-full aspect-video object-cover" 
+                  />
                 </div>
                 <div className="p-4">
-                  <h3 className="font-medium text-lg line-clamp-1">{diagram.title}</h3>
+                  <h3 className="font-medium text-lg line-clamp-1">{diagram.diagram_data.title}</h3>
                   <p className="text-xs text-muted-foreground mt-1">
                     Liked on {new Date(diagram.created_at).toLocaleDateString()}
                   </p>

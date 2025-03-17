@@ -37,7 +37,9 @@ export function useSearchLimit(): SearchLimitState {
   // Different logic based on authentication status
   const hasReachedLimit = !user 
     ? searchCount >= DEMO_LIMIT
-    : searchCount >= FREE_TIER_LIMIT;
+    : isPremium
+      ? false // Premium users don't have a search limit
+      : searchCount >= FREE_TIER_LIMIT;
   
   const hasReachedGenerationLimit = !user
     ? generationCount >= DEMO_GENERATION_LIMIT
@@ -50,7 +52,9 @@ export function useSearchLimit(): SearchLimitState {
   
   // Calculate remaining searches and generations
   const remainingSearches = user 
-    ? (FREE_TIER_LIMIT - searchCount) 
+    ? isPremium
+      ? Infinity // Premium users have unlimited searches
+      : (FREE_TIER_LIMIT - searchCount) 
     : (DEMO_LIMIT - searchCount);
     
   const remainingGenerations = user
@@ -66,12 +70,24 @@ export function useSearchLimit(): SearchLimitState {
       const storedData = localStorage.getItem('searchData');
       
       if (storedData) {
-        const data = JSON.parse(storedData);
-        if (data.date === today) {
-          setSearchCount(data.searchCount || 0);
-          setGenerationCount(data.generationCount || 0);
-        } else {
-          // Reset for a new day
+        try {
+          const data = JSON.parse(storedData);
+          if (data.date === today) {
+            setSearchCount(data.searchCount || 0);
+            setGenerationCount(data.generationCount || 0);
+          } else {
+            // Reset for a new day
+            localStorage.setItem('searchData', JSON.stringify({ 
+              date: today, 
+              searchCount: 0, 
+              generationCount: 0 
+            }));
+            setSearchCount(0);
+            setGenerationCount(0);
+          }
+        } catch (error) {
+          console.error('Error parsing search data from localStorage:', error);
+          // Reset if data is corrupted
           localStorage.setItem('searchData', JSON.stringify({ 
             date: today, 
             searchCount: 0, 
@@ -129,17 +145,25 @@ export function useSearchLimit(): SearchLimitState {
   };
 
   const incrementCount = async (): Promise<boolean> => {
-    // During beta period, users with accounts don't have search limits
-    if (isBetaPeriod && user) return true;
+    // Premium users don't have search limits
+    if (user && isPremium) return true;
     
-    if (hasReachedLimit) return false; // Users who reached limit
+    // Users who reached limit
+    if (hasReachedLimit) return false; 
     
     try {
       if (!user) {
         // Update localStorage for non-logged-in users
         const today = new Date().toDateString();
         const storedData = localStorage.getItem('searchData');
-        const data = storedData ? JSON.parse(storedData) : { date: today, searchCount: 0, generationCount: 0 };
+        let data;
+        
+        try {
+          data = storedData ? JSON.parse(storedData) : { date: today, searchCount: 0, generationCount: 0 };
+        } catch (error) {
+          console.error('Error parsing search data:', error);
+          data = { date: today, searchCount: 0, generationCount: 0 };
+        }
         
         if (data.date !== today) {
           data.date = today;
@@ -191,7 +215,14 @@ export function useSearchLimit(): SearchLimitState {
         // Update localStorage for non-logged-in users
         const today = new Date().toDateString();
         const storedData = localStorage.getItem('searchData');
-        const data = storedData ? JSON.parse(storedData) : { date: today, searchCount: 0, generationCount: 0 };
+        let data;
+        
+        try {
+          data = storedData ? JSON.parse(storedData) : { date: today, searchCount: 0, generationCount: 0 };
+        } catch (error) {
+          console.error('Error parsing search data:', error);
+          data = { date: today, searchCount: 0, generationCount: 0 };
+        }
         
         if (data.date !== today) {
           data.date = today;

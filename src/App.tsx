@@ -75,7 +75,7 @@ function AppContent() {
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-          <BuiltByBadge position="fixed" />
+          <BuiltByBadge position="fixed-left" />
           <Suspense fallback={null}>
             <PremiumPlanDialog open={false} onClose={() => {}} onLoginClick={handleLoginClick} />
           </Suspense>

@@ -8,6 +8,7 @@ import { DiagramrLogo } from "@/components/diagramr-logo";
 import { useAuth } from "@/components/auth-context";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { Footer } from "@/components/footer";
 
 export default function Pricing() {
   const { user, profile } = useAuth();
@@ -51,7 +52,7 @@ export default function Pricing() {
     <div className="min-h-screen bg-background">
       <div className="container max-w-7xl mx-auto py-10 px-4 sm:px-6">
         <div className="flex justify-between items-center mb-12">
-          <DiagramrLogo size="md" />
+          <DiagramrLogo size="md" showText />
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={() => navigate("/")}>
               Home
@@ -201,7 +202,7 @@ export default function Pricing() {
                   className="w-full relative group overflow-hidden"
                   onClick={handleUpgradeClick}
                 >
-                  <span className="relative z-10">Coming Soon</span>
+                  <span className="relative z-10">Upgrade Now</span>
                   <span className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-primary/20 group-hover:opacity-80 opacity-0 transition-opacity duration-300"></span>
                 </Button>
               </CardFooter>
@@ -222,6 +223,8 @@ export default function Pricing() {
           </p>
         </motion.div>
       </div>
+      
+      <Footer />
     </div>
   );
 }

@@ -68,13 +68,13 @@ export function Header() {
     <header
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-200",
-        scrolled ? "bg-background/80 backdrop-blur-lg shadow-sm" : "bg-transparent"
+        scrolled ? "bg-background/90 backdrop-blur-lg shadow-sm" : "bg-transparent"
       )}
     >
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2">
-            <DiagramrLogo size="sm" className="h-8 w-auto" />
+            <DiagramrLogo size="sm" className="h-10 w-auto" showText showBeta={false} />
           </Link>
         </div>
 

@@ -36,7 +36,7 @@ serve(async (req) => {
          2. Visually attractive with appropriate colors and styling
          3. Well-structured with logical flow
          4. Properly labeled with detailed annotations
-         5. High resolution (at least 1200px width)
+         5. High resolution (at least 1920x1080)
          
          The diagram must be extremely relevant to the specific request and contain appropriate technical details.
          Please respond only with a clear, high-quality diagram image that can be directly displayed.
@@ -45,7 +45,7 @@ serve(async (req) => {
     
     console.log("Generating diagram with Gemini:", enhancedPrompt);
     
-    // Updated to use the latest Gemini API endpoint
+    // Try with Gemini Pro model
     try {
       const response = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
         method: "POST",
@@ -59,8 +59,8 @@ serve(async (req) => {
             }]
           }],
           generationConfig: {
-            temperature: 0.2, // Lower temperature for more focused results
-            topK: 40,
+            temperature: 0.1, // Very low temperature for precise results
+            topK: 32,
             topP: 0.95,
             maxOutputTokens: 4096,
           }
@@ -68,8 +68,16 @@ serve(async (req) => {
       });
       
       if (!response.ok) {
-        // If the main Gemini API fails, try the alternative model
-        console.log("Primary Gemini model failed, trying alternative model...");
+        throw new Error(`Gemini API request failed with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return handleGeminiResponse(data, corsHeaders);
+    } catch (directApiError) {
+      console.error("Direct Gemini API error:", directApiError);
+      
+      // Try with Gemini 1.5 model
+      try {
         const alternativeResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`, {
           method: "POST",
           headers: {
@@ -82,7 +90,7 @@ serve(async (req) => {
               }]
             }],
             generationConfig: {
-              temperature: 0.3,
+              temperature: 0.2,
               topK: 32,
               topP: 0.95,
               maxOutputTokens: 4096,
@@ -91,41 +99,38 @@ serve(async (req) => {
         });
         
         if (!alternativeResponse.ok) {
-          throw new Error("Both Gemini models failed to generate content");
+          throw new Error(`Alternative Gemini model failed with status: ${alternativeResponse.status}`);
         }
         
         const data = await alternativeResponse.json();
         return handleGeminiResponse(data, corsHeaders);
+      } catch (alternativeError) {
+        console.error("Alternative Gemini model error:", alternativeError);
+        
+        // If both direct APIs fail, create a basic diagram description that can be used for searching
+        const fallbackResponse = `
+          I'm having trouble generating a direct image for "${prompt}". 
+          
+          But here's a detailed description of what such a diagram would include:
+          
+          A comprehensive diagram about ${prompt} would include key components like:
+          1. Main concepts clearly labeled
+          2. Visual representation of relationships
+          3. Color-coded sections for different aspects
+          4. Clear organization with a logical flow
+          
+          Please try again or search for "${prompt} diagram" to find similar educational resources.
+        `;
+        
+        return new Response(
+          JSON.stringify({ 
+            text: fallbackResponse,
+            error: "Could not generate diagram directly, but created a description",
+            success: false
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
-      
-      const data = await response.json();
-      return handleGeminiResponse(data, corsHeaders);
-    } catch (directApiError) {
-      console.error("Direct Gemini API error:", directApiError);
-      
-      // If both direct APIs fail, create a basic diagram description that can be used for searching
-      const fallbackResponse = `
-        I'm having trouble generating a direct image for "${prompt}". 
-        
-        But here's a detailed description of what such a diagram would include:
-        
-        A comprehensive diagram about ${prompt} would include key components like:
-        1. Main concepts clearly labeled
-        2. Visual representation of relationships
-        3. Color-coded sections for different aspects
-        4. Clear organization with a logical flow
-        
-        Please try searching for "${prompt} diagram" to find similar educational resources.
-      `;
-      
-      return new Response(
-        JSON.stringify({ 
-          text: fallbackResponse,
-          error: "Could not generate diagram directly, but created a description",
-          success: false
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
     }
   } catch (error) {
     console.error("Error generating diagram:", error.message);
@@ -163,6 +168,18 @@ function handleGeminiResponse(data: any, corsHeaders: any) {
       return new Response(
         JSON.stringify({ 
           text: textPart.text,
+          success: true
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Check for inline image parts
+    const inlineImagePart = parts.find((part: any) => part.inlineData);
+    if (inlineImagePart && inlineImagePart.inlineData) {
+      return new Response(
+        JSON.stringify({ 
+          imageData: inlineImagePart.inlineData,
           success: true
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

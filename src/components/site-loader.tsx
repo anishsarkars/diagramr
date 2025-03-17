@@ -15,20 +15,7 @@ export function SiteLoader({ className }: { className?: string }) {
             ease: [0.22, 1, 0.36, 1]
           }}
         >
-          <DiagramrLogo size="xl" isLoading showBeta={false} />
-        </motion.div>
-        
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            delay: 0.3,
-            duration: 0.5
-          }}
-        >
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            Diagramr
-          </h1>
+          <DiagramrLogo size="xl" isLoading showBeta={false} showText />
         </motion.div>
         
         <motion.div 

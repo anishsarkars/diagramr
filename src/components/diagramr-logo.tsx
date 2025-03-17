@@ -10,6 +10,7 @@ interface DiagramrLogoProps {
   size?: "sm" | "md" | "lg" | "xl" | "2xl";
   isLoading?: boolean;
   showBeta?: boolean;
+  showText?: boolean;
 }
 
 export function DiagramrLogo({ 
@@ -17,15 +18,16 @@ export function DiagramrLogo({
   textClassName,
   size = "md",
   isLoading = false,
-  showBeta = true
+  showBeta = true,
+  showText = false
 }: DiagramrLogoProps) {
   const { theme } = useTheme();
   const sizeClasses = {
-    sm: "h-8 w-8",
-    md: "h-12 w-12",
-    lg: "h-16 w-16", 
-    xl: "h-24 w-24",
-    "2xl": "h-32 w-32"
+    sm: "h-10 w-10",
+    md: "h-14 w-14",
+    lg: "h-20 w-20", 
+    xl: "h-28 w-28",
+    "2xl": "h-36 w-36"
   };
   
   return (
@@ -54,12 +56,23 @@ export function DiagramrLogo({
       >
         <img 
           src={theme === 'dark' 
-            ? "/lovable-uploads/d13f2dfc-b974-424f-83a2-a060b3a74cb5.png" 
-            : "/lovable-uploads/29c6874b-2503-4a4a-ac77-228929a96128.png"}
+            ? "/lovable-uploads/5aa6a42f-771c-4e89-a3ba-e58ff53c701e.png" 
+            : "/lovable-uploads/a837a9a5-a83f-42b8-835c-261565ed609f.png"}
           alt="Diagramr Logo" 
-          className="h-full w-full object-contain drop-shadow-lg" 
+          className="h-full w-full object-contain drop-shadow-lg transition-all duration-300" 
         />
       </motion.div>
+      
+      {showText && (
+        <motion.div 
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+          className={cn("font-bold text-2xl md:text-3xl bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent", textClassName)}
+        >
+          Diagramr
+        </motion.div>
+      )}
       
       {showBeta && (
         <Badge 

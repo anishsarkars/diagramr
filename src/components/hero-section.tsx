@@ -1,186 +1,168 @@
 
-import { Button } from "@/components/ui/button";
-import { DiagramrLogo } from "./diagramr-logo";
+import { AIInput } from "@/components/ai-input";
 import { motion } from "framer-motion";
-import { GraduationCap, Sparkles, ScrollText } from "lucide-react";
-import { SimpleSearchBar } from "./simple-search-bar";
+import { DiagramrLogo } from "@/components/diagramr-logo";
 import { SearchLimitIndicator } from "./search-limit-indicator";
+import { useState, useEffect } from "react";
+import { CheckCircle2, Search, Sparkles, ImageIcon, LineChart, Network, Database } from "lucide-react";
+import { Button } from "./ui/button";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "./auth-context";
 
 interface HeroSectionProps {
-  onSearch: (prompt: string, mode: "search" | "generate") => void;
-  isLoading: boolean;
+  onSearch: (query: string, mode: "search" | "generate") => void;
+  isLoading?: boolean;
 }
 
 export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
-  const handlePopularSearch = (term: string) => {
-    onSearch(term, "search");
-  };
-
-  const fadeInUpVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: 0.1 * i,
-        duration: 0.5
-      }
-    })
-  };
-
-  const backgroundBlobVariants = {
-    animate: {
-      scale: [1, 1.1, 1],
-      opacity: [0.5, 0.7, 0.5],
-      transition: {
-        duration: 8,
-        repeat: Infinity,
-        repeatType: "reverse" as const
-      }
-    }
-  };
+  const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  const features = [
+    { icon: Search, label: "Search for educational diagrams" },
+    { icon: Sparkles, label: "Generate new diagrams with AI" },
+    { icon: Database, label: "Save your favorite diagrams" },
+    { icon: Network, label: "Visualize complex concepts" },
+    { icon: LineChart, label: "Understand difficult topics faster" },
+  ];
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentFeatureIndex((prevIndex) => (prevIndex + 1) % features.length);
+    }, 3000);
+    
+    return () => clearInterval(interval);
+  }, [features.length]);
 
   return (
     <motion.div 
-      className="relative min-h-[80vh] flex flex-col items-center justify-center w-full px-4 pt-12 pb-16"
+      className="container pt-16 md:pt-24 pb-16 text-center flex flex-col items-center justify-center relative"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.7 }}
     >
-      {/* Simplified background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div 
-          className="absolute -top-20 -right-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl"
-          animate={backgroundBlobVariants.animate}
-        />
-        <motion.div 
-          className="absolute -bottom-40 -left-20 w-[30rem] h-[30rem] bg-primary/5 rounded-full blur-3xl"
-          animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.5, 0.6, 0.5],
-            transition: { 
-              duration: 10, 
-              repeat: Infinity,
-              repeatType: "reverse" as const,
-              delay: 1 
-            }
-          }}
-        />
+      {/* Background decorative elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-primary/10 rounded-full blur-3xl"></div>
       </div>
       
       <motion.div 
-        className="mb-10 flex flex-col items-center text-center max-w-2xl mx-auto z-10"
-        initial={{ y: 20, opacity: 0 }}
+        initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <DiagramrLogo className="mb-8" size="lg" />
-        
-        <motion.h1 
-          className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4"
-          custom={1}
-          initial="hidden"
-          animate="visible"
-          variants={fadeInUpVariants}
-        >
-          Find & Learn from
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70 ml-2">Diagrams</span>
-        </motion.h1>
-        
-        <motion.p 
-          className="text-lg text-muted-foreground mb-8 max-w-xl"
-          custom={2}
-          initial="hidden"
-          animate="visible"
-          variants={fadeInUpVariants}
-        >
-          Quickly discover and understand complex concepts with visual diagrams — perfect for students preparing for exams and researchers.
-        </motion.p>
+        <DiagramrLogo size="lg" showText className="mb-4" />
+      </motion.div>
+      
+      <motion.h1 
+        className="font-bold text-3xl md:text-5xl lg:text-6xl mb-6 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+      >
+        Visualize Knowledge Instantly
+      </motion.h1>
+      
+      <motion.div
+        className="mb-8 text-muted-foreground text-lg max-w-2xl"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+      >
+        <p>
+          Search for educational diagrams or generate custom visualizations
+          to understand complex concepts in seconds.
+        </p>
+      </motion.div>
+      
+      <motion.div
+        className="mb-6 h-8 overflow-hidden relative"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+      >
+        {features.map((feature, index) => (
+          <motion.div
+            key={index}
+            className={`flex items-center justify-center gap-2 absolute left-0 right-0 ${
+              index === currentFeatureIndex ? "text-primary" : "text-transparent"
+            }`}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ 
+              y: index === currentFeatureIndex ? 0 : (index < currentFeatureIndex ? -20 : 20),
+              opacity: index === currentFeatureIndex ? 1 : 0
+            }}
+            transition={{ duration: 0.5 }}
+          >
+            <feature.icon className="h-5 w-5" />
+            <span className="font-medium">{feature.label}</span>
+          </motion.div>
+        ))}
       </motion.div>
       
       <motion.div 
-        className="w-full max-w-2xl mx-auto z-10"
-        custom={3}
-        initial="hidden"
-        animate="visible"
-        variants={fadeInUpVariants}
+        className="w-full max-w-2xl mx-auto mb-8"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.6 }}
       >
-        <SimpleSearchBar 
-          onSearch={onSearch}
+        <AIInput 
+          onSubmit={onSearch} 
+          placeholder="Search for diagrams or describe a diagram to generate..." 
           isLoading={isLoading}
-          className="w-full"
         />
       </motion.div>
       
-      <motion.div 
-        className="mt-8 text-center z-10"
-        custom={4}
-        initial="hidden"
-        animate="visible"
-        variants={fadeInUpVariants}
+      <motion.div
+        className="flex justify-center"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.7 }}
       >
-        <h3 className="text-xs font-medium mb-3 text-muted-foreground">Popular searches</h3>
-        <div className="flex flex-wrap gap-2 justify-center">
-          {["UML Class Diagram", "Network Architecture", "Data Structures", 
-            "System Design", "ER Diagram", "Cloud Infrastructure"].map((type, i) => (
-            <motion.div
-              key={type}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 + (i * 0.1), duration: 0.3 }}
+        <SearchLimitIndicator />
+        
+        {!user && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2 }}
+            className="ml-4"
+          >
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/auth')}
+              className="gap-2 shadow-sm"
             >
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="mb-2 bg-background/40 backdrop-blur-sm border-border/30 hover:bg-background/60 text-xs"
-                onClick={() => handlePopularSearch(type)}
-              >
-                {type}
-              </Button>
-            </motion.div>
-          ))}
-        </div>
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              <span>Sign up for more searches</span>
+            </Button>
+          </motion.div>
+        )}
       </motion.div>
       
-      <motion.div 
-        className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto z-10"
-        custom={5}
-        initial="hidden"
-        animate="visible"
-        variants={fadeInUpVariants}
+      <motion.div
+        className="mt-16 flex flex-wrap justify-center gap-8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1, duration: 0.7 }}
       >
-        <motion.div 
-          className="flex flex-col items-center text-center"
-          whileHover={{ y: -3, transition: { duration: 0.2 } }}
-        >
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-            <GraduationCap className="h-6 w-6 text-primary" />
-          </div>
-          <h3 className="text-sm font-medium mb-1">Study Aid</h3>
-          <p className="text-xs text-muted-foreground">Find diagrams to help study for exams and assignments.</p>
-        </motion.div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Search className="h-4 w-4" />
+          <span>50+ searches daily for registered users</span>
+        </div>
         
-        <motion.div 
-          className="flex flex-col items-center text-center"
-          whileHover={{ y: -3, transition: { duration: 0.2 } }}
-        >
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-            <Sparkles className="h-6 w-6 text-primary" />
-          </div>
-          <h3 className="text-sm font-medium mb-1">AI Generation</h3>
-          <p className="text-xs text-muted-foreground">Request custom diagrams to understand any concept.</p>
-        </motion.div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Sparkles className="h-4 w-4" />
+          <span>AI-powered diagram generation</span>
+        </div>
         
-        <motion.div 
-          className="flex flex-col items-center text-center"
-          whileHover={{ y: -3, transition: { duration: 0.2 } }}
-        >
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-            <ScrollText className="h-6 w-6 text-primary" />
-          </div>
-          <h3 className="text-sm font-medium mb-1">Quick Reference</h3>
-          <p className="text-xs text-muted-foreground">Save time with visual references for complex topics.</p>
-        </motion.div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <ImageIcon className="h-4 w-4" />
+          <span>High-quality educational diagrams</span>
+        </div>
       </motion.div>
     </motion.div>
   );
