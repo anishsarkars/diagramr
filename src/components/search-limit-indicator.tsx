@@ -85,6 +85,10 @@ export function SearchLimitIndicator({ className, compact = false }: SearchLimit
         )}
       </motion.div>
       
+      <div className="text-[10px] text-muted-foreground/60 mt-1 text-center italic max-w-xs mx-auto">
+        Diagramr is in beta and improving every day. Results may vary in quality and relevance.
+      </div>
+      
       <PremiumPlanDialog 
         open={showPremiumDialog} 
         onClose={() => setShowPremiumDialog(false)} 

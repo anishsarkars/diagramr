@@ -77,7 +77,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
           <div className="relative flex-1">
             <Input
               type="text"
-              placeholder={mode === "search" ? "Search for educational diagrams..." : "Describe a diagram to generate..."}
+              placeholder={mode === "search" ? "Search for diagrams and visualizations..." : "Describe a diagram to generate..."}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="pl-10 py-6 text-base w-full bg-background shadow-sm border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30"
@@ -131,11 +131,15 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
         
         <div className="text-xs text-muted-foreground">
           {mode === "search" ? (
-            <span>{remainingSearches} searches left</span>
+            <span>{remainingSearches} searches left{!isPremium && " today"}</span>
           ) : (
-            <span>{remainingGenerations} generations left</span>
+            <span>{remainingGenerations} generations left{!isPremium && " today"}</span>
           )}
         </div>
+      </div>
+      
+      <div className="text-xs text-muted-foreground/70 mt-1 text-center italic">
+        Diagramr is in beta and may occasionally produce unexpected results. We're constantly improving!
       </div>
       
       <PremiumPlanDialog

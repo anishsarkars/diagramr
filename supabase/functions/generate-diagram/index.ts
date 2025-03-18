@@ -2,6 +2,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "AIzaSyCL-wB_Ym_40vV17e1gFhyyL-o2864KQN8";
+const STABILITY_API_KEY = Deno.env.get("STABILITY_API_KEY") || "sk-glNeUMg8H2IIBEKoPNftbAIQ97EnAl5QrBAETnqxIT76zTCS";
+const CLOUDFLARE_API_KEY = Deno.env.get("CLOUDFLARE_API_KEY") || "69Jz-coOYL8VI8fPR2MtES0-N7bTS02FVlA34D-e";
+
 const API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent";
 
 const corsHeaders = {
@@ -25,111 +28,172 @@ serve(async (req) => {
       );
     }
 
-    // Enhance the prompt to generate higher quality, more relevant diagrams
+    // Enhanced prompt to generate higher quality, more relevant diagrams
     const enhancedPrompt = detailedPrompt 
-      ? `Create a high-quality, educational diagram illustrating: "${prompt}". 
+      ? `Create a high-quality, professional diagram illustrating: "${prompt}". 
          Create this as a professional-looking, visually appealing diagram that would be suitable for
-         educational materials, presentations, or research papers.
+         educational materials, presentations, research papers, or business documentation.
          
          Make the diagram:
          1. Clear and precise - focus exactly on what is being asked
          2. Visually attractive with appropriate colors and styling
-         3. Well-structured with logical flow
+         3. Well-structured with logical flow and professional layout
          4. Properly labeled with detailed annotations
          5. High resolution (at least 1920x1080)
+         6. Include appropriate legends, titles, and explanations when needed
          
          The diagram must be extremely relevant to the specific request and contain appropriate technical details.
          Please respond only with a clear, high-quality diagram image that can be directly displayed.
          No additional text explanations are needed in the response.`
       : prompt;
     
-    console.log("Generating diagram with Gemini:", enhancedPrompt);
+    console.log("Generating diagram with prompt:", enhancedPrompt);
     
-    // Try with Gemini Pro model
+    // Try with Cloudflare Workers AI first
     try {
-      const response = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
+      console.log("Trying Cloudflare Workers AI...");
+      const response = await fetch("https://api.cloudflare.com/client/v4/accounts/e5fad8b4d6ca29e53d57831b4e45ebd7/ai/run/@cf/stabilityai/stable-diffusion-xl-base-1.0", {
         method: "POST",
         headers: {
+          "Authorization": `Bearer ${CLOUDFLARE_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: enhancedPrompt
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.1, // Very low temperature for precise results
-            topK: 32,
-            topP: 0.95,
-            maxOutputTokens: 4096,
-          }
+          prompt: enhancedPrompt + ", professional diagram, high quality, detailed, educational, vectorized, sharp, clean lines, infographic style, minimalist, educational diagram",
+          num_steps: 40,
+          height: 1024,
+          width: 1024
         })
       });
       
       if (!response.ok) {
-        throw new Error(`Gemini API request failed with status: ${response.status}`);
+        throw new Error(`Cloudflare API request failed with status: ${response.status}`);
       }
       
-      const data = await response.json();
-      return handleGeminiResponse(data, corsHeaders);
-    } catch (directApiError) {
-      console.error("Direct Gemini API error:", directApiError);
+      const imageArrayBuffer = await response.arrayBuffer();
+      const bytes = new Uint8Array(imageArrayBuffer);
       
-      // Try with Gemini 1.5 model
+      // Convert to base64
+      let binaryString = "";
+      bytes.forEach(byte => binaryString += String.fromCharCode(byte));
+      const base64Image = btoa(binaryString);
+      
+      return new Response(
+        JSON.stringify({ 
+          imageUrl: `data:image/png;base64,${base64Image}`,
+          success: true
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (cloudflareError) {
+      console.error("Cloudflare API error:", cloudflareError);
+      
+      // Try with Stability AI
       try {
-        const alternativeResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`, {
+        console.log("Trying Stability API...");
+        const stabilityResponse = await fetch("https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": `Bearer ${STABILITY_API_KEY}`,
           },
           body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: enhancedPrompt
-              }]
-            }],
-            generationConfig: {
-              temperature: 0.2,
-              topK: 32,
-              topP: 0.95,
-              maxOutputTokens: 4096,
-            }
+            text_prompts: [
+              {
+                text: enhancedPrompt + ", professional diagram, high quality, detailed, educational, vectorized, sharp, clean lines, infographic style",
+                weight: 1
+              },
+              {
+                text: "blurry, distorted, low quality, ugly, unrealistic, photographic, photograph, photo, text, words",
+                weight: -1
+              }
+            ],
+            cfg_scale: 7,
+            height: 1024,
+            width: 1024,
+            steps: 40,
+            samples: 1
           })
         });
         
-        if (!alternativeResponse.ok) {
-          throw new Error(`Alternative Gemini model failed with status: ${alternativeResponse.status}`);
+        if (!stabilityResponse.ok) {
+          throw new Error(`Stability AI API request failed with status: ${stabilityResponse.status}`);
         }
         
-        const data = await alternativeResponse.json();
-        return handleGeminiResponse(data, corsHeaders);
-      } catch (alternativeError) {
-        console.error("Alternative Gemini model error:", alternativeError);
+        const stabilityData = await stabilityResponse.json();
+        if (stabilityData.artifacts && stabilityData.artifacts.length > 0) {
+          const base64Image = stabilityData.artifacts[0].base64;
+          
+          return new Response(
+            JSON.stringify({ 
+              imageUrl: `data:image/png;base64,${base64Image}`,
+              success: true
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        } else {
+          throw new Error("No image generated by Stability AI");
+        }
+      } catch (stabilityError) {
+        console.error("Stability AI error:", stabilityError);
         
-        // If both direct APIs fail, create a basic diagram description that can be used for searching
-        const fallbackResponse = `
-          I'm having trouble generating a direct image for "${prompt}". 
+        // Try with Gemini Pro as final fallback
+        try {
+          console.log("Trying Gemini Pro as fallback...");
+          const geminiResponse = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{
+                  text: enhancedPrompt
+                }]
+              }],
+              generationConfig: {
+                temperature: 0.1, // Very low temperature for precise results
+                topK: 32,
+                topP: 0.95,
+                maxOutputTokens: 4096,
+              }
+            })
+          });
           
-          But here's a detailed description of what such a diagram would include:
+          if (!geminiResponse.ok) {
+            throw new Error(`Gemini API request failed with status: ${geminiResponse.status}`);
+          }
           
-          A comprehensive diagram about ${prompt} would include key components like:
-          1. Main concepts clearly labeled
-          2. Visual representation of relationships
-          3. Color-coded sections for different aspects
-          4. Clear organization with a logical flow
+          const data = await geminiResponse.json();
+          return handleGeminiResponse(data, corsHeaders);
+        } catch (geminiError) {
+          console.error("Gemini API error:", geminiError);
           
-          Please try again or search for "${prompt} diagram" to find similar educational resources.
-        `;
-        
-        return new Response(
-          JSON.stringify({ 
-            text: fallbackResponse,
-            error: "Could not generate diagram directly, but created a description",
-            success: false
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+          // Create a text-based fallback
+          const fallbackResponse = `
+            I'm having trouble generating a direct image for "${prompt}". 
+            
+            But here's a detailed description of what such a diagram would include:
+            
+            A comprehensive diagram about ${prompt} would include key components like:
+            1. Main concepts clearly labeled
+            2. Visual representation of relationships
+            3. Color-coded sections for different aspects
+            4. Clear organization with a logical flow
+            
+            Please try again or search for "${prompt} diagram" to find similar resources.
+          `;
+          
+          return new Response(
+            JSON.stringify({ 
+              text: fallbackResponse,
+              error: "Could not generate diagram directly, but created a description",
+              success: false
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
       }
     }
   } catch (error) {

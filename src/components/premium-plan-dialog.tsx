@@ -144,6 +144,10 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false, onLoginCli
           </div>
         </div>
 
+        <div className="text-xs text-muted-foreground/60 text-center italic mb-2">
+          Diagramr is in early beta. Features and results may vary in quality as we improve the service.
+        </div>
+
         <DialogFooter className="flex flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={onClose} className="sm:w-auto w-full">
             Maybe later

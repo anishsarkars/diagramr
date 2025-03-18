@@ -58,7 +58,7 @@ export function DiagramrLogo({
             ? "/lovable-uploads/5aa6a42f-771c-4e89-a3ba-e58ff53c701e.png" 
             : "/lovable-uploads/a837a9a5-a83f-42b8-835c-261565ed609f.png"}
           alt="Diagramr Logo" 
-          className="h-full w-full object-contain drop-shadow-lg transition-all duration-300" 
+          className="h-full w-full object-contain drop-shadow-md transition-all duration-300" 
         />
       </motion.div>
       

@@ -4,7 +4,7 @@ import { SimpleSearchBar } from "./simple-search-bar";
 import { DiagramCard } from "./diagram-card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Search, ArrowLeft, Filter, SlidersHorizontal, Grid, GridIcon, LayoutGrid } from "lucide-react";
+import { Search, ArrowLeft, Filter, ChevronLeft, ChevronRight, Grid, GridIcon, LayoutGrid } from "lucide-react";
 import { 
   Select, 
   SelectContent, 
@@ -13,6 +13,15 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { DiagramResult } from "@/hooks/use-infinite-search";
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationEllipsis, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "@/components/ui/pagination";
 
 interface ResultsSectionProps {
   results: DiagramResult[];
@@ -38,6 +47,8 @@ export function ResultsSection({
   const [layoutType, setLayoutType] = useState<"grid" | "masonry">("grid");
   const [filterOpen, setFilterOpen] = useState(false);
   const [sortBy, setSortBy] = useState("relevance");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
 
   // Filter states
   const [typeFilter, setTypeFilter] = useState("all");
@@ -126,6 +137,103 @@ export function ResultsSection({
   
   const filteredResults = getFilteredResults();
   
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredResults.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = filteredResults.slice(startIndex, endIndex);
+  
+  const handleChangePage = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  // Build pagination display
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+    
+    const pages = [];
+    
+    // Previous button
+    pages.push(
+      <PaginationItem key="prev">
+        <PaginationPrevious 
+          onClick={() => currentPage > 1 && handleChangePage(currentPage - 1)}
+          className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+        />
+      </PaginationItem>
+    );
+    
+    // Page numbers with ellipsis if needed
+    const pageNumbers = [];
+    if (totalPages <= 5) {
+      // Show all pages if 5 or fewer
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      // Show current page with neighbors and ellipsis
+      if (currentPage <= 3) {
+        // Near start
+        pageNumbers.push(1, 2, 3, 4);
+        pageNumbers.push('ellipsis');
+        pageNumbers.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        // Near end
+        pageNumbers.push(1);
+        pageNumbers.push('ellipsis');
+        pageNumbers.push(totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        // In the middle
+        pageNumbers.push(1);
+        pageNumbers.push('ellipsis');
+        pageNumbers.push(currentPage - 1, currentPage, currentPage + 1);
+        pageNumbers.push('ellipsis');
+        pageNumbers.push(totalPages);
+      }
+    }
+    
+    // Add page links
+    pageNumbers.forEach((page, index) => {
+      if (page === 'ellipsis') {
+        pages.push(
+          <PaginationItem key={`ellipsis-${index}`}>
+            <PaginationEllipsis />
+          </PaginationItem>
+        );
+      } else {
+        pages.push(
+          <PaginationItem key={`page-${page}`}>
+            <PaginationLink 
+              isActive={currentPage === page}
+              onClick={() => handleChangePage(page as number)}
+            >
+              {page}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      }
+    });
+    
+    // Next button
+    pages.push(
+      <PaginationItem key="next">
+        <PaginationNext 
+          onClick={() => currentPage < totalPages && handleChangePage(currentPage + 1)}
+          className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+        />
+      </PaginationItem>
+    );
+    
+    return (
+      <Pagination className="my-8">
+        <PaginationContent>
+          {pages}
+        </PaginationContent>
+      </Pagination>
+    );
+  };
+
   return (
     <div className="container max-w-screen-xl mx-auto pt-8 pb-16 px-4 sm:px-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
@@ -139,7 +247,7 @@ export function ResultsSection({
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight">
             {lastAction === "search" ? (
               <>Results for <span className="text-primary">"{searchTerm}"</span></>
             ) : (
@@ -254,6 +362,10 @@ export function ResultsSection({
               </Select>
             </div>
           </div>
+          
+          <div className="mt-3 text-xs text-muted-foreground italic text-center">
+            Diagramr is in beta and actively improving. Results quality may vary as we enhance our search algorithms.
+          </div>
         </motion.div>
       )}
       
@@ -298,43 +410,59 @@ export function ResultsSection({
       
       {/* Results Grid */}
       {!isLoading && filteredResults.length > 0 && (
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className={`grid ${
-            layoutType === "grid" 
-              ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" 
-              : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-          } gap-6`}
-        >
-          {filteredResults.map((result, index) => {
-            // Calculate if this is the last element for infinite scroll
-            const isLastItem = index === filteredResults.length - 1;
-            
-            return (
-              <motion.div
-                key={result.id}
-                variants={childVariants}
-                ref={isLastItem ? lastResultRef : null}
-                className={layoutType === "masonry" ? `${index % 3 === 0 ? "sm:col-span-2" : ""}` : ""}
-              >
-                <DiagramCard
-                  title={result.title}
-                  imageSrc={result.imageSrc}
-                  author={result.author}
-                  authorUsername={result.authorUsername}
-                  tags={result.tags}
-                  sourceUrl={result.sourceUrl}
-                  isGenerated={result.isGenerated}
-                  isSaved={savedDiagrams.has(String(result.id))}
-                  onSave={() => onSaveDiagram(result.id)}
-                  aspectRatio={layoutType === "masonry" ? (index % 5 === 0 ? 16/10 : index % 3 === 0 ? 16/14 : 16/9) : 16/9}
-                />
-              </motion.div>
-            );
-          })}
-        </motion.div>
+        <>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className={`grid ${
+              layoutType === "grid" 
+                ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5" 
+                : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+            } gap-4 sm:gap-6`}
+          >
+            {currentItems.map((result, index) => {
+              // Calculate if this is the last element for infinite scroll
+              const isLastItem = index === currentItems.length - 1 && currentPage === totalPages;
+              
+              return (
+                <motion.div
+                  key={result.id}
+                  variants={childVariants}
+                  ref={isLastItem ? lastResultRef : null}
+                  className={layoutType === "masonry" ? `${index % 3 === 0 ? "sm:col-span-2" : ""}` : ""}
+                >
+                  <DiagramCard
+                    title={result.title}
+                    imageSrc={result.imageSrc}
+                    author={result.author}
+                    authorUsername={result.authorUsername}
+                    tags={result.tags}
+                    sourceUrl={result.sourceUrl}
+                    isGenerated={result.isGenerated}
+                    isSaved={savedDiagrams.has(String(result.id))}
+                    onSave={() => onSaveDiagram(result.id)}
+                    aspectRatio={layoutType === "masonry" ? (index % 5 === 0 ? 16/10 : index % 3 === 0 ? 16/14 : 16/9) : 16/9}
+                  />
+                </motion.div>
+              );
+            })}
+          </motion.div>
+          
+          {/* Pagination */}
+          {renderPagination()}
+          
+          {/* Loading more indicator - only shown when there are more results to load */}
+          {currentPage === totalPages && hasMore && (
+            <div 
+              ref={lastResultRef}
+              className="flex justify-center items-center p-6 mt-6"
+            >
+              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <p className="ml-3 text-muted-foreground">Loading more results...</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
