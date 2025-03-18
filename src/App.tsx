@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -102,8 +101,8 @@ const App = () => {
   const prefersDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
   const savedTheme = localStorage.getItem("diagramr-theme");
   
-  // Default to light mode, but respect system or saved preferences
-  const defaultTheme = savedTheme || (prefersDarkMode ? "dark" : "light");
+  // Fixed: Ensure savedTheme is cast to a valid Theme type
+  const defaultTheme = (savedTheme as "light" | "dark" | "system") || (prefersDarkMode ? "dark" : "light");
   
   return (
     <QueryClientProvider client={queryClient}>
