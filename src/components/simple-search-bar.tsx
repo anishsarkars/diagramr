@@ -1,13 +1,16 @@
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Sparkles } from "lucide-react";
+import { Search, Sparkles, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSearchLimit } from "@/hooks/use-search-limit";
 import { PremiumPlanDialog } from "@/components/premium-plan-dialog";
 import { useAuth } from "@/components/auth-context";
 import { SearchLimitIndicator } from "./search-limit-indicator";
+import { SearchSuggestions } from "@/components/search-suggestions";
+import { cn } from "@/lib/utils";
+import { useTheme } from "@/components/theme-provider";
 
 interface SimpleSearchBarProps {
   onSearch: (query: string, mode: "search" | "generate") => void;
@@ -19,11 +22,14 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<"search" | "generate">("search");
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const { isDarkMode } = useTheme();
   
   const { 
     hasReachedLimit, 
     incrementCount, 
-    requiresLogin, 
+    requiresLogin,
     remainingSearches,
     hasReachedGenerationLimit,
     incrementGenerationCount,
@@ -63,10 +69,48 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
     }
     
     onSearch(query, mode);
+    setShowSuggestions(false);
   };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSubmit(e as any);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+    } else {
+      setShowSuggestions(true);
+    }
+  };
+  
+  const handleSuggestionClick = (suggestion: string) => {
+    setQuery(suggestion);
+    setShowSuggestions(false);
+    setTimeout(() => {
+      onSearch(suggestion, mode);
+    }, 50);
+  };
+  
+  const handleClearSearch = () => {
+    setQuery("");
+  };
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <motion.div 
+      ref={wrapperRef}
       className={className}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -79,14 +123,37 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
               type="text"
               placeholder={mode === "search" ? "Search for diagrams and visualizations..." : "Describe a diagram to generate..."}
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="pl-10 py-6 text-base w-full bg-background shadow-sm border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30"
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setShowSuggestions(e.target.value.length > 0);
+              }}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setShowSuggestions(query.length > 0)}
+              className={cn(
+                "pl-10 py-6 text-base w-full shadow-sm",
+                "focus-visible:ring-1 focus-visible:ring-primary/30",
+                isDarkMode 
+                  ? "bg-background/70 border-border/30" 
+                  : "bg-background border-border/50"
+              )}
               disabled={isLoading}
             />
             {mode === "search" ? (
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             ) : (
               <Sparkles className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            )}
+            
+            {query && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
+                onClick={handleClearSearch}
+              >
+                <X className="h-4 w-4" />
+              </Button>
             )}
           </div>
           
@@ -124,6 +191,14 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
             )}
           </Button>
         </div>
+        
+        {/* Search suggestions */}
+        <SearchSuggestions
+          isVisible={showSuggestions && !isLoading}
+          query={query}
+          onSuggestionClick={handleSuggestionClick}
+          className="top-full"
+        />
       </form>
       
       <div className="mt-2 flex justify-between items-center">
@@ -136,10 +211,6 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
             <span>{remainingGenerations} generations left{!isPremium && " today"}</span>
           )}
         </div>
-      </div>
-      
-      <div className="text-xs text-muted-foreground/70 mt-1 text-center italic">
-        Diagramr is in beta and may occasionally produce unexpected results. We're constantly improving!
       </div>
       
       <PremiumPlanDialog

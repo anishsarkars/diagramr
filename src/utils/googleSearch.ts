@@ -1,4 +1,3 @@
-
 import { DiagramResult } from "@/hooks/use-infinite-search";
 
 export async function searchGoogleImages(
@@ -16,30 +15,39 @@ export async function searchGoogleImages(
     const startIndex = (page - 1) * 10 + 1;
     const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(enhancedQuery)}&searchType=image&num=10&start=${startIndex}&safe=active&imgSize=large&imgType=photo,clipart,lineart,stock&rights=cc_publicdomain,cc_attribute,cc_sharealike`;
     
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch from Google API: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    // Fallback to sample data if the API has no items (useful for development or if API quota is exhausted)
-    if (!data.items || data.items.length === 0) {
-      console.log("No results found from API, using alternative search");
+    try {
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        if (response.status === 429) {
+          console.log("Google API quota exceeded, using alternative search results");
+          return getAlternativeSearchResults(query, page);
+        }
+        throw new Error(`Failed to fetch from Google API: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Fallback to sample data if the API has no items (useful for development or if API quota is exhausted)
+      if (!data.items || data.items.length === 0) {
+        console.log("No results found from API, using alternative search");
+        return getAlternativeSearchResults(query, page);
+      }
+      
+      return data.items.map((item: any, index: number) => ({
+        id: `${new Date().getTime()}-${page}-${index}`,
+        title: item.title,
+        imageSrc: item.link,
+        author: item.displayLink || "",
+        authorUsername: "",
+        tags: generateTags(item.title, query),
+        sourceUrl: item.image?.contextLink || "",
+        isGenerated: false
+      }));
+    } catch (error) {
+      console.log("Google API search failed, falling back to alternative results:", error);
       return getAlternativeSearchResults(query, page);
     }
-    
-    return data.items.map((item: any, index: number) => ({
-      id: `${new Date().getTime()}-${page}-${index}`,
-      title: item.title,
-      imageSrc: item.link,
-      author: item.displayLink || "",
-      authorUsername: "",
-      tags: generateTags(item.title, query),
-      sourceUrl: item.image?.contextLink || "",
-      isGenerated: false
-    }));
   } catch (error) {
     console.error("Error searching Google Images:", error);
     
@@ -84,47 +92,55 @@ function generateTags(title: string, query: string): string[] {
 
 // Function to generate alternative search results with high-quality diagram images
 function getAlternativeSearchResults(query: string, page: number): DiagramResult[] {
-  // Curated list of high-quality diagram images for common query types
+  // Enhanced curated list of high-quality diagram images for common query types
   const diagramImageSets: Record<string, string[]> = {
     network: [
-      "https://www.lucidchart.com/pages/templates/network-diagram/lucidchart-complete-network-diagram-template",
-      "https://www.edrawsoft.com/templates/pdf/network-diagram-example.pdf",
-      "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/networkdiagram.svg",
-      "/lovable-uploads/5aa6a42f-771c-4e89-a3ba-e58ff53c701e.png"
+      "/lovable-uploads/5aa6a42f-771c-4e89-a3ba-e58ff53c701e.png",
+      "/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png",
+      "/lovable-uploads/a6ccf758-c406-414d-8f2e-e5e6d69439ff.png",
+      "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/networkdiagram.svg"
     ],
     flowchart: [
-      "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/flowchart-examples/hiring-process-flowchart.svg",
-      "https://www.lucidchart.com/pages/templates/flowchart/blank-flowchart-template",
-      "https://www.edrawsoft.com/templates/images/hr-flowchart.png",
-      "/lovable-uploads/a837a9a5-a83f-42b8-835c-261565ed609f.png"
+      "/lovable-uploads/a837a9a5-a83f-42b8-835c-261565ed609f.png",
+      "/lovable-uploads/ca791211-179d-415b-87a8-97ea4fcfa0cd.png",
+      "/lovable-uploads/29c6874b-2503-4a4a-ac77-228929a96128.png",
+      "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/flowchart-examples/hiring-process-flowchart.svg"
     ],
     sequence: [
-      "https://www.lucidchart.com/pages/templates/sequence-diagram/sequence-diagram-tutorial-example",
-      "https://www.visual-paradigm.com/guide/uml-unified-modeling-language/what-is-sequence-diagram/",
-      "https://www.uml-diagrams.org/sequence-diagrams/sequence-diagram-example.png",
-      "/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png"
+      "/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png",
+      "/lovable-uploads/1fcd5d05-8fe4-4a85-a06e-0797163cce27.png",
+      "/lovable-uploads/ca791211-179d-415b-87a8-97ea4fcfa0cd.png",
+      "https://www.uml-diagrams.org/sequence-diagrams/sequence-diagram-example.png"
     ],
     uml: [
-      "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/discovery-page/UML-class-diagram/UML-class-diagram-example.png",
-      "https://www.lucidchart.com/pages/templates/class-diagram/lucidchart-class-diagram-with-relationships-template",
-      "https://www.uml-diagrams.org/examples/use-case-example-airline.png",
-      "/lovable-uploads/ca791211-179d-415b-87a8-97ea4fcfa0cd.png"
+      "/lovable-uploads/ca791211-179d-415b-87a8-97ea4fcfa0cd.png",
+      "/lovable-uploads/a6ccf758-c406-414d-8f2e-e5e6d69439ff.png",
+      "/lovable-uploads/14b933d8-4bc5-478d-a61d-0f37bd0404b1.png",
+      "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/discovery-page/UML-class-diagram/UML-class-diagram-example.png"
     ],
     architecture: [
-      "https://d2slcw3kip6qmk.cloudfront.net/marketing/blog/2018Q4/system-architecture/system-architecture-diagram.png",
-      "https://aws.amazon.com/architecture/reference-architecture-diagrams/",
-      "/lovable-uploads/d13f2dfc-b974-424f-83a2-a060b3a74cb5.png"
+      "/lovable-uploads/d13f2dfc-b974-424f-83a2-a060b3a74cb5.png",
+      "/lovable-uploads/00280548-0e69-4df9-9d87-4dfdca65bb09.png",
+      "/lovable-uploads/0bd711da-9830-4f71-ad4b-5b7325223770.png",
+      "https://d2slcw3kip6qmk.cloudfront.net/marketing/blog/2018Q4/system-architecture/system-architecture-diagram.png"
     ],
     er: [
-      "https://www.lucidchart.com/pages/templates/er-diagram/er-diagram-example-template",
-      "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/ER-diagram-tutorial/ER-diagram-tutorial.png",
-      "https://www.visual-paradigm.com/guide/data-modeling/what-is-entity-relationship-diagram/",
-      "/lovable-uploads/ec798833-9785-43fd-9962-8c826d437f27.png"
+      "/lovable-uploads/ec798833-9785-43fd-9962-8c826d437f27.png",
+      "/lovable-uploads/29c6874b-2503-4a4a-ac77-228929a96128.png",
+      "/lovable-uploads/a6ccf758-c406-414d-8f2e-e5e6d69439ff.png",
+      "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/ER-diagram-tutorial/ER-diagram-tutorial.png"
     ],
     database: [
-      "https://www.lucidchart.com/pages/templates/database-design/mysql-database-template",
-      "https://d2slcw3kip6qmk.cloudfront.net/marketing/blog/2018Q4/database-diagram-tool/database-diagram.png",
-      "/lovable-uploads/6fded565-6442-486f-9eea-5259f0fe2811.png"
+      "/lovable-uploads/6fded565-6442-486f-9eea-5259f0fe2811.png",
+      "/lovable-uploads/ec798833-9785-43fd-9962-8c826d437f27.png",
+      "/lovable-uploads/a6ccf758-c406-414d-8f2e-e5e6d69439ff.png",
+      "https://d2slcw3kip6qmk.cloudfront.net/marketing/blog/2018Q4/database-diagram-tool/database-diagram.png"
+    ],
+    data: [
+      "/lovable-uploads/6fded565-6442-486f-9eea-5259f0fe2811.png",
+      "/lovable-uploads/ec798833-9785-43fd-9962-8c826d437f27.png", 
+      "/lovable-uploads/a6ccf758-c406-414d-8f2e-e5e6d69439ff.png",
+      "/lovable-uploads/29c6874b-2503-4a4a-ac77-228929a96128.png"
     ]
   };
   
@@ -139,13 +155,10 @@ function getAlternativeSearchResults(query: string, page: number): DiagramResult
     "/lovable-uploads/6fded565-6442-486f-9eea-5259f0fe2811.png",
     "/lovable-uploads/a6ccf758-c406-414d-8f2e-e5e6d69439ff.png",
     "/lovable-uploads/29c6874b-2503-4a4a-ac77-228929a96128.png",
-    "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/network-diagram.png",
-    "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/discovery-page/UML-class-diagram/UML-class-diagram-example.png",
-    "https://d2slcw3kip6qmk.cloudfront.net/marketing/blog/2018Q4/system-architecture/system-architecture-diagram.png",
-    "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/ER-diagram-tutorial/ER-diagram-tutorial.png",
-    "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/flowchart-examples/hiring-process-flowchart.svg",
-    "https://www.edrawsoft.com/templates/images/network-diagram-template.png",
-    "https://www.edrawsoft.com/templates/images/business-process-workflow-diagram.png"
+    "/lovable-uploads/00280548-0e69-4df9-9d87-4dfdca65bb09.png",
+    "/lovable-uploads/0bd711da-9830-4f71-ad4b-5b7325223770.png",
+    "/lovable-uploads/14b933d8-4bc5-478d-a61d-0f37bd0404b1.png",
+    "/lovable-uploads/1fcd5d05-8fe4-4a85-a06e-0797163cce27.png"
   ];
   
   let imagesToUse: string[] = [];

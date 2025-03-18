@@ -9,13 +9,17 @@ import {
   ArchiveIcon, 
   FilterIcon,
   Wand2Icon, 
-  AlertCircleIcon
+  AlertCircleIcon,
+  SlidersHorizontal,
+  Sparkles
 } from "lucide-react";
 import { SimpleSearchBar } from "@/components/simple-search-bar";
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedContainer } from "@/components/animated-container";
 import { useInView } from "react-intersection-observer";
+import { DiagramPreviewModal } from "@/components/diagram-preview-modal";
+import { useTheme } from "@/components/theme-provider";
 
 interface ResultsSectionProps {
   results: DiagramResult[];
@@ -26,7 +30,7 @@ interface ResultsSectionProps {
   onLike?: (id: string | number) => void;
   likedDiagrams?: Set<string>;
   lastResultRef?: (node: HTMLDivElement) => void;
-  hasMore: boolean; // Added hasMore property to the interface
+  hasMore: boolean;
 }
 
 export function ResultsSection({ 
@@ -38,10 +42,15 @@ export function ResultsSection({
   onLike,
   likedDiagrams = new Set(),
   lastResultRef,
-  hasMore // Added hasMore to the destructured props
+  hasMore
 }: ResultsSectionProps) {
   const [sortOption, setSortOption] = useState<"relevance" | "newest">("relevance");
+  const [filterOption, setFilterOption] = useState<"all" | "generated" | "search">("all");
   const { ref: titleRef, inView: titleInView } = useInView({ triggerOnce: true });
+  const { isDarkMode } = useTheme();
+  
+  const [selectedDiagram, setSelectedDiagram] = useState<DiagramResult | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const isLiked = (id: string | number) => likedDiagrams.has(String(id));
 
@@ -50,6 +59,22 @@ export function ResultsSection({
       onLike(id);
     }
   };
+  
+  const openDiagramPreview = (diagram: DiagramResult) => {
+    setSelectedDiagram(diagram);
+    setPreviewOpen(true);
+  };
+  
+  const closeDiagramPreview = () => {
+    setPreviewOpen(false);
+  };
+  
+  const filteredResults = results.filter(result => {
+    if (filterOption === "all") return true;
+    if (filterOption === "generated") return result.isGenerated;
+    if (filterOption === "search") return !result.isGenerated;
+    return true;
+  });
 
   return (
     <div className="container py-8 pb-16">
@@ -61,7 +86,12 @@ export function ResultsSection({
           transition={{ duration: 0.6 }}
         >
           <div className="flex items-center gap-2 mb-1">
-            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+            <Badge variant="outline" className={cn(
+              "px-2 py-0.5",
+              isDarkMode 
+                ? "bg-primary/20 text-primary border-primary/30" 
+                : "bg-primary/5 text-primary border-primary/20"
+            )}>
               {lastAction === "search" ? "Search Results" : "AI Generated"}
             </Badge>
             {lastAction === "generate" && (
@@ -72,8 +102,8 @@ export function ResultsSection({
           <p className="text-muted-foreground mt-1 text-sm">
             {isLoading ? (
               "Finding the best diagrams..."
-            ) : results.length > 0 ? (
-              `Found ${results.length} diagram${results.length > 1 ? "s" : ""}`
+            ) : filteredResults.length > 0 ? (
+              `Found ${filteredResults.length} diagram${filteredResults.length > 1 ? "s" : ""}`
             ) : (
               "No diagrams found. Try a different search term."
             )}
@@ -89,24 +119,33 @@ export function ResultsSection({
       <div className="flex flex-wrap items-center justify-between mb-6 gap-4">
         <div className="flex flex-wrap items-center gap-2">
           <Badge 
-            variant={lastAction === "search" ? "default" : "outline"} 
+            variant={filterOption === "all" ? "default" : "outline"} 
             className="px-3 py-1 cursor-pointer"
+            onClick={() => setFilterOption("all")}
           >
-            <SearchIcon className="h-3 w-3 mr-1" />
-            Search
+            All
           </Badge>
           <Badge 
-            variant={lastAction === "generate" ? "default" : "outline"} 
+            variant={filterOption === "search" ? "default" : "outline"} 
             className="px-3 py-1 cursor-pointer"
+            onClick={() => setFilterOption("search")}
           >
-            <Wand2Icon className="h-3 w-3 mr-1" />
+            <SearchIcon className="h-3 w-3 mr-1" />
+            Search Results
+          </Badge>
+          <Badge 
+            variant={filterOption === "generated" ? "default" : "outline"} 
+            className="px-3 py-1 cursor-pointer"
+            onClick={() => setFilterOption("generated")}
+          >
+            <Sparkles className="h-3 w-3 mr-1" />
             Generated
           </Badge>
         </div>
         
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <FilterIcon className="h-4 w-4" />
+            <SlidersHorizontal className="h-4 w-4" />
             <span>Sort by:</span>
             <select 
               value={sortOption}
@@ -148,7 +187,7 @@ export function ResultsSection({
               </div>
             </AnimatedContainer>
           </div>
-        ) : results.length === 0 ? (
+        ) : filteredResults.length === 0 ? (
           <div className="text-center py-16">
             <AnimatedContainer className="flex flex-col items-center">
               <AlertCircleIcon className="h-12 w-12 text-muted-foreground mb-4" />
@@ -161,9 +200,9 @@ export function ResultsSection({
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {results.map((result, index) => {
+            {filteredResults.map((result, index) => {
               // Check if this is the last item to attach the ref for infinite scrolling
-              if (results.length === index + 1) {
+              if (filteredResults.length === index + 1) {
                 return (
                   <div ref={lastResultRef} key={result.id}>
                     <DiagramCard
@@ -176,6 +215,7 @@ export function ResultsSection({
                       isGenerated={result.isGenerated}
                       isLiked={isLiked(result.id)}
                       onLike={() => handleLike(result.id)}
+                      onClick={() => openDiagramPreview(result)}
                     />
                   </div>
                 );
@@ -192,6 +232,7 @@ export function ResultsSection({
                     isGenerated={result.isGenerated}
                     isLiked={isLiked(result.id)}
                     onLike={() => handleLike(result.id)}
+                    onClick={() => openDiagramPreview(result)}
                   />
                 );
               }
@@ -201,7 +242,7 @@ export function ResultsSection({
       </AnimatePresence>
       
       {/* Loading more results indicator */}
-      {!isLoading && results.length > 0 && hasMore && (
+      {!isLoading && filteredResults.length > 0 && hasMore && (
         <div className="flex justify-center mt-8">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2Icon className="h-4 w-4 animate-spin" />
@@ -210,7 +251,7 @@ export function ResultsSection({
         </div>
       )}
       
-      {!isLoading && results.length > 0 && !hasMore && (
+      {!isLoading && filteredResults.length > 0 && !hasMore && (
         <div className="text-center mt-8 py-4">
           <p className="text-muted-foreground text-sm">You've reached the end of the results</p>
           <Button variant="outline" onClick={onNewSearch} className="mt-4">
@@ -218,6 +259,20 @@ export function ResultsSection({
           </Button>
         </div>
       )}
+      
+      {/* Diagram preview modal */}
+      <DiagramPreviewModal
+        open={previewOpen}
+        onClose={closeDiagramPreview}
+        diagram={selectedDiagram}
+        onLike={selectedDiagram ? () => handleLike(selectedDiagram.id) : undefined}
+        isLiked={selectedDiagram ? isLiked(selectedDiagram.id) : false}
+      />
     </div>
   );
+}
+
+// Import cn function
+function cn(...inputs: any[]) {
+  return inputs.filter(Boolean).join(" ");
 }

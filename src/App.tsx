@@ -17,12 +17,14 @@ import { BuiltByBadge } from "./components/built-by-badge";
 import { SiteLoader } from "./components/site-loader";
 import { lazy, Suspense } from "react";
 
-// Create a query client
+// Create a query client with better retry settings for failed API requests
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      retry: 1,
+      retry: 3,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      staleTime: 5 * 60 * 1000, // 5 minutes
     },
   },
 });
@@ -45,7 +47,7 @@ function AppContent() {
       if (!hasVisited) {
         localStorage.setItem("hasVisited", "true");
       }
-    }, hasVisited ? 800 : 1500);
+    }, hasVisited ? 500 : 1200);
     
     return () => clearTimeout(timer);
   }, []);
@@ -76,7 +78,7 @@ function AppContent() {
       ) : (
         <>
           <Toaster />
-          <Sonner />
+          <Sonner closeButton position="top-right" />
           <Routes>
             <Route path="/" element={<Index onLoginClick={handleLoginClick} />} />
             <Route path="/auth" element={<Auth />} />
@@ -97,9 +99,15 @@ function AppContent() {
 }
 
 const App = () => {
+  const prefersDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const savedTheme = localStorage.getItem("diagramr-theme");
+  
+  // Default to light mode, but respect system or saved preferences
+  const defaultTheme = savedTheme || (prefersDarkMode ? "dark" : "light");
+  
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light">
+      <ThemeProvider defaultTheme={defaultTheme} storageKey="diagramr-theme">
         <AuthProvider>
           <TooltipProvider>
             <BrowserRouter>

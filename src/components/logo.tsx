@@ -28,7 +28,7 @@ export function Logo({
     md: "h-8 w-auto",
     lg: "h-12 w-auto", 
     xl: "h-16 w-auto",
-    "2xl": "h-20 w-auto"
+    "2xl": "h-24 w-auto"
   };
   
   return (
@@ -43,6 +43,8 @@ export function Logo({
             repeat: Infinity 
           } 
         } : {}}
+        whileHover={{ scale: 1.05 }}
+        transition={{ duration: 0.2 }}
       >
         <img 
           src="/lovable-uploads/ade8aaaa-293a-4a73-bf2d-2490956a1578.png" 

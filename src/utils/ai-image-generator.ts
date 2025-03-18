@@ -14,27 +14,15 @@ interface GenerateImageResult {
 export async function generateDiagramWithAI(prompt: string): Promise<GenerateImageResult> {
   console.log("Generating diagram with AI for prompt:", prompt);
   
-  // Enhance the prompt for better educational diagrams - inspired by Napkin.ai
+  // Enhance the prompt for better educational diagrams
   const enhancedPrompt = `Create a stunning, high-quality, professional diagram for: "${prompt}". 
   The diagram should be clean, visually appealing with perfect color harmony, clear text labels, and professional design.
   Include relevant icons, arrows connecting elements, detailed annotations, and a logical structure.
   Style it like a premium infographic or professional documentation diagram with clear hierarchy.
   Make it extremely legible with good contrast and spacing. The diagram should be modern, minimal, and suitable for business presentations.`;
   
-  // First, try using the Edge Function (most reliable approach)
   try {
-    const edgeFunctionResult = await generateWithEdgeFunction(enhancedPrompt);
-    if (edgeFunctionResult.success) {
-      console.log("Successfully generated diagram with Edge Function");
-      return edgeFunctionResult;
-    }
-    console.warn("Edge Function generation failed, trying direct methods");
-  } catch (error) {
-    console.error("Error with Edge Function generation:", error);
-  }
-  
-  // Try Stability AI as the next best option
-  try {
+    // First try Stability AI for highest quality diagrams
     const stabilityResult = await generateWithStabilityAI(enhancedPrompt);
     if (stabilityResult.success) {
       console.log("Successfully generated diagram with Stability AI");
@@ -52,9 +40,21 @@ export async function generateDiagramWithAI(prompt: string): Promise<GenerateIma
       console.log("Successfully generated diagram with Cloudflare");
       return cloudflareResult;
     }
-    console.warn("Cloudflare generation failed");
+    console.warn("Cloudflare generation failed, trying Edge Function");
   } catch (error) {
     console.error("Error with Cloudflare generation:", error);
+  }
+  
+  // Try using the Edge Function (fallback approach)
+  try {
+    const edgeFunctionResult = await generateWithEdgeFunction(enhancedPrompt);
+    if (edgeFunctionResult.success) {
+      console.log("Successfully generated diagram with Edge Function");
+      return edgeFunctionResult;
+    }
+    console.warn("Edge Function generation failed");
+  } catch (error) {
+    console.error("Error with Edge Function generation:", error);
   }
   
   // Final fallback to high-quality static image if all methods fail
