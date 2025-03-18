@@ -1,74 +1,48 @@
 
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
+import { Logo } from "@/components/logo";
 import { useTheme } from "@/components/theme-provider";
 
 interface DiagramrLogoProps {
   className?: string;
-  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
-  isLoading?: boolean;
-  showBeta?: boolean;
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
   showText?: boolean;
+  iconOnly?: boolean;
+  showBeta?: boolean;
 }
 
 export function DiagramrLogo({ 
-  className, 
+  className,
   size = "md",
-  isLoading = false,
-  showBeta = true,
-  showText = false
+  showText = true,
+  iconOnly = false,
+  showBeta = true
 }: DiagramrLogoProps) {
-  const { theme } = useTheme();
-  const sizeClasses = {
-    sm: "h-10 w-auto",
-    md: "h-14 w-auto",
-    lg: "h-20 w-auto", 
-    xl: "h-28 w-auto",
-    "2xl": "h-36 w-auto",
-    "3xl": "h-44 w-auto",
-    "4xl": "h-52 w-auto"
-  };
+  const { isDarkMode } = useTheme();
+  
+  const logoSrc = isDarkMode 
+    ? "/lovable-uploads/ade8aaaa-293a-4a73-bf2d-2490956a1578.png" 
+    : "/lovable-uploads/ade8aaaa-293a-4a73-bf2d-2490956a1578.png";
   
   return (
-    <div className={cn("flex items-center gap-3", className)}>
-      <motion.div 
-        className={cn("relative", sizeClasses[size])}
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={isLoading ? {
-          opacity: 1,
-          scale: 1,
-          rotate: 360,
-          transition: { 
-            opacity: { duration: 0.5 },
-            scale: { duration: 0.5 },
-            rotate: { 
-              duration: 2, 
-              ease: "linear", 
-              repeat: Infinity 
-            }
-          }
-        } : { 
-          opacity: 1, 
-          scale: 1,
-          transition: { duration: 0.5 }
-        }}
-        whileHover={{ scale: 1.05 }}
-      >
-        <img 
-          src="/lovable-uploads/f8176116-d343-4392-ba84-07f1bfbf8709.png"
-          alt="Diagramr Logo" 
-          className="h-full w-auto object-contain drop-shadow-md transition-all duration-300" 
-        />
-      </motion.div>
+    <div className={cn("flex items-center", className)}>
+      <Logo 
+        iconOnly={iconOnly} 
+        showText={showText} 
+        size={size} 
+        showBeta={showBeta}
+        className={className}
+      />
       
-      {showBeta && (
-        <Badge 
-          variant="outline" 
-          className="ml-2 text-xs px-2 py-0.5 h-auto border-primary/50 text-primary font-medium bg-primary/5"
-        >
-          BETA
-        </Badge>
+      {!iconOnly && showText && (
+        <div className="ml-2 flex flex-col items-start">
+          <span className={cn(
+            "font-bold tracking-tight", 
+            size === "sm" ? "text-lg" : size === "lg" ? "text-2xl" : size === "xl" ? "text-3xl" : size === "2xl" ? "text-4xl" : "text-xl"
+          )}>
+            Diagramr
+          </span>
+        </div>
       )}
     </div>
   );

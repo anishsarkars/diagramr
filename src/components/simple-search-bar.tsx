@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Sparkles, X } from "lucide-react";
+import { Search, Sparkles, X, RefreshCcw } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSearchLimit } from "@/hooks/use-search-limit";
 import { PremiumPlanDialog } from "@/components/premium-plan-dialog";
@@ -11,6 +11,7 @@ import { SearchLimitIndicator } from "./search-limit-indicator";
 import { SearchSuggestions } from "@/components/search-suggestions";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/theme-provider";
+import { toast } from "sonner";
 
 interface SimpleSearchBarProps {
   onSearch: (query: string, mode: "search" | "generate") => void;
@@ -23,6 +24,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
   const [mode, setMode] = useState<"search" | "generate">("search");
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { isDarkMode } = useTheme();
   
@@ -44,32 +46,55 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
     
     if (!query.trim()) return;
     
-    if (mode === "generate") {
-      if (hasReachedGenerationLimit) {
-        setShowPremiumDialog(true);
-        return;
-      }
-      
-      const success = await incrementGenerationCount();
-      if (!success) {
-        setShowPremiumDialog(true);
-        return;
-      }
-    } else {
-      if (hasReachedLimit) {
-        setShowPremiumDialog(true);
-        return;
-      }
-      
-      const success = await incrementCount();
-      if (!success) {
-        setShowPremiumDialog(true);
-        return;
-      }
-    }
+    setSearchError(null);
     
-    onSearch(query, mode);
-    setShowSuggestions(false);
+    try {
+      if (mode === "generate") {
+        if (hasReachedGenerationLimit) {
+          setShowPremiumDialog(true);
+          return;
+        }
+        
+        const success = await incrementGenerationCount();
+        if (!success) {
+          setShowPremiumDialog(true);
+          return;
+        }
+      } else {
+        if (hasReachedLimit) {
+          setShowPremiumDialog(true);
+          return;
+        }
+        
+        const success = await incrementCount();
+        if (!success) {
+          setShowPremiumDialog(true);
+          return;
+        }
+      }
+      
+      // Add to search history
+      const savedHistory = localStorage.getItem('diagramr-search-history');
+      let history: string[] = [];
+      
+      if (savedHistory) {
+        try {
+          history = JSON.parse(savedHistory);
+        } catch (e) {
+          console.error('Error parsing search history:', e);
+        }
+      }
+      
+      const newHistory = [query, ...history.filter(item => item !== query)].slice(0, 10);
+      localStorage.setItem('diagramr-search-history', JSON.stringify(newHistory));
+      
+      onSearch(query, mode);
+      setShowSuggestions(false);
+    } catch (error) {
+      console.error("Search error:", error);
+      setSearchError("Failed to process search. Please try again.");
+      toast.error("Search failed. Please try again.");
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -87,11 +112,32 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
     setShowSuggestions(false);
     setTimeout(() => {
       onSearch(suggestion, mode);
+      
+      // Add to search history
+      const savedHistory = localStorage.getItem('diagramr-search-history');
+      let history: string[] = [];
+      
+      if (savedHistory) {
+        try {
+          history = JSON.parse(savedHistory);
+        } catch (e) {
+          console.error('Error parsing search history:', e);
+        }
+      }
+      
+      const newHistory = [suggestion, ...history.filter(item => item !== suggestion)].slice(0, 10);
+      localStorage.setItem('diagramr-search-history', JSON.stringify(newHistory));
     }, 50);
   };
   
   const handleClearSearch = () => {
     setQuery("");
+    setSearchError(null);
+  };
+  
+  const retrySearch = () => {
+    setSearchError(null);
+    handleSubmit(new Event('submit') as any);
   };
 
   // Close suggestions when clicking outside
@@ -126,6 +172,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
               onChange={(e) => {
                 setQuery(e.target.value);
                 setShowSuggestions(e.target.value.length > 0);
+                setSearchError(null);
               }}
               onKeyDown={handleKeyDown}
               onFocus={() => setShowSuggestions(query.length > 0)}
@@ -134,7 +181,8 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
                 "focus-visible:ring-1 focus-visible:ring-primary/30",
                 isDarkMode 
                   ? "bg-background/70 border-border/30" 
-                  : "bg-background border-border/50"
+                  : "bg-background border-border/50",
+                searchError ? "border-red-500 focus-visible:ring-red-500/30" : ""
               )}
               disabled={isLoading}
             />
@@ -157,24 +205,35 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
             )}
           </div>
           
-          <Button 
-            type="submit" 
-            disabled={!query.trim() || isLoading}
-            className="h-12 px-6"
-          >
-            {isLoading ? (
-              <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                {mode === "search" ? (
-                  <Search className="h-4 w-4 mr-2" />
-                ) : (
-                  <Sparkles className="h-4 w-4 mr-2" />
-                )}
-                {mode === "search" ? "Search" : "Generate"}
-              </>
-            )}
-          </Button>
+          {searchError ? (
+            <Button 
+              type="button" 
+              onClick={retrySearch}
+              className="h-12 px-6 bg-red-500 hover:bg-red-600"
+            >
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          ) : (
+            <Button 
+              type="submit" 
+              disabled={!query.trim() || isLoading}
+              className="h-12 px-6"
+            >
+              {isLoading ? (
+                <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  {mode === "search" ? (
+                    <Search className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Sparkles className="h-4 w-4 mr-2" />
+                  )}
+                  {mode === "search" ? "Search" : "Generate"}
+                </>
+              )}
+            </Button>
+          )}
           
           <Button
             type="button" 
@@ -191,6 +250,12 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
             )}
           </Button>
         </div>
+        
+        {searchError && (
+          <div className="mt-2 text-sm text-red-500">
+            {searchError}
+          </div>
+        )}
         
         {/* Search suggestions */}
         <SearchSuggestions

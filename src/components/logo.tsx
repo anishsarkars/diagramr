@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { useTheme } from "@/components/theme-provider";
 
 interface LogoProps {
   className?: string;
@@ -23,6 +24,8 @@ export function Logo({
   isLoading = false,
   showBeta = true
 }: LogoProps) {
+  const { isDarkMode } = useTheme();
+  
   const sizeClasses = {
     sm: "h-6 w-auto",
     md: "h-8 w-auto",
@@ -30,6 +33,11 @@ export function Logo({
     xl: "h-16 w-auto",
     "2xl": "h-24 w-auto"
   };
+  
+  // Use different logo based on theme
+  const logoSrc = isDarkMode 
+    ? "/lovable-uploads/ade8aaaa-293a-4a73-bf2d-2490956a1578.png" 
+    : "/lovable-uploads/ade8aaaa-293a-4a73-bf2d-2490956a1578.png";
   
   return (
     <div className={cn("flex items-center gap-2", className)}>
@@ -47,7 +55,7 @@ export function Logo({
         transition={{ duration: 0.2 }}
       >
         <img 
-          src="/lovable-uploads/ade8aaaa-293a-4a73-bf2d-2490956a1578.png" 
+          src={logoSrc}
           alt="Diagramr Logo" 
           className="h-full w-auto object-contain drop-shadow-md" 
         />

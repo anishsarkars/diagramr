@@ -1,4 +1,6 @@
+
 import { DiagramResult } from "@/hooks/use-infinite-search";
+import { toast } from "sonner";
 
 export async function searchGoogleImages(
   query: string,
@@ -19,7 +21,13 @@ export async function searchGoogleImages(
       const response = await fetch(url);
       
       if (!response.ok) {
+        // Log error details for debugging
+        console.error("Google API error status:", response.status);
+        const errorText = await response.text();
+        console.error("Google API error response:", errorText);
+        
         if (response.status === 429) {
+          toast.error("Search limit exceeded. Using alternative results.");
           console.log("Google API quota exceeded, using alternative search results");
           return getAlternativeSearchResults(query, page);
         }
@@ -28,28 +36,34 @@ export async function searchGoogleImages(
       
       const data = await response.json();
       
-      // Fallback to sample data if the API has no items (useful for development or if API quota is exhausted)
+      // Log search results for debugging
+      console.log("Google API response:", data);
+      
+      // Fallback to sample data if the API has no items
       if (!data.items || data.items.length === 0) {
         console.log("No results found from API, using alternative search");
+        toast.info("No search results found, showing similar diagrams");
         return getAlternativeSearchResults(query, page);
       }
       
       return data.items.map((item: any, index: number) => ({
         id: `${new Date().getTime()}-${page}-${index}`,
-        title: item.title,
+        title: item.title || `Diagram: ${query}`,
         imageSrc: item.link,
-        author: item.displayLink || "",
+        author: item.displayLink || "Source",
         authorUsername: "",
-        tags: generateTags(item.title, query),
+        tags: generateTags(item.title || query, query),
         sourceUrl: item.image?.contextLink || "",
         isGenerated: false
       }));
     } catch (error) {
-      console.log("Google API search failed, falling back to alternative results:", error);
+      console.error("Google API search failed:", error);
+      toast.error("Search failed. Showing alternative results.");
       return getAlternativeSearchResults(query, page);
     }
   } catch (error) {
     console.error("Error searching Google Images:", error);
+    toast.error("Search error. Showing alternative results.");
     
     // If API fails, still show some results by using the alternative function
     console.log("Performing alternative search for:", query);
