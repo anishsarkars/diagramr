@@ -1,276 +1,202 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/components/auth-context";
 
-interface SearchLimitState {
-  searchCount: number;
-  hasReachedLimit: boolean;
-  isLoading: boolean;
-  incrementCount: () => Promise<boolean>;
-  remainingSearches: number;
-  requiresLogin: boolean;
-  generationCount: number;
-  remainingGenerations: number;
-  hasReachedGenerationLimit: boolean;
-  incrementGenerationCount: () => Promise<boolean>;
-}
+import { useAuth } from '@/components/auth-context';
+import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useCallback } from 'react';
 
-// Define constants for search limits as per new requirements
-const FREE_TIER_LIMIT = 30; // Free users get 30 searches per day during beta
-const DEMO_LIMIT = 3; // Anonymous users get 3 searches before requiring login
-const FREE_GENERATION_LIMIT = 5; // Free users get 5 generations per day
-const DEMO_GENERATION_LIMIT = 1; // Anonymous users get 1 generation before requiring login
-const PREMIUM_GENERATION_LIMIT = 15; // Premium users get 15 generations per day
+// For non-logged-in users
+const GUEST_DAILY_SEARCH_LIMIT = 4;
+const GUEST_DAILY_GENERATION_LIMIT = 1;
 
-export function useSearchLimit(): SearchLimitState {
+// For logged-in free users
+const FREE_DAILY_SEARCH_LIMIT = 30;
+const FREE_DAILY_GENERATION_LIMIT = 5;
+
+// For premium users
+const PREMIUM_DAILY_SEARCH_LIMIT = Infinity;
+const PREMIUM_DAILY_GENERATION_LIMIT = 15;
+
+export const useSearchLimit = () => {
   const { user, profile } = useAuth();
   const [searchCount, setSearchCount] = useState(0);
   const [generationCount, setGenerationCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   
   const isPremium = profile?.is_premium || false;
   
-  // Different logic based on authentication status
-  const hasReachedLimit = !user 
-    ? searchCount >= DEMO_LIMIT
-    : isPremium
-      ? false // Premium users don't have a search limit
-      : searchCount >= FREE_TIER_LIMIT;
-  
-  const hasReachedGenerationLimit = !user
-    ? generationCount >= DEMO_GENERATION_LIMIT
-    : isPremium
-      ? generationCount >= PREMIUM_GENERATION_LIMIT
-      : generationCount >= FREE_GENERATION_LIMIT;
-  
-  // Require login after trial limit is reached for anonymous users
-  const requiresLogin = !user && (searchCount >= DEMO_LIMIT || generationCount >= DEMO_GENERATION_LIMIT);
-  
-  // Calculate remaining searches and generations
-  const remainingSearches = user 
-    ? isPremium
-      ? Infinity // Premium users have unlimited searches
-      : (FREE_TIER_LIMIT - searchCount) 
-    : (DEMO_LIMIT - searchCount);
-    
-  const remainingGenerations = user
-    ? isPremium
-      ? (PREMIUM_GENERATION_LIMIT - generationCount)
-      : (FREE_GENERATION_LIMIT - generationCount)
-    : (DEMO_GENERATION_LIMIT - generationCount);
-
-  useEffect(() => {
-    if (!user) {
-      // If not logged in, use localStorage for tracking anonymous usage
-      const today = new Date().toDateString();
-      const storedData = localStorage.getItem('searchData');
+  // Get the appropriate limits based on user status
+  const dailySearchLimit = isPremium 
+    ? PREMIUM_DAILY_SEARCH_LIMIT 
+    : user 
+      ? FREE_DAILY_SEARCH_LIMIT 
+      : GUEST_DAILY_SEARCH_LIMIT;
       
-      if (storedData) {
-        try {
-          const data = JSON.parse(storedData);
-          if (data.date === today) {
-            setSearchCount(data.searchCount || 0);
-            setGenerationCount(data.generationCount || 0);
-          } else {
-            // Reset for a new day
-            localStorage.setItem('searchData', JSON.stringify({ 
-              date: today, 
-              searchCount: 0, 
-              generationCount: 0 
-            }));
-            setSearchCount(0);
-            setGenerationCount(0);
-          }
-        } catch (error) {
-          console.error('Error parsing search data from localStorage:', error);
-          // Reset if data is corrupted
-          localStorage.setItem('searchData', JSON.stringify({ 
-            date: today, 
-            searchCount: 0, 
-            generationCount: 0 
-          }));
+  const dailyGenerationLimit = isPremium
+    ? PREMIUM_DAILY_GENERATION_LIMIT
+    : user
+      ? FREE_DAILY_GENERATION_LIMIT
+      : GUEST_DAILY_GENERATION_LIMIT;
+  
+  const remainingSearches = dailySearchLimit - searchCount;
+  const remainingGenerations = dailyGenerationLimit - generationCount;
+  
+  const hasReachedLimit = remainingSearches <= 0;
+  const hasReachedGenerationLimit = remainingGenerations <= 0;
+  
+  // Check if the user needs to login to continue
+  const requiresLogin = !user && (hasReachedLimit || hasReachedGenerationLimit);
+  
+  // Load search counts from local storage for guests or from supabase for logged in users
+  const loadCounts = useCallback(async () => {
+    setLoading(true);
+    
+    try {
+      if (user) {
+        // Fetch counts from Supabase
+        const { data, error } = await supabase
+          .from('user_search_logs')
+          .select('search_count, generation_count')
+          .eq('user_id', user.id)
+          .eq('search_date', new Date().toISOString().split('T')[0])
+          .single();
+        
+        if (error && error.code !== 'PGRST116') {
+          // PGRST116 is "no rows returned" error, which is expected if no searches today
+          console.error('Error fetching search counts:', error);
+        }
+        
+        if (data) {
+          setSearchCount(data.search_count || 0);
+          setGenerationCount(data.generation_count || 0);
+        } else {
+          // No record for today yet
           setSearchCount(0);
           setGenerationCount(0);
         }
       } else {
-        localStorage.setItem('searchData', JSON.stringify({ 
-          date: today, 
-          searchCount: 0, 
-          generationCount: 0 
-        }));
-        setSearchCount(0);
-        setGenerationCount(0);
-      }
-      setIsLoading(false);
-    } else {
-      // If logged in, fetch from Supabase
-      fetchUsageCounts();
-    }
-  }, [user]);
-
-  const fetchUsageCounts = async () => {
-    if (!user) return;
-    
-    try {
-      setIsLoading(true);
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-      
-      const { data, error } = await supabase
-        .from('user_search_logs')
-        .select('search_count, generation_count')
-        .eq('user_id', user.id)
-        .eq('search_date', today)
-        .maybeSingle();
-      
-      if (error) throw error;
-      
-      if (data) {
-        setSearchCount(data.search_count || 0);
-        setGenerationCount(data.generation_count || 0);
-      } else {
-        setSearchCount(0);
-        setGenerationCount(0);
+        // Guest user, use local storage
+        const today = new Date().toISOString().split('T')[0];
+        const storedData = localStorage.getItem('guestSearchData');
+        
+        if (storedData) {
+          const parsedData = JSON.parse(storedData);
+          if (parsedData.date === today) {
+            setSearchCount(parsedData.searchCount || 0);
+            setGenerationCount(parsedData.generationCount || 0);
+          } else {
+            // Reset for a new day
+            setSearchCount(0);
+            setGenerationCount(0);
+            localStorage.setItem('guestSearchData', JSON.stringify({
+              date: today,
+              searchCount: 0,
+              generationCount: 0
+            }));
+          }
+        } else {
+          // Initialize for first time
+          localStorage.setItem('guestSearchData', JSON.stringify({
+            date: today,
+            searchCount: 0,
+            generationCount: 0
+          }));
+        }
       }
     } catch (error) {
-      console.error('Error fetching usage counts:', error);
-      setSearchCount(0);
-      setGenerationCount(0);
+      console.error('Error in useSearchLimit:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  };
-
-  const incrementCount = async (): Promise<boolean> => {
-    // Premium users don't have search limits
-    if (user && isPremium) return true;
-    
-    // Users who reached limit
-    if (hasReachedLimit) return false; 
+  }, [user]);
+  
+  // Increment search count
+  const incrementCount = useCallback(async (): Promise<boolean> => {
+    if (hasReachedLimit) return false;
     
     try {
-      if (!user) {
-        // Update localStorage for non-logged-in users
-        const today = new Date().toDateString();
-        const storedData = localStorage.getItem('searchData');
-        let data;
-        
-        try {
-          data = storedData ? JSON.parse(storedData) : { date: today, searchCount: 0, generationCount: 0 };
-        } catch (error) {
-          console.error('Error parsing search data:', error);
-          data = { date: today, searchCount: 0, generationCount: 0 };
-        }
-        
-        if (data.date !== today) {
-          data.date = today;
-          data.searchCount = 0;
-          data.generationCount = 0;
-        }
-        
-        const newCount = (data.searchCount || 0) + 1;
-        data.searchCount = newCount;
-        
-        localStorage.setItem('searchData', JSON.stringify(data));
-        setSearchCount(newCount);
-      } else {
-        // Update Supabase for logged-in users
+      if (user) {
         const today = new Date().toISOString().split('T')[0];
         
-        // Use upsert operation
+        // Upsert to user_search_logs
         const { error } = await supabase
           .from('user_search_logs')
-          .upsert(
-            {
-              user_id: user.id,
-              search_date: today,
-              search_count: searchCount + 1,
-              generation_count: generationCount
-            },
-            {
-              onConflict: 'user_id,search_date'
-            }
-          );
+          .upsert({
+            user_id: user.id,
+            search_date: today,
+            search_count: searchCount + 1,
+            generation_count: generationCount
+          }, { onConflict: 'user_id, search_date' });
         
         if (error) throw error;
-        
-        setSearchCount(prev => prev + 1);
+      } else {
+        // Guest user, use local storage
+        const today = new Date().toISOString().split('T')[0];
+        localStorage.setItem('guestSearchData', JSON.stringify({
+          date: today,
+          searchCount: searchCount + 1,
+          generationCount: generationCount
+        }));
       }
       
+      setSearchCount(prev => prev + 1);
       return true;
     } catch (error) {
       console.error('Error incrementing search count:', error);
       return false;
     }
-  };
+  }, [user, searchCount, generationCount, hasReachedLimit]);
   
-  const incrementGenerationCount = async (): Promise<boolean> => {
+  // Increment generation count
+  const incrementGenerationCount = useCallback(async (): Promise<boolean> => {
     if (hasReachedGenerationLimit) return false;
     
     try {
-      if (!user) {
-        // Update localStorage for non-logged-in users
-        const today = new Date().toDateString();
-        const storedData = localStorage.getItem('searchData');
-        let data;
-        
-        try {
-          data = storedData ? JSON.parse(storedData) : { date: today, searchCount: 0, generationCount: 0 };
-        } catch (error) {
-          console.error('Error parsing search data:', error);
-          data = { date: today, searchCount: 0, generationCount: 0 };
-        }
-        
-        if (data.date !== today) {
-          data.date = today;
-          data.searchCount = 0;
-          data.generationCount = 0;
-        }
-        
-        const newCount = (data.generationCount || 0) + 1;
-        data.generationCount = newCount;
-        
-        localStorage.setItem('searchData', JSON.stringify(data));
-        setGenerationCount(newCount);
-      } else {
-        // Update Supabase for logged-in users
+      if (user) {
         const today = new Date().toISOString().split('T')[0];
         
+        // Upsert to user_search_logs
         const { error } = await supabase
           .from('user_search_logs')
-          .upsert(
-            {
-              user_id: user.id,
-              search_date: today,
-              search_count: searchCount,
-              generation_count: generationCount + 1
-            },
-            {
-              onConflict: 'user_id,search_date'
-            }
-          );
+          .upsert({
+            user_id: user.id,
+            search_date: today,
+            search_count: searchCount,
+            generation_count: generationCount + 1
+          }, { onConflict: 'user_id, search_date' });
         
         if (error) throw error;
-        
-        setGenerationCount(prev => prev + 1);
+      } else {
+        // Guest user, use local storage
+        const today = new Date().toISOString().split('T')[0];
+        localStorage.setItem('guestSearchData', JSON.stringify({
+          date: today,
+          searchCount: searchCount,
+          generationCount: generationCount + 1
+        }));
       }
       
+      setGenerationCount(prev => prev + 1);
       return true;
     } catch (error) {
       console.error('Error incrementing generation count:', error);
       return false;
     }
-  };
-
+  }, [user, searchCount, generationCount, hasReachedGenerationLimit]);
+  
+  useEffect(() => {
+    loadCounts();
+  }, [loadCounts]);
+  
   return {
     searchCount,
-    hasReachedLimit,
-    isLoading,
-    incrementCount,
-    remainingSearches,
-    requiresLogin,
     generationCount,
+    remainingSearches,
     remainingGenerations,
+    hasReachedLimit,
     hasReachedGenerationLimit,
-    incrementGenerationCount
+    requiresLogin,
+    loading,
+    incrementCount,
+    incrementGenerationCount,
+    loadCounts
   };
-}
+};

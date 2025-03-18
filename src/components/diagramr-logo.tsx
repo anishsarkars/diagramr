@@ -6,8 +6,7 @@ import { useTheme } from "@/components/theme-provider";
 
 interface DiagramrLogoProps {
   className?: string;
-  textClassName?: string;
-  size?: "sm" | "md" | "lg" | "xl" | "2xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
   isLoading?: boolean;
   showBeta?: boolean;
   showText?: boolean;
@@ -15,7 +14,6 @@ interface DiagramrLogoProps {
 
 export function DiagramrLogo({ 
   className, 
-  textClassName,
   size = "md",
   isLoading = false,
   showBeta = true,
@@ -27,7 +25,8 @@ export function DiagramrLogo({
     md: "h-12 w-12",
     lg: "h-16 w-16", 
     xl: "h-24 w-24",
-    "2xl": "h-32 w-32"
+    "2xl": "h-32 w-32",
+    "3xl": "h-40 w-40"
   };
   
   return (

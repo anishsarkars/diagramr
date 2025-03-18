@@ -55,12 +55,12 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false, onLoginCli
   };
 
   const features = [
-    { title: "Searches per day", free: "30", account: "30", premium: "Unlimited" },
-    { title: "AI-generated diagrams per day", free: "5", account: "5", premium: "15" },
-    { title: "High-quality diagram images", free: true, account: true, premium: true },
-    { title: "Bookmark favorite diagrams", free: true, account: true, premium: true },
-    { title: "Advanced filters & sorting", free: true, account: true, premium: true },
-    { title: "Priority support", free: false, account: false, premium: true },
+    { title: "Searches per day", free: "30", premium: "Unlimited" },
+    { title: "AI-generated diagrams per day", free: "5", premium: "15" },
+    { title: "High-quality diagram images", free: true, premium: true },
+    { title: "Bookmark favorite diagrams", free: true, premium: true },
+    { title: "Advanced filters & sorting", free: true, premium: true },
+    { title: "Priority support", free: false, premium: true },
   ];
 
   return (
@@ -74,7 +74,7 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false, onLoginCli
           <DialogDescription>
             {showLogin && !user 
               ? "Create an account and get 30 free searches and 5 AI generations per day."
-              : "Unlock unlimited searches and more AI generations to enhance your learning experience."}
+              : "Unlock unlimited searches and more AI generations to enhance your experience."}
           </DialogDescription>
         </DialogHeader>
 
