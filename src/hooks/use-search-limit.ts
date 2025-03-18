@@ -13,7 +13,7 @@ const FREE_DAILY_GENERATION_LIMIT = 5;
 
 // For premium users
 const PREMIUM_DAILY_SEARCH_LIMIT = Infinity;
-const PREMIUM_DAILY_GENERATION_LIMIT = 15;
+const PREMIUM_DAILY_GENERATION_LIMIT = Infinity;
 
 export const useSearchLimit = () => {
   const { user, profile } = useAuth();
@@ -57,7 +57,7 @@ export const useSearchLimit = () => {
           .select('search_count, generation_count')
           .eq('user_id', user.id)
           .eq('search_date', new Date().toISOString().split('T')[0])
-          .single();
+          .maybeSingle();
         
         if (error && error.code !== 'PGRST116') {
           // PGRST116 is "no rows returned" error, which is expected if no searches today

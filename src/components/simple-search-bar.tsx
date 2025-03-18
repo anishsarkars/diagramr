@@ -73,7 +73,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
       transition={{ duration: 0.3 }}
     >
       <form onSubmit={handleSubmit} className="relative w-full">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
           <div className="relative flex-1">
             <Input
               type="text"
@@ -90,43 +90,49 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
             )}
           </div>
           
-          <Button 
-            type="submit" 
-            disabled={!query.trim() || isLoading}
-            className="h-12 px-6"
-          >
-            {isLoading ? (
-              <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                {mode === "search" ? (
-                  <Search className="h-4 w-4 mr-2" />
-                ) : (
-                  <Sparkles className="h-4 w-4 mr-2" />
-                )}
-                {mode === "search" ? "Search" : "Generate"}
-              </>
-            )}
-          </Button>
-          
-          <Button
-            type="button" 
-            variant="outline"
-            size="icon"
-            className="h-12 w-12"
-            onClick={() => setMode(mode === "search" ? "generate" : "search")}
-            title={mode === "search" ? "Switch to Generate" : "Switch to Search"}
-          >
-            {mode === "search" ? (
-              <Sparkles className="h-4 w-4" />
-            ) : (
-              <Search className="h-4 w-4" />
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              type="submit" 
+              disabled={!query.trim() || isLoading}
+              className="h-12 px-6 flex-1 md:flex-none"
+            >
+              {isLoading ? (
+                <motion.div 
+                  className="h-5 w-5 border-2 border-current border-t-transparent rounded-full" 
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                />
+              ) : (
+                <>
+                  {mode === "search" ? (
+                    <Search className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Sparkles className="h-4 w-4 mr-2" />
+                  )}
+                  {mode === "search" ? "Search" : "Generate"}
+                </>
+              )}
+            </Button>
+            
+            <Button
+              type="button" 
+              variant="outline"
+              size="icon"
+              className="h-12 w-12 flex-shrink-0"
+              onClick={() => setMode(mode === "search" ? "generate" : "search")}
+              title={mode === "search" ? "Switch to Generate" : "Switch to Search"}
+            >
+              {mode === "search" ? (
+                <Sparkles className="h-4 w-4" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </div>
       </form>
       
-      <div className="mt-2 flex justify-between items-center">
+      <div className="mt-3 flex justify-between items-center">
         <SearchLimitIndicator compact={true} className="opacity-70 scale-90" />
         
         <div className="text-xs text-muted-foreground">

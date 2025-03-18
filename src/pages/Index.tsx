@@ -8,23 +8,23 @@ import { useAuth } from "@/components/auth-context";
 import { useSearchLimit } from "@/hooks/use-search-limit";
 import { PremiumPlanDialog } from "@/components/premium-plan-dialog";
 import { useNavigate } from "react-router-dom";
-import { useInfiniteSearch, DiagramResult } from "@/hooks/use-infinite-search";
+import { useInfiniteSearch } from "@/hooks/use-infinite-search";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { Json } from "@/integrations/supabase/types";
+import { generateDiagramWithGemini } from "@/utils/geminiImageGenerator";
 
 const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   const [showSearchField, setShowSearchField] = useState(true);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showLoginRequired, setShowLoginRequired] = useState(false);
-  const [savedDiagrams, setSavedDiagrams] = useState<Set<string>>(new Set());
   
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { 
     hasReachedLimit, 
     incrementCount, 
-    requiresLogin
+    requiresLogin,
+    hasReachedGenerationLimit,
+    incrementGenerationCount
   } = useSearchLimit();
   
   const { 
@@ -57,113 +57,83 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
       setShowLoginRequired(true);
       return;
     }
-    
-    if (hasReachedLimit && mode !== 'generate') {
-      setShowPremiumDialog(true);
-      return;
-    }
+
+    let canProceed = false;
     
     if (mode === "search") {
-      const success = await incrementCount();
-      if (!success) {
+      if (hasReachedLimit) {
+        setShowPremiumDialog(true);
+        return;
+      }
+      
+      canProceed = await incrementCount();
+      if (!canProceed) {
+        setShowPremiumDialog(true);
+        return;
+      }
+    } else if (mode === "generate") {
+      if (hasReachedGenerationLimit) {
+        setShowPremiumDialog(true);
+        return;
+      }
+      
+      canProceed = await incrementGenerationCount();
+      if (!canProceed) {
         setShowPremiumDialog(true);
         return;
       }
     }
     
     setShowSearchField(false);
-    await searchFor(prompt, mode);
+    
+    if (mode === "generate") {
+      try {
+        // Show loading state
+        toast.loading("Generating your diagram...");
+        
+        // Generate the image
+        const imageUrl = await generateDiagramWithGemini(prompt);
+        
+        if (imageUrl) {
+          // Create a result with the generated image
+          const generatedResult = {
+            id: `gen-${Date.now()}`,
+            title: `AI-Generated: ${prompt}`,
+            imageSrc: imageUrl,
+            author: "Diagramr AI",
+            authorUsername: "diagramr",
+            tags: prompt.split(" ").filter(tag => tag.length > 3).slice(0, 5),
+            sourceUrl: "#",
+            isGenerated: true
+          };
+          
+          // Set the results
+          await searchFor(prompt, "generate", [generatedResult]);
+          toast.dismiss();
+          toast.success("Diagram generated successfully!");
+        } else {
+          toast.dismiss();
+          toast.error("Could not generate diagram. Please try again.");
+          resetSearch();
+          setShowSearchField(true);
+        }
+      } catch (error) {
+        console.error("Generation error:", error);
+        toast.dismiss();
+        toast.error("Generation failed. Please try again.");
+        resetSearch();
+        setShowSearchField(true);
+      }
+    } else {
+      // Regular search
+      await searchFor(prompt, "search");
+    }
   };
 
   const handleNewSearch = () => {
     setShowSearchField(true);
     resetSearch();
   };
-
-  const handleSaveDiagram = async (diagramId: string | number) => {
-    if (!user) {
-      setShowLoginRequired(true);
-      return;
-    }
-    
-    try {
-      const diagramToSave = results.find(r => r.id === diagramId);
-      if (diagramToSave) {
-        // Save diagram logic
-        const isSaved = savedDiagrams.has(String(diagramId));
-        
-        if (isSaved) {
-          // Remove from saved
-          const { error } = await supabase
-            .from('saved_diagrams')
-            .delete()
-            .eq('user_id', user.id)
-            .eq('diagram_id', String(diagramId));
-          
-          if (error) throw error;
-          
-          // Update local state
-          const newSaved = new Set(savedDiagrams);
-          newSaved.delete(String(diagramId));
-          setSavedDiagrams(newSaved);
-          
-          toast.success(`"${diagramToSave.title}" removed from your bookmarks`);
-        } else {
-          // Add to saved - Convert diagramToSave to a proper JSON object
-          const diagramData = {
-            id: String(diagramToSave.id),
-            title: diagramToSave.title,
-            imageSrc: diagramToSave.imageSrc,
-            author: diagramToSave.author || "",
-            authorUsername: diagramToSave.authorUsername || "",
-            tags: diagramToSave.tags || [],
-            sourceUrl: diagramToSave.sourceUrl || "",
-            isGenerated: diagramToSave.isGenerated || false
-          };
-          
-          const { error } = await supabase
-            .from('saved_diagrams')
-            .insert({
-              user_id: user.id,
-              diagram_id: String(diagramId),
-              diagram_data: diagramData as Json
-            });
-          
-          if (error) throw error;
-          
-          // Update local state
-          const newSaved = new Set(savedDiagrams);
-          newSaved.add(String(diagramId));
-          setSavedDiagrams(newSaved);
-          
-          toast.success(`"${diagramToSave.title}" saved to your bookmarks!`);
-        }
-      }
-    } catch (error) {
-      console.error('Error saving diagram:', error);
-      toast.error('Failed to save diagram. Please try again.');
-    }
-  };
-
-  const fetchSavedDiagrams = useCallback(async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('saved_diagrams')
-        .select('diagram_id')
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      
-      if (data) {
-        const savedIds = new Set(data.map(item => item.diagram_id));
-        setSavedDiagrams(savedIds);
-      }
-    } catch (error) {
-      console.error('Error fetching saved diagrams:', error);
-    }
-  }, [user]);
 
   const handleLoginRedirect = () => {
     if (onLoginClick) {
@@ -172,16 +142,6 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
       navigate('/auth');
     }
   };
-
-  useEffect(() => {
-    fetchSavedDiagrams();
-  }, [fetchSavedDiagrams]);
-
-  useEffect(() => {
-    if (requiresLogin && !user) {
-      setShowLoginRequired(true);
-    }
-  }, [requiresLogin, user]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -197,8 +157,6 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
             onNewSearch={handleNewSearch} 
             isLoading={isLoading}
             lastAction={lastAction}
-            onSaveDiagram={handleSaveDiagram}
-            savedDiagrams={savedDiagrams}
             lastResultRef={lastResultRef}
           />
         )}

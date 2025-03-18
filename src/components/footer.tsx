@@ -1,206 +1,232 @@
 
+import { Logo } from "@/components/logo";
 import { DiagramrLogo } from "@/components/diagramr-logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Github, 
-  Twitter, 
-  Linkedin, 
-  Mail, 
-  Heart,
-  BookOpen,
-  Users,
-  BarChart,
-  Lightbulb,
-  RefreshCw,
-  Sparkles
-} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth-context";
-import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import {
+  Heart,
+  Coffee,
+  Github,
+  Twitter,
+  LinkedinIcon,
+  BookOpen,
+  Home,
+  Sparkles,
+  Layers,
+  Database,
+  HelpCircle,
+  BarChart,
+  LayoutGrid,
+  Info,
+  GraduationCap
+} from "lucide-react";
 
 export function Footer() {
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const currentYear = new Date().getFullYear();
-  
+
   const footerLinks = [
     {
       title: "Product",
       links: [
-        { name: "Home", href: "/" },
-        { name: "Pricing", href: "/pricing" },
-        { name: "Upgrade to Premium", href: "/pricing" },
-        { name: "API (Coming Soon)", href: "#" },
+        { name: "Home", href: "/", icon: Home },
+        { name: "Diagram Search", href: "/", icon: LayoutGrid },
+        { name: "AI Generation", href: "/", icon: Sparkles },
+        { name: "Pricing", href: "/pricing", icon: BarChart }
       ]
     },
     {
       title: "Resources",
       links: [
-        { name: "Educational Diagrams", href: "/" },
-        { name: "Study Guide", href: "#" },
-        { name: "Blog", href: "#" },
-        { name: "FAQs", href: "#" },
-      ]
-    },
-    {
-      title: "Account",
-      links: [
-        { name: "My Account", href: "/account" },
-        { name: "Saved Diagrams", href: "/liked" },
-        { name: "Settings", href: "/account" },
-        { name: "Get Help", href: "#" },
+        { name: "Learning", href: "#", icon: BookOpen },
+        { name: "Templates", href: "#", icon: Layers },
+        { name: "Data Science", href: "#", icon: Database },
+        { name: "Education", href: "#", icon: GraduationCap }
       ]
     },
     {
       title: "Company",
       links: [
-        { name: "About Us", href: "#" },
-        { name: "Careers", href: "#" },
-        { name: "Contact", href: "#" },
-        { name: "Privacy", href: "#" },
+        { name: "About", href: "#", icon: Info },
+        { name: "Help", href: "#", icon: HelpCircle },
+        { name: "Account", href: user ? "/account" : "/auth", icon: Database }
       ]
     }
   ];
 
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
+  const footerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
       transition: {
-        staggerChildren: 0.05
+        staggerChildren: 0.1,
+        delayChildren: 0.1
       }
     }
   };
 
-  const item = {
+  const linkVariants = {
     hidden: { opacity: 0, y: 10 },
-    show: { opacity: 1, y: 0 }
+    visible: { opacity: 1, y: 0 }
   };
 
   return (
-    <footer className="bg-background border-t relative overflow-hidden">
-      {/* 3D-like gradient decorative elements */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute -top-24 -left-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/4 right-1/4 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl"></div>
-      </div>
+    <footer className="mt-auto border-t py-8 md:py-12 relative overflow-hidden">
+      {/* 3D background effect */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/5 opacity-50" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,theme(colors.primary.DEFAULT/0.08),transparent_70%)]" />
       
-      <div className="container px-4 py-12 mx-auto relative z-10">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
-          <div className="lg:col-span-2 space-y-6">
-            <DiagramrLogo size="md" />
-            
-            <p className="max-w-xs text-sm text-muted-foreground mt-4">
-              Diagramr helps students, educators, professionals, and businesses discover and create 
-              high-quality diagrams for learning, presentations, research, and business documentation.
+      <div className="container relative z-10">
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-12 gap-8"
+          variants={footerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          <div className="md:col-span-4 space-y-4">
+            <DiagramrLogo showBeta={false} size="lg" />
+            <p className="text-muted-foreground text-sm max-w-xs">
+              Diagramr helps students, educators, and professionals find and create high-quality visual diagrams for learning, presentations, and development.
             </p>
-            
-            <div className="flex space-x-3">
-              <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 500 }}>
-                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
-                  <Twitter className="h-5 w-5" />
-                </Button>
-              </motion.div>
-              
-              <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 500 }}>
-                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
-                  <Github className="h-5 w-5" />
-                </Button>
-              </motion.div>
-              
-              <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 500 }}>
-                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
-                  <Linkedin className="h-5 w-5" />
-                </Button>
-              </motion.div>
-              
-              <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 500 }}>
-                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
-                  <Mail className="h-5 w-5" />
-                </Button>
-              </motion.div>
+            <div className="pt-2 flex items-center gap-2">
+              <motion.a 
+                href="https://github.com" 
+                target="_blank"
+                rel="noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+              >
+                <Github className="h-5 w-5" />
+              </motion.a>
+              <motion.a 
+                href="https://twitter.com" 
+                target="_blank"
+                rel="noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+              >
+                <Twitter className="h-5 w-5" />
+              </motion.a>
+              <motion.a 
+                href="https://linkedin.com/in/anishsarkar-" 
+                target="_blank"
+                rel="noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+              >
+                <LinkedinIcon className="h-5 w-5" />
+              </motion.a>
+              <ThemeToggle />
             </div>
           </div>
           
-          <motion.div 
-            className="col-span-3 grid grid-cols-2 sm:grid-cols-4 gap-8"
-            variants={container}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-          >
-            {footerLinks.map((group) => (
-              <div key={group.title} className="space-y-3">
-                <motion.h3 variants={item} className="text-sm font-medium">
-                  {group.title}
-                </motion.h3>
-                <ul className="space-y-2">
-                  {group.links.map((link) => (
-                    <motion.li variants={item} key={link.name}>
-                      <Link 
-                        to={link.href} 
-                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {link.name}
-                      </Link>
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </motion.div>
-        </div>
+          {footerLinks.map((group, i) => (
+            <div key={group.title} className="md:col-span-2 space-y-4">
+              <p className="font-medium text-sm">{group.title}</p>
+              <ul className="space-y-2">
+                {group.links.map((link, j) => (
+                  <motion.li key={link.name} variants={linkVariants}>
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto text-muted-foreground hover:text-foreground flex items-center gap-2"
+                      onClick={() => navigate(link.href)}
+                    >
+                      <link.icon className="h-3.5 w-3.5" />
+                      <span>{link.name}</span>
+                    </Button>
+                  </motion.li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          
+          <div className="md:col-span-2 space-y-4">
+            <p className="font-medium text-sm">Try Premium</p>
+            <Button
+              className="gap-2"
+              onClick={() => navigate("/pricing")}
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>Upgrade</span>
+            </Button>
+            <p className="text-xs text-muted-foreground pt-2">
+              Get unlimited searches and generations with our premium plan.
+            </p>
+          </div>
+        </motion.div>
+
+        <Separator className="my-8 bg-border/50" />
         
-        <Separator className="my-8" />
-        
-        <div className="py-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-            <div className="flex justify-center md:justify-start">
-              <motion.div 
-                className="flex items-center space-x-1 text-sm text-muted-foreground"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 400 }}
-              >
-                <Heart className="h-3 w-3 text-red-500" />
-                <span>Built with 💖 by <span className="font-semibold">@Anish</span></span>
-              </motion.div>
-            </div>
-            
-            <div className="flex justify-center space-x-8 text-center">
-              <motion.div
-                className="flex items-center gap-2 text-muted-foreground"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 400 }}
-              >
-                <Sparkles className="h-4 w-4 text-amber-500" />
-                <span className="text-xs font-medium">Premium Quality</span>
-              </motion.div>
-              
-              <motion.div
-                className="flex items-center gap-2 text-muted-foreground"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 400 }}
-              >
-                <RefreshCw className="h-4 w-4 text-blue-500" />
-                <span className="text-xs font-medium">Daily Updates</span>
-              </motion.div>
-            </div>
-            
-            <div className="flex justify-center md:justify-end">
-              <p className="text-sm text-muted-foreground">
-                &copy; {currentYear} Diagramr. All rights reserved.
-              </p>
-            </div>
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex items-center space-x-1 text-muted-foreground text-sm">
+            <span>© {new Date().getFullYear()} Diagramr. Made with</span>
+            <motion.span 
+              whileHover={{ scale: 1.2 }}
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ repeat: Infinity, repeatType: "mirror", duration: 2 }}
+            >
+              <Heart className="h-4 w-4 text-red-500 inline" />
+            </motion.span>
+            <span>by <a 
+              href="https://www.linkedin.com/in/anishsarkar-/" 
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium hover:underline text-foreground/90"
+            >
+              @Anish
+            </a></span>
+          </div>
+          
+          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+            <motion.a 
+              whileHover={{ y: -2 }}
+              href="#" 
+              className="hover:text-foreground transition-colors"
+            >
+              Terms
+            </motion.a>
+            <motion.a 
+              whileHover={{ y: -2 }}
+              href="#" 
+              className="hover:text-foreground transition-colors"
+            >
+              Privacy
+            </motion.a>
+            <motion.a 
+              whileHover={{ y: -2 }}
+              href="#" 
+              className="hover:text-foreground transition-colors"
+            >
+              Cookies
+            </motion.a>
+            <motion.a 
+              whileHover={{ scale: 1.1 }}
+              href="https://www.buymeacoffee.com" 
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 hover:text-foreground transition-colors"
+            >
+              <Coffee className="h-4 w-4" />
+              <span>Buy me a coffee</span>
+            </motion.a>
           </div>
         </div>
         
-        <div className="mt-6 text-center">
-          <p className="text-xs text-muted-foreground/70 italic">
-            Diagramr is in the initial stages of development. Results may occasionally vary in quality.
-            We're constantly improving to deliver the best experience for our users.
-          </p>
-        </div>
+        <motion.div 
+          className="mt-6 text-center text-xs text-muted-foreground/70 italic"
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.5 }}
+        >
+          Diagramr is currently in beta. We're constantly improving our services. Your feedback is valuable to us.
+        </motion.div>
       </div>
     </footer>
   );
