@@ -1,7 +1,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { searchGoogleImages } from '@/utils/googleSearch';
+import { generateDiagramWithAI } from '@/utils/ai-image-generator';
 import { toast } from 'sonner';
+import { useSearchLimit } from '@/hooks/use-search-limit';
 
 export interface DiagramResult {
   id: string | number;
@@ -28,14 +30,14 @@ interface UseInfiniteSearchResult {
   hasMore: boolean;
   loadMore: () => void;
   searchTerm: string;
-  searchFor: (query: string, mode: 'search' | 'generate', generatedResults?: DiagramResult[]) => Promise<void>;
+  searchFor: (query: string, mode: 'search' | 'generate') => Promise<void>;
   lastAction: 'search' | 'generate';
   resetSearch: () => void;
 }
 
 export function useInfiniteSearch({
   initialQuery = '',
-  pageSize = 20,
+  pageSize = 20, // Increased from 12 to 20
   searchKey = "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4",
   searchId = "260090575ae504419"
 }: UseInfiniteSearchOptions = {}): UseInfiniteSearchResult {
@@ -47,6 +49,8 @@ export function useInfiniteSearch({
   const [currentSearchPage, setCurrentSearchPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState(initialQuery);
   const [lastAction, setLastAction] = useState<'search' | 'generate'>('search');
+  
+  const { incrementGenerationCount } = useSearchLimit();
   
   const cachedResults = useRef<Map<string, DiagramResult[]>>(new Map());
   const allResults = useRef<DiagramResult[]>([]);
@@ -63,11 +67,7 @@ export function useInfiniteSearch({
     currentSearchKey.current = '';
   }, []);
   
-  const searchFor = useCallback(async (
-    query: string, 
-    mode: 'search' | 'generate',
-    generatedResults?: DiagramResult[]
-  ) => {
+  const searchFor = useCallback(async (query: string, mode: 'search' | 'generate') => {
     if (!query.trim()) return;
     
     setIsLoading(true);
@@ -93,16 +93,10 @@ export function useInfiniteSearch({
           searchResults = JSON.parse(cachedData);
         } else {
           // Initial batch of results
-          try {
-            searchResults = await searchGoogleImages(query, searchKey, searchId);
-            
-            // Cache the results
-            sessionStorage.setItem(cacheKey, JSON.stringify(searchResults));
-          } catch (error) {
-            console.error("Failed to fetch search results:", error);
-            toast.error("Search failed. Please try a different query.");
-            searchResults = [];
-          }
+          searchResults = await searchGoogleImages(query, searchKey, searchId);
+          
+          // Cache the results
+          sessionStorage.setItem(cacheKey, JSON.stringify(searchResults));
         }
         
         // Sort results by relevance
@@ -117,36 +111,61 @@ export function useInfiniteSearch({
         setResults(searchResults.slice(0, pageSize));
         setHasMore(searchResults.length > pageSize || currentSearchPage < 5); // Assume there are more pages
         
+        toast.success(`Found ${searchResults.length} diagram results for "${query}"`);
+        
         // Cache the key and fetch additional results in the background for "endless" scrolling
-        if (searchResults.length > 0) {
-          toast.success(`Found ${searchResults.length} diagram results for "${query}"`);
-          cachedResults.current.set(currentSearchKey.current, searchResults);
-          
-          // Start fetching more pages in the background
-          fetchAdditionalPages(query, 2);
-        }
-      } else if (generatedResults && generatedResults.length > 0) {
-        // Handle generated diagram from outside
-        allResults.current = generatedResults;
-        setResults(generatedResults);
-        setHasMore(false);
+        cachedResults.current.set(currentSearchKey.current, searchResults);
+        
+        // Start fetching more pages in the background
+        fetchAdditionalPages(query, 2);
       } else {
-        // No generated results provided, show empty state
-        allResults.current = [];
-        setResults([]);
-        setHasMore(false);
-        toast.error("No diagrams generated. Please try again with a different prompt.");
+        // Generate diagram with AI
+        try {
+          // Increment generation count
+          await incrementGenerationCount();
+          
+          // Generate image with AI
+          const result = await generateDiagramWithAI(query);
+          
+          if (result && result.imageUrl) {
+            const generatedResults: DiagramResult[] = [{
+              id: `ai-${Date.now()}`,
+              title: `AI-Generated Diagram: ${query}`,
+              imageSrc: result.imageUrl,
+              author: 'Diagramr AI',
+              authorUsername: 'diagramr_ai',
+              tags: query.split(' ')
+                .filter(w => w.length > 3)
+                .map(w => w.toLowerCase()),
+              sourceUrl: '#',
+              isGenerated: true
+            }];
+            
+            allResults.current = generatedResults;
+            setResults(generatedResults);
+            setHasMore(false);
+            
+            toast.success('Diagram generated successfully!');
+          } else {
+            toast.error('Failed to generate diagram. Please try a different prompt.');
+            setResults([]);
+            setHasMore(false);
+          }
+        } catch (err) {
+          console.error('Generation error:', err);
+          toast.error('Failed to generate diagram. Please try again.');
+          setResults([]);
+          setHasMore(false);
+        }
       }
     } catch (err) {
       console.error('Search error:', err);
       setError(err instanceof Error ? err : new Error('An error occurred during search'));
       toast.error('Search failed. Please try again.');
-      setResults([]);
-      setHasMore(false);
     } finally {
       setIsLoading(false);
     }
-  }, [pageSize, searchKey, searchId]);
+  }, [pageSize, searchKey, searchId, incrementGenerationCount]);
   
   // Function to fetch additional pages for endless scrolling
   const fetchAdditionalPages = async (query: string, startPage: number) => {
@@ -174,29 +193,25 @@ export function useInfiniteSearch({
         fetchAdditionalPages(query, startPage + 1);
       } else {
         console.log(`Fetching additional results for page ${startPage}`);
-        try {
-          const additionalResults = await searchGoogleImages(query, searchKey, searchId, startPage);
+        const additionalResults = await searchGoogleImages(query, searchKey, searchId, startPage);
+        
+        if (additionalResults.length > 0) {
+          // Cache the results
+          sessionStorage.setItem(cacheKey, JSON.stringify(additionalResults));
           
-          if (additionalResults && additionalResults.length > 0) {
-            // Cache the results
-            sessionStorage.setItem(cacheKey, JSON.stringify(additionalResults));
-            
-            // Deduplicate results by URL to avoid showing the same image twice
-            const existingUrls = new Set(allResults.current.map(r => r.imageSrc));
-            const newResults = additionalResults.filter(r => !existingUrls.has(r.imageSrc));
-            
-            if (newResults.length > 0) {
-              allResults.current = [...allResults.current, ...newResults];
-              setHasMore(true);
-            }
-            
-            // Continue fetching next page in background
-            fetchAdditionalPages(query, startPage + 1);
-          } else {
-            console.log(`No more results found for page ${startPage}`);
+          // Deduplicate results by URL to avoid showing the same image twice
+          const existingUrls = new Set(allResults.current.map(r => r.imageSrc));
+          const newResults = additionalResults.filter(r => !existingUrls.has(r.imageSrc));
+          
+          if (newResults.length > 0) {
+            allResults.current = [...allResults.current, ...newResults];
+            setHasMore(true);
           }
-        } catch (error) {
-          console.error(`Error fetching page ${startPage}:`, error);
+          
+          // Continue fetching next page in background
+          fetchAdditionalPages(query, startPage + 1);
+        } else {
+          console.log(`No more results found for page ${startPage}`);
         }
       }
     } catch (err) {
@@ -283,16 +298,11 @@ export function useInfiniteSearch({
           newPageResults = JSON.parse(cachedData);
         } else {
           console.log(`Fetching new page ${nextSearchPage} for ${searchTerm}`);
-          try {
-            newPageResults = await searchGoogleImages(searchTerm, searchKey, searchId, nextSearchPage);
-            
-            // Cache for future use
-            if (newPageResults.length > 0) {
-              sessionStorage.setItem(cacheKey, JSON.stringify(newPageResults));
-            }
-          } catch (error) {
-            console.error(`Error fetching page ${nextSearchPage}:`, error);
-            newPageResults = [];
+          newPageResults = await searchGoogleImages(searchTerm, searchKey, searchId, nextSearchPage);
+          
+          // Cache for future use
+          if (newPageResults.length > 0) {
+            sessionStorage.setItem(cacheKey, JSON.stringify(newPageResults));
           }
         }
         
@@ -306,7 +316,7 @@ export function useInfiniteSearch({
           
           // Update displayed results
           setResults(prev => [...prev, ...uniqueNewResults]);
-          setHasMore(uniqueNewResults.length >= 5); // Assume more if we got a decent number
+          setHasMore(uniqueNewResults.length >= 10); // Assume more if we got a decent number
           setCurrentSearchPage(nextSearchPage);
           
           // Pre-fetch next page if we got results

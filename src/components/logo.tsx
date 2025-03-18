@@ -3,7 +3,6 @@ import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
-import { useTheme } from "@/components/theme-provider";
 
 interface LogoProps {
   className?: string;
@@ -24,13 +23,12 @@ export function Logo({
   isLoading = false,
   showBeta = true
 }: LogoProps) {
-  const { theme } = useTheme();
   const sizeClasses = {
-    sm: "h-6 w-auto",
-    md: "h-8 w-auto",
-    lg: "h-12 w-auto", 
-    xl: "h-16 w-auto",
-    "2xl": "h-20 w-auto"
+    sm: "h-6 w-6",
+    md: "h-8 w-8",
+    lg: "h-12 w-12", 
+    xl: "h-16 w-16",
+    "2xl": "h-20 w-20"
   };
   
   return (
@@ -47,11 +45,9 @@ export function Logo({
         } : {}}
       >
         <img 
-          src={theme === 'dark' 
-            ? "/lovable-uploads/b26fbef4-6b82-4fb4-bec9-43504a07565e.png" 
-            : "/lovable-uploads/f5e36644-b381-4a3c-88ae-83437a706a20.png"}
+          src="/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png" 
           alt="Diagramr Logo" 
-          className="h-full w-auto object-contain drop-shadow-md" 
+          className="h-full w-full object-contain drop-shadow-md" 
         />
       </motion.div>
       

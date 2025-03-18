@@ -22,7 +22,7 @@ export function BuiltByBadge({ className, position = "bottom-left" }: BuiltByBad
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 1, duration: 0.3 }}
-      whileHover={{ scale: 1.05, y: -2 }}
+      whileHover={{ scale: 1.05 }}
     >
       <a 
         href="https://www.linkedin.com/in/anishsarkar-/" 
@@ -32,9 +32,9 @@ export function BuiltByBadge({ className, position = "bottom-left" }: BuiltByBad
       >
         <Badge 
           variant="secondary" 
-          className="gap-1.5 py-1.5 px-3 shadow-md backdrop-blur-sm bg-background/90 hover:bg-accent border border-border/30 transition-all group"
+          className="gap-1 py-1 px-2 shadow-md backdrop-blur-sm bg-background/90 hover:bg-accent border border-border/30 transition-all group scale-90"
         >
-          <span className="text-xs font-medium">Built with ❤️ by @Anish</span>
+          <span className="text-xs font-medium">Built by @Anish</span>
           <LinkedinIcon className="h-3.5 w-3.5 text-[#0077B5] group-hover:text-[#0077B5]/80 transition-colors" />
         </Badge>
       </a>

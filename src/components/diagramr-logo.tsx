@@ -21,13 +21,13 @@ export function DiagramrLogo({
 }: DiagramrLogoProps) {
   const { theme } = useTheme();
   const sizeClasses = {
-    sm: "h-10 w-auto",
-    md: "h-14 w-auto",
-    lg: "h-20 w-auto", 
-    xl: "h-28 w-auto",
-    "2xl": "h-36 w-auto",
-    "3xl": "h-44 w-auto",
-    "4xl": "h-52 w-auto"
+    sm: "h-10 w-10",
+    md: "h-14 w-14",
+    lg: "h-20 w-20", 
+    xl: "h-28 w-28",
+    "2xl": "h-36 w-36",
+    "3xl": "h-44 w-44",
+    "4xl": "h-52 w-52"
   };
   
   return (
@@ -57,10 +57,10 @@ export function DiagramrLogo({
       >
         <img 
           src={theme === 'dark' 
-            ? "/lovable-uploads/b26fbef4-6b82-4fb4-bec9-43504a07565e.png" 
-            : "/lovable-uploads/f5e36644-b381-4a3c-88ae-83437a706a20.png"}
+            ? "/lovable-uploads/ec798833-9785-43fd-9962-8c826d437f27.png" 
+            : "/lovable-uploads/4de5a600-5de6-4ff0-a535-1b409d5c2393.png"}
           alt="Diagramr Logo" 
-          className="h-full w-auto object-contain drop-shadow-md transition-all duration-300" 
+          className="h-full w-full object-contain drop-shadow-md transition-all duration-300" 
         />
       </motion.div>
       

@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useRef, useEffect } from "react";
-import { SearchIcon, Sparkles, LightbulbIcon, SendIcon, CornerRightDown } from "lucide-react";
+import { SearchIcon, Sparkles, Wand2, LightbulbIcon, SendIcon, CornerRightDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AIInputProps {
@@ -39,7 +39,7 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
 
   return (
     <motion.div 
-      className={cn("relative transition-all duration-300 w-full max-w-3xl mx-auto", className)}
+      className={cn("relative transition-all duration-300 w-full max-w-3xl", className)}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
@@ -47,7 +47,7 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
       <AnimatePresence>
         <motion.div
           className={cn(
-            "flex flex-col sm:flex-row items-stretch sm:items-center w-full rounded-2xl overflow-hidden",
+            "flex items-center w-full rounded-2xl overflow-hidden",
             "border border-border/30",
             "bg-background/80 backdrop-blur-lg shadow-md",
             isFocused ? "ring-2 ring-primary/20 shadow-xl border-primary/30" : "",
@@ -60,7 +60,7 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
               {mode === "search" ? (
                 <SearchIcon className="h-5 w-5" />
               ) : (
-                <Sparkles className="h-5 w-5" />
+                <Wand2 className="h-5 w-5" />
               )}
             </div>
             <Input
@@ -79,12 +79,12 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
             />
           </div>
           
-          <div className="flex p-2 sm:p-0 flex-nowrap gap-2 mx-auto sm:mx-0 sm:mr-3">
+          <div className="flex gap-2 mr-3">
             <Button
               size="sm"
               variant={mode === "search" ? "default" : "outline"}
               className={cn(
-                "rounded-xl transition-all px-4 py-2.5 flex-1 sm:flex-none",
+                "rounded-xl transition-all px-4 py-2.5",
                 mode === "search" ? "bg-primary/90 hover:bg-primary" : "bg-background/60 hover:bg-background"
               )}
               onClick={() => setMode("search")}
@@ -97,7 +97,7 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
               size="sm"
               variant={mode === "generate" ? "default" : "outline"}
               className={cn(
-                "rounded-xl transition-all px-4 py-2.5 flex-1 sm:flex-none",
+                "rounded-xl transition-all px-4 py-2.5",
                 mode === "generate" ? "bg-primary/90 hover:bg-primary" : "bg-background/60 hover:bg-background"
               )}
               onClick={() => setMode("generate")}
