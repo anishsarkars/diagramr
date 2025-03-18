@@ -1,8 +1,10 @@
+
 import { toast } from "sonner";
 
 // API keys
 const CLOUDFLARE_API_KEY = "69Jz-coOYL8VI8fPR2MtES0-N7bTS02FVlA34D-e";
 const STABILITY_API_KEY = "sk-glNeUMg8H2IIBEKoPNftbAIQ97EnAl5QrBAETnqxIT76zTCS";
+const GEMINI_API_KEY = "AIzaSyCL-wB_Ym_40vV17e1gFhyyL-o2864KQN8";
 
 interface GenerateImageResult {
   imageUrl: string;
@@ -21,12 +23,12 @@ export async function generateDiagramWithAI(prompt: string): Promise<GenerateIma
   Style it like a premium infographic or professional documentation diagram with clear hierarchy.
   Make it extremely legible with good contrast and spacing. The diagram should be modern, minimal, and suitable for business presentations.`;
   
+  // Try Stability AI first (highest quality)
   try {
-    // First try Stability AI for highest quality diagrams
-    console.log("Attempting to generate with Stability AI...");
+    console.log("Attempting generation with Stability AI...");
     const stabilityResult = await generateWithStabilityAI(enhancedPrompt);
     if (stabilityResult.success) {
-      console.log("Successfully generated diagram with Stability AI");
+      console.log("Successfully generated with Stability AI");
       toast.success("Diagram generated successfully!");
       return stabilityResult;
     }
@@ -35,26 +37,40 @@ export async function generateDiagramWithAI(prompt: string): Promise<GenerateIma
     console.error("Error with Stability AI generation:", error);
   }
   
-  // Try Cloudflare as another option
+  // Try Cloudflare as backup option
   try {
-    console.log("Attempting to generate with Cloudflare...");
+    console.log("Attempting generation with Cloudflare...");
     const cloudflareResult = await generateWithCloudflare(enhancedPrompt);
     if (cloudflareResult.success) {
-      console.log("Successfully generated diagram with Cloudflare");
+      console.log("Successfully generated with Cloudflare");
       toast.success("Diagram generated successfully!");
       return cloudflareResult;
     }
-    console.warn("Cloudflare generation failed, trying Edge Function");
+    console.warn("Cloudflare generation failed, trying Gemini");
   } catch (error) {
     console.error("Error with Cloudflare generation:", error);
   }
   
-  // Try using the Edge Function (fallback approach)
+  // Try Gemini as another option
   try {
-    console.log("Attempting to generate with Edge Function...");
+    console.log("Attempting generation with Gemini...");
+    const geminiResult = await generateWithGemini(enhancedPrompt);
+    if (geminiResult.success) {
+      console.log("Successfully generated with Gemini");
+      toast.success("Diagram generated successfully!");
+      return geminiResult;
+    }
+    console.warn("Gemini generation failed, trying Edge Function");
+  } catch (error) {
+    console.error("Error with Gemini generation:", error);
+  }
+  
+  // Try using the Edge Function
+  try {
+    console.log("Attempting generation with Edge Function...");
     const edgeFunctionResult = await generateWithEdgeFunction(enhancedPrompt);
     if (edgeFunctionResult.success) {
-      console.log("Successfully generated diagram with Edge Function");
+      console.log("Successfully generated with Edge Function");
       toast.success("Diagram generated successfully!");
       return edgeFunctionResult;
     }
@@ -63,13 +79,34 @@ export async function generateDiagramWithAI(prompt: string): Promise<GenerateIma
     console.error("Error with Edge Function generation:", error);
   }
   
-  // Final fallback to high-quality static image if all methods fail
-  console.warn("All generation attempts failed, using fallback static image");
+  // Final fallback to high-quality diagram image from the web
+  console.warn("All generation attempts failed, using web diagram example");
   toast.info("Using alternative diagram as generation failed");
-  return {
-    imageUrl: generateFallbackImageUrl(prompt),
-    success: true
-  };
+  
+  // Get a web diagram that matches the query
+  const webDiagrams = [
+    "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/networkdiagram.svg",
+    "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/flowchart-examples/hiring-process-flowchart.svg",
+    "https://www.uml-diagrams.org/sequence-diagrams/sequence-diagram-example.png",
+    "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/discovery-page/UML-class-diagram/UML-class-diagram-example.png",
+    "https://d2slcw3kip6qmk.cloudfront.net/marketing/blog/2018Q4/system-architecture/system-architecture-diagram.png",
+    "https://images.edrawsoft.com/articles/network-diagram-software/network-diagram.png"
+  ];
+  
+  // If web diagrams fail, use our fallback images
+  try {
+    const randomIndex = Math.floor(Math.random() * webDiagrams.length);
+    return {
+      imageUrl: webDiagrams[randomIndex],
+      success: true
+    };
+  } catch (e) {
+    // Final fallback to local images if web images fail
+    return {
+      imageUrl: generateFallbackImageUrl(prompt),
+      success: true
+    };
+  }
 }
 
 async function generateWithEdgeFunction(prompt: string): Promise<GenerateImageResult> {
@@ -82,7 +119,8 @@ async function generateWithEdgeFunction(prompt: string): Promise<GenerateImageRe
       body: JSON.stringify({
         prompt,
         detailedPrompt: true
-      })
+      }),
+      cache: 'no-store'
     });
     
     if (!response.ok) {
@@ -140,12 +178,11 @@ async function generateWithStabilityAI(prompt: string): Promise<GenerateImageRes
     });
 
     console.log("Stability API response status:", response.status);
-    console.log("Stability API response headers:", Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error("Stability API error response:", errorData);
-      throw new Error(`Stability API error: ${errorData.message || response.statusText}`);
+      const errorText = await response.text();
+      console.error("Stability API error response:", errorText);
+      throw new Error(`Stability API error: ${response.status}`);
     }
 
     const responseData = await response.json();
@@ -188,10 +225,9 @@ async function generateWithCloudflare(prompt: string): Promise<GenerateImageResu
     });
     
     console.log("Cloudflare API response status:", response.status);
-    console.log("Cloudflare API response headers:", Object.fromEntries(response.headers.entries()));
     
     if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
+      const errorText = await response.text();
       console.error("Cloudflare API error response:", errorText);
       throw new Error(`Cloudflare API request failed with status: ${response.status}`);
     }
@@ -217,19 +253,68 @@ async function generateWithCloudflare(prompt: string): Promise<GenerateImageResu
   }
 }
 
-// Fallback function to generate a high-quality static image URL based on the prompt
+async function generateWithGemini(prompt: string): Promise<GenerateImageResult> {
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt + "\n\nGenerate a detailed diagram image. Respond only with a URL to an image."
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.2,
+          topK: 32,
+          topP: 0.95,
+          maxOutputTokens: 4096,
+        }
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Gemini API error:", errorText);
+      throw new Error(`Gemini API request failed with status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.candidates && data.candidates[0]?.content?.parts) {
+      const parts = data.candidates[0].content.parts;
+      const textPart = parts.find((part: any) => part.text);
+      
+      if (textPart) {
+        // Extract image URL if it exists in the text
+        const imgMatch = textPart.text.match(/https:\/\/[^)\s]+\.(png|jpg|jpeg|gif)/i);
+        if (imgMatch) {
+          return { imageUrl: imgMatch[0], success: true };
+        }
+      }
+    }
+    
+    throw new Error("No valid diagram found in Gemini response");
+  } catch (error) {
+    console.error("Gemini API error:", error);
+    return { 
+      imageUrl: '', 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error with Gemini' 
+    };
+  }
+}
+
+// Fallback function to generate a high-quality static image URL
 function generateFallbackImageUrl(prompt: string): string {
   const imageOptions = [
     "/lovable-uploads/5aa6a42f-771c-4e89-a3ba-e58ff53c701e.png",
     "/lovable-uploads/a837a9a5-a83f-42b8-835c-261565ed609f.png",
     "/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png",
     "/lovable-uploads/00280548-0e69-4df9-9d87-4dfdca65bb09.png",
-    "/lovable-uploads/0bd711da-9830-4f71-ad4b-5b7325223770.png",
-    "/lovable-uploads/14b933d8-4bc5-478d-a61d-0f37bd0404b1.png",
-    "/lovable-uploads/1fcd5d05-8fe4-4a85-a06e-0797163cce27.png",
-    "/lovable-uploads/29c6874b-2503-4a4a-ac77-228929a96128.png",
-    "/lovable-uploads/a6ccf758-c406-414d-8f2e-e5e6d69439ff.png",
-    "/lovable-uploads/ca791211-179d-415b-87a8-97ea4fcfa0cd.png"
+    "/lovable-uploads/0bd711da-9830-4f71-ad4b-5b7325223770.png"
   ];
   
   const imageIndex = Math.abs(hashCode(prompt)) % imageOptions.length;

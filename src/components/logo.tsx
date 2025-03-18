@@ -36,8 +36,10 @@ export function Logo({
   
   // Use different logo based on theme
   const logoSrc = isDarkMode 
-    ? "/lovable-uploads/ade8aaaa-293a-4a73-bf2d-2490956a1578.png" 
+    ? "/lovable-uploads/f3f7be99-d517-49d2-af13-14b26120e656.png" 
     : "/lovable-uploads/ade8aaaa-293a-4a73-bf2d-2490956a1578.png";
+  
+  console.log("Logo using theme:", isDarkMode ? "dark" : "light", "logo source:", logoSrc);
   
   return (
     <div className={cn("flex items-center gap-2", className)}>

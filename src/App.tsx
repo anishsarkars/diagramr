@@ -102,11 +102,11 @@ const App = () => {
   const prefersDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
   const savedTheme = localStorage.getItem("diagramr-theme");
   
-  // Define the Theme type to avoid type errors
+  // Define the Theme type
   type Theme = "light" | "dark" | "system";
   
-  // Fixed: Ensure savedTheme is cast to a valid Theme type
-  const defaultTheme = (savedTheme as Theme) || (prefersDarkMode ? "dark" : "light");
+  // Ensure savedTheme is properly cast to a valid Theme type
+  const defaultTheme: Theme = (savedTheme as Theme) || (prefersDarkMode ? "dark" : "light");
   
   return (
     <QueryClientProvider client={queryClient}>

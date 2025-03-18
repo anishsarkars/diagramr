@@ -9,6 +9,7 @@ interface DiagramrLogoProps {
   showText?: boolean;
   iconOnly?: boolean;
   showBeta?: boolean;
+  isLoading?: boolean;
 }
 
 export function DiagramrLogo({ 
@@ -16,12 +17,13 @@ export function DiagramrLogo({
   size = "md",
   showText = true,
   iconOnly = false,
-  showBeta = true
+  showBeta = true,
+  isLoading = false
 }: DiagramrLogoProps) {
   const { isDarkMode } = useTheme();
   
   const logoSrc = isDarkMode 
-    ? "/lovable-uploads/ade8aaaa-293a-4a73-bf2d-2490956a1578.png" 
+    ? "/lovable-uploads/f3f7be99-d517-49d2-af13-14b26120e656.png" 
     : "/lovable-uploads/ade8aaaa-293a-4a73-bf2d-2490956a1578.png";
   
   return (
@@ -31,6 +33,7 @@ export function DiagramrLogo({
         showText={showText} 
         size={size} 
         showBeta={showBeta}
+        isLoading={isLoading}
         className={className}
       />
       

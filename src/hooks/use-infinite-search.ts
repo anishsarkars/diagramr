@@ -39,7 +39,22 @@ export function useInfiniteSearch({
   pageSize = 20,
   searchKey = "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4",
   searchId = "260090575ae504419"
-}: UseInfiniteSearchOptions = {}): UseInfiniteSearchResult {
+}: {
+  initialQuery?: string;
+  pageSize?: number;
+  searchKey?: string;
+  searchId?: string;
+} = {}): {
+  results: DiagramResult[];
+  isLoading: boolean;
+  error: Error | null;
+  hasMore: boolean;
+  loadMore: () => void;
+  searchTerm: string;
+  searchFor: (query: string, mode: 'search' | 'generate') => Promise<void>;
+  lastAction: 'search' | 'generate';
+  resetSearch: () => void;
+} {
   const [results, setResults] = useState<DiagramResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -69,6 +84,7 @@ export function useInfiniteSearch({
   const searchFor = useCallback(async (query: string, mode: 'search' | 'generate') => {
     if (!query.trim()) return;
     
+    console.log(`Starting ${mode} for query: "${query}"`);
     setIsLoading(true);
     setError(null);
     setSearchTerm(query);
@@ -81,6 +97,7 @@ export function useInfiniteSearch({
     
     try {
       if (mode === 'search') {
+        console.log("Searching for diagrams with query:", query);
         const cacheKey = `diagramr-search-${query}-page-1`;
         const cachedData = sessionStorage.getItem(cacheKey);
         let searchResults: DiagramResult[] = [];
@@ -89,13 +106,18 @@ export function useInfiniteSearch({
           console.log("Using cached search results");
           searchResults = JSON.parse(cachedData);
         } else {
+          console.log("Fetching fresh search results");
           searchResults = await searchGoogleImages(query, searchKey, searchId);
           
           if (searchResults.length > 0) {
+            console.log(`Caching ${searchResults.length} search results`);
             sessionStorage.setItem(cacheKey, JSON.stringify(searchResults));
           }
         }
         
+        console.log(`Got ${searchResults.length} search results`);
+        
+        // Sort results by relevance
         const queryTerms = query.toLowerCase().split(' ');
         searchResults.sort((a, b) => {
           const aRelevance = calculateRelevance(a, queryTerms);
@@ -117,10 +139,12 @@ export function useInfiniteSearch({
         
         fetchAdditionalPages(query, 2);
       } else {
+        console.log("Generating diagram for query:", query);
         try {
           await incrementGenerationCount();
           
           const result = await generateDiagramWithAI(query);
+          console.log("Generation result:", result);
           
           if (result && result.imageUrl) {
             const generatedResults: DiagramResult[] = [{
@@ -142,6 +166,7 @@ export function useInfiniteSearch({
             
             toast.success('Diagram generated successfully!');
           } else {
+            console.error("Failed to generate diagram - no imageUrl in result");
             toast.error('Failed to generate diagram. Please try a different prompt.');
             setResults([]);
             setHasMore(false);
@@ -179,6 +204,7 @@ export function useInfiniteSearch({
         const newResults = pageResults.filter((r: DiagramResult) => !existingUrls.has(r.imageSrc));
         
         if (newResults.length > 0) {
+          console.log(`Adding ${newResults.length} new results from cached page ${startPage}`);
           allResults.current = [...allResults.current, ...newResults];
           setHasMore(true);
         }
@@ -189,12 +215,14 @@ export function useInfiniteSearch({
         const additionalResults = await searchGoogleImages(query, searchKey, searchId, startPage);
         
         if (additionalResults.length > 0) {
+          console.log(`Got ${additionalResults.length} results for page ${startPage}`);
           sessionStorage.setItem(cacheKey, JSON.stringify(additionalResults));
           
           const existingUrls = new Set(allResults.current.map(r => r.imageSrc));
           const newResults = additionalResults.filter(r => !existingUrls.has(r.imageSrc));
           
           if (newResults.length > 0) {
+            console.log(`Adding ${newResults.length} new unique results from page ${startPage}`);
             allResults.current = [...allResults.current, ...newResults];
             setHasMore(true);
           }
@@ -254,6 +282,7 @@ export function useInfiniteSearch({
   const loadMore = useCallback(async () => {
     if (isLoading || isLoadingMore.current || !hasMore) return;
     
+    console.log("Loading more results...");
     isLoadingMore.current = true;
     
     try {
@@ -262,11 +291,13 @@ export function useInfiniteSearch({
       const endIndex = startIndex + pageSize;
       
       if (endIndex < allResults.current.length) {
+        console.log(`Loading more results from memory (${startIndex}-${endIndex})`);
         setResults(prev => [...prev, ...allResults.current.slice(startIndex, endIndex)]);
         setPage(nextPage);
         setHasMore(allResults.current.length > endIndex);
       } else if (lastAction === 'search') {
         const nextSearchPage = currentSearchPage + 1;
+        console.log(`Need to fetch more results, checking page ${nextSearchPage}`);
         
         const cacheKey = `diagramr-search-${searchTerm}-page-${nextSearchPage}`;
         const cachedData = sessionStorage.getItem(cacheKey);
@@ -281,6 +312,7 @@ export function useInfiniteSearch({
           newPageResults = await searchGoogleImages(searchTerm, searchKey, searchId, nextSearchPage);
           
           if (newPageResults.length > 0) {
+            console.log(`Caching ${newPageResults.length} results from page ${nextSearchPage}`);
             sessionStorage.setItem(cacheKey, JSON.stringify(newPageResults));
           }
         }
@@ -289,6 +321,7 @@ export function useInfiniteSearch({
         const uniqueNewResults = newPageResults.filter(r => !existingUrls.has(r.imageSrc));
         
         if (uniqueNewResults.length > 0) {
+          console.log(`Adding ${uniqueNewResults.length} new unique results to display`);
           allResults.current = [...allResults.current, ...uniqueNewResults];
           setResults(prev => [...prev, ...uniqueNewResults]);
           setHasMore(uniqueNewResults.length >= 5);
@@ -296,9 +329,11 @@ export function useInfiniteSearch({
           
           fetchAdditionalPages(searchTerm, nextSearchPage + 1);
         } else {
+          console.log("No new unique results found");
           setHasMore(false);
         }
       } else {
+        console.log("No more results to load for generation");
         setHasMore(false);
       }
     } catch (error) {
@@ -327,3 +362,4 @@ export function useInfiniteSearch({
     resetSearch
   };
 }
+
