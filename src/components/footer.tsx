@@ -1,207 +1,170 @@
 
-import { DiagramrLogo } from "@/components/diagramr-logo";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { 
-  Github, 
-  Twitter, 
-  Linkedin, 
-  Mail, 
-  Heart,
-  BookOpen,
-  Users,
-  BarChart,
-  Lightbulb,
-  RefreshCw,
-  Sparkles
-} from "lucide-react";
-import { useAuth } from "@/components/auth-context";
-import { Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { motion } from "framer-motion";
+import { Github, Linkedin, Twitter, ExternalLink } from "lucide-react";
+import { Logo } from "@/components/logo";
 
 export function Footer() {
-  const { user } = useAuth();
+  const location = useLocation();
   const currentYear = new Date().getFullYear();
   
-  const footerLinks = [
-    {
-      title: "Product",
-      links: [
-        { name: "Home", href: "/" },
-        { name: "Pricing", href: "/pricing" },
-        { name: "Upgrade to Premium", href: "/pricing" },
-        { name: "API (Coming Soon)", href: "#" },
-      ]
-    },
-    {
-      title: "Resources",
-      links: [
-        { name: "Educational Diagrams", href: "/" },
-        { name: "Study Guide", href: "#" },
-        { name: "Blog", href: "#" },
-        { name: "FAQs", href: "#" },
-      ]
-    },
-    {
-      title: "Account",
-      links: [
-        { name: "My Account", href: "/account" },
-        { name: "Saved Diagrams", href: "/liked" },
-        { name: "Settings", href: "/account" },
-        { name: "Get Help", href: "#" },
-      ]
-    },
-    {
-      title: "Company",
-      links: [
-        { name: "About Us", href: "#" },
-        { name: "Careers", href: "#" },
-        { name: "Contact", href: "#" },
-        { name: "Privacy", href: "#" },
-      ]
-    }
-  ];
-
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05
-      }
-    }
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 10 },
-    show: { opacity: 1, y: 0 }
-  };
+  // Skip footer on auth page
+  if (location.pathname === "/auth") {
+    return null;
+  }
 
   return (
-    <footer className="bg-background border-t relative overflow-hidden">
-      {/* 3D-like gradient decorative elements */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute -top-24 -left-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/4 right-1/4 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl"></div>
-      </div>
-      
-      <div className="container px-4 py-12 mx-auto relative z-10">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
-          <div className="lg:col-span-2 space-y-6">
-            <DiagramrLogo size="md" />
+    <motion.footer 
+      className="border-t border-border/40 bg-gradient-to-b from-background to-background/95 backdrop-blur-sm"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3, duration: 0.5 }}
+    >
+      <div className="container py-12 relative overflow-hidden">
+        {/* 3D Design Elements */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -right-24 -bottom-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl opacity-50"></div>
+          <div className="absolute -left-20 -bottom-16 w-72 h-72 bg-primary/10 rounded-full blur-3xl opacity-30"></div>
+        </div>
+        
+        <div className="relative z-10 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-4">
+            <Logo size="lg" iconOnly={false} showText className="lg:ml-0" />
             
-            <p className="max-w-xs text-sm text-muted-foreground mt-4">
-              Diagramr helps students, educators, professionals, and businesses discover and create 
-              high-quality diagrams for learning, presentations, research, and business documentation.
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Find and generate high-quality diagrams for education, business, 
+              and technical documentation.
             </p>
             
-            <div className="flex space-x-3">
-              <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 500 }}>
-                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
-                  <Twitter className="h-5 w-5" />
-                </Button>
-              </motion.div>
+            <div className="flex space-x-2">
+              <Button variant="ghost" size="icon" asChild className="h-8 w-8 rounded-md">
+                <a href="https://twitter.com/anish_designer" target="_blank" rel="noopener noreferrer">
+                  <Twitter className="h-4 w-4" />
+                  <span className="sr-only">Twitter</span>
+                </a>
+              </Button>
               
-              <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 500 }}>
-                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
-                  <Github className="h-5 w-5" />
-                </Button>
-              </motion.div>
+              <Button variant="ghost" size="icon" asChild className="h-8 w-8 rounded-md">
+                <a href="https://github.com/Anish-Karthik" target="_blank" rel="noopener noreferrer">
+                  <Github className="h-4 w-4" />
+                  <span className="sr-only">GitHub</span>
+                </a>
+              </Button>
               
-              <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 500 }}>
-                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
-                  <Linkedin className="h-5 w-5" />
-                </Button>
-              </motion.div>
-              
-              <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 500 }}>
-                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
-                  <Mail className="h-5 w-5" />
-                </Button>
-              </motion.div>
+              <Button variant="ghost" size="icon" asChild className="h-8 w-8 rounded-md">
+                <a href="https://www.linkedin.com/in/anishsarkar-/" target="_blank" rel="noopener noreferrer">
+                  <Linkedin className="h-4 w-4" />
+                  <span className="sr-only">LinkedIn</span>
+                </a>
+              </Button>
             </div>
           </div>
           
-          <motion.div 
-            className="col-span-3 grid grid-cols-2 sm:grid-cols-4 gap-8"
-            variants={container}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-          >
-            {footerLinks.map((group) => (
-              <div key={group.title} className="space-y-3">
-                <motion.h3 variants={item} className="text-sm font-medium">
-                  {group.title}
-                </motion.h3>
-                <ul className="space-y-2">
-                  {group.links.map((link) => (
-                    <motion.li variants={item} key={link.name}>
-                      <Link 
-                        to={link.href} 
-                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {link.name}
-                      </Link>
-                    </motion.li>
-                  ))}
-                </ul>
+          <div>
+            <h3 className="font-medium mb-4">Product</h3>
+            <ul className="space-y-3">
+              <li>
+                <a href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Search Diagrams
+                </a>
+              </li>
+              <li>
+                <a href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Generate with AI
+                </a>
+              </li>
+              <li>
+                <a href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Pricing
+                </a>
+              </li>
+              <li>
+                <Badge variant="outline" className="text-xs px-1.5 py-0 rounded-sm">Coming Soon</Badge>
+                <span className="text-sm text-muted-foreground ml-2">Custom Diagrams</span>
+              </li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 className="font-medium mb-4">Resources</h3>
+            <ul className="space-y-3">
+              <li>
+                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Documentation
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Help Center
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Terms of Service
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Privacy Policy
+                </a>
+              </li>
+            </ul>
+          </div>
+          
+          <div className="space-y-4">
+            <h3 className="font-medium mb-4">Theme</h3>
+            <ThemeToggle variant="outline" />
+            
+            <div className="pt-4">
+              <div className="bg-card p-4 rounded-lg border border-border/40 shadow-sm">
+                <motion.div
+                  className="flex items-center gap-2 mb-2"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">Creator</Badge>
+                  <h4 className="font-medium text-sm">Anish Sarkar</h4>
+                </motion.div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Full Stack Developer & Designer passionate about creating beautiful, functional products.
+                </p>
+                <Button variant="default" size="sm" className="w-full gap-1.5" asChild>
+                  <a href="https://www.linkedin.com/in/anishsarkar-/" target="_blank" rel="noopener noreferrer">
+                    <Linkedin className="h-3.5 w-3.5" />
+                    <span className="text-xs">Connect on LinkedIn</span>
+                  </a>
+                </Button>
               </div>
-            ))}
-          </motion.div>
-        </div>
-        
-        <Separator className="my-8" />
-        
-        <div className="py-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-            <div className="flex justify-center md:justify-start">
-              <motion.div 
-                className="flex items-center space-x-1 text-sm text-muted-foreground"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 400 }}
-              >
-                <Heart className="h-3 w-3 text-red-500" />
-                <span>Built with 💖 by <span className="font-semibold">@Anish</span></span>
-              </motion.div>
-            </div>
-            
-            <div className="flex justify-center space-x-8 text-center">
-              <motion.div
-                className="flex items-center gap-2 text-muted-foreground"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 400 }}
-              >
-                <Sparkles className="h-4 w-4 text-amber-500" />
-                <span className="text-xs font-medium">Premium Quality</span>
-              </motion.div>
-              
-              <motion.div
-                className="flex items-center gap-2 text-muted-foreground"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 400 }}
-              >
-                <RefreshCw className="h-4 w-4 text-blue-500" />
-                <span className="text-xs font-medium">Daily Updates</span>
-              </motion.div>
-            </div>
-            
-            <div className="flex justify-center md:justify-end">
-              <p className="text-sm text-muted-foreground">
-                &copy; {currentYear} Diagramr. All rights reserved.
-              </p>
             </div>
           </div>
         </div>
         
-        <div className="mt-6 text-center">
-          <p className="text-xs text-muted-foreground/70 italic">
-            Diagramr is in the initial stages of development. Results may occasionally vary in quality.
-            We're constantly improving to deliver the best experience for our users.
+        <div className="mt-12 pt-6 border-t border-border/30 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-muted-foreground">
+            © {currentYear} Diagramr. Built with ❤️ by 
+            <a 
+              href="https://www.linkedin.com/in/anishsarkar-/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-primary hover:text-primary/90 font-medium ml-1 inline-flex items-center gap-0.5"
+            >
+              @Anish <ExternalLink className="h-3 w-3 ml-0.5" />
+            </a>
           </p>
+          
+          <div className="flex items-center gap-6">
+            <motion.div 
+              className="text-xs text-muted-foreground flex items-center gap-1.5 px-2.5 py-1 bg-muted/50 rounded-full"
+              whileHover={{ y: -2 }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+              All systems operational
+            </motion.div>
+          </div>
         </div>
       </div>
-    </footer>
+    </motion.footer>
   );
 }

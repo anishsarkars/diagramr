@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useRef, useEffect } from "react";
-import { SearchIcon, Sparkles, Wand2, LightbulbIcon, SendIcon, CornerRightDown } from "lucide-react";
+import { SearchIcon, Sparkles, Wand2, LightbulbIcon, SendIcon, CornerRightDown, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AIInputProps {
@@ -18,6 +18,15 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
   const [isFocused, setIsFocused] = useState(false);
   const [mode, setMode] = useState<"search" | "generate">("search");
   const inputRef = useRef<HTMLInputElement>(null);
+  const [examples, setExamples] = useState<string[]>([
+    "Data flow diagram for e-commerce",
+    "Network architecture diagram",
+    "Software development lifecycle",
+    "Database schema for social media",
+    "Cloud infrastructure architecture",
+    "Microservices system diagram",
+    "UML class diagram for banking",
+  ]);
 
   const handleSubmit = () => {
     if (onSubmit && prompt.trim()) {
@@ -28,6 +37,13 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleSubmit();
+    }
+  };
+
+  const useExample = (example: string) => {
+    setPrompt(example);
+    if (inputRef.current) {
+      inputRef.current.focus();
     }
   };
 
@@ -49,7 +65,7 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
           className={cn(
             "flex items-center w-full rounded-2xl overflow-hidden",
             "border border-border/30",
-            "bg-background/80 backdrop-blur-lg shadow-md",
+            "bg-background/80 backdrop-blur-lg shadow-lg",
             isFocused ? "ring-2 ring-primary/20 shadow-xl border-primary/30" : "",
             isLoading ? "opacity-80" : ""
           )}
@@ -127,7 +143,7 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
                         transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                       />
                     ) : (
-                      <CornerRightDown className="h-4 w-4" />
+                      <ArrowRight className="h-4 w-4" />
                     )}
                   </Button>
                 </motion.div>
@@ -144,6 +160,37 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
           animate={{ width: "100%" }}
           transition={{ duration: 2.5, ease: "easeInOut" }}
         />
+      )}
+
+      {/* Example prompts - Napkin.ai style */}
+      {isFocused && !isLoading && !prompt && (
+        <motion.div 
+          className="mt-4 bg-background/80 backdrop-blur-sm border border-border/30 rounded-xl p-4 shadow-lg"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+        >
+          <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+            <LightbulbIcon className="h-4 w-4 text-primary" />
+            <span>Try these examples</span>
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {examples.map((example, index) => (
+              <motion.button
+                key={index}
+                className="text-left text-sm py-2 px-3 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground flex items-center gap-2"
+                onClick={() => useExample(example)}
+                whileHover={{ x: 3 }}
+              >
+                <span className="text-xs bg-primary/10 text-primary h-5 w-5 rounded-full flex items-center justify-center">
+                  {index + 1}
+                </span>
+                {example}
+              </motion.button>
+            ))}
+          </div>
+        </motion.div>
       )}
     </motion.div>
   );

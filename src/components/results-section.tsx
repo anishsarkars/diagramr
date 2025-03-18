@@ -1,306 +1,220 @@
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Bookmark,
-  BookmarkCheck,
-  Search,
-  ChevronRight,
-  RefreshCw,
-  Download,
-  Clock,
-  Zap,
-  AlertCircle,
-} from "lucide-react";
-import { SearchLimitIndicator } from "@/components/search-limit-indicator";
-import { useAuth } from "@/components/auth-context";
-import { Badge } from "@/components/ui/badge";
 import { DiagramResult } from "@/hooks/use-infinite-search";
-import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { DiagramCard } from "@/components/diagram-card";
+import { Badge } from "@/components/ui/badge";
+import { 
+  SearchIcon, 
+  Loader2Icon, 
+  ArchiveIcon, 
+  FilterIcon,
+  Wand2Icon, 
+  AlertCircleIcon
+} from "lucide-react";
+import { SimpleSearchBar } from "@/components/simple-search-bar";
+import { useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { AnimatedContainer } from "@/components/animated-container";
 import { useInView } from "react-intersection-observer";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
 interface ResultsSectionProps {
   results: DiagramResult[];
   searchTerm: string;
   onNewSearch: () => void;
   isLoading: boolean;
-  lastAction?: "search" | "generate";
-  onSaveDiagram?: (id: string | number) => void;
-  savedDiagrams?: Set<string>;
-  lastResultRef?: (node: HTMLDivElement | null) => void;
+  lastAction: "search" | "generate";
+  onLike?: (id: string | number) => void;
+  likedDiagrams?: Set<string>;
+  lastResultRef?: (node: HTMLDivElement) => void;
 }
 
-export function ResultsSection({
-  results,
-  searchTerm,
-  onNewSearch,
+export function ResultsSection({ 
+  results, 
+  searchTerm, 
+  onNewSearch, 
   isLoading,
-  lastAction = "search",
-  onSaveDiagram,
-  savedDiagrams = new Set(),
-  lastResultRef,
+  lastAction,
+  onLike,
+  likedDiagrams = new Set(),
+  lastResultRef
 }: ResultsSectionProps) {
-  const [showDownloadTooltip, setShowDownloadTooltip] = useState<number | null>(
-    null
-  );
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const { ref, inView } = useInView({
-    threshold: 0.1,
-  });
+  const [sortOption, setSortOption] = useState<"relevance" | "newest">("relevance");
+  const { ref: titleRef, inView: titleInView } = useInView({ triggerOnce: true });
 
-  // Pass the ref to the parent component for infinite scrolling
-  useEffect(() => {
-    if (inView && lastResultRef) {
-      const lastElement = document.querySelector('.last-result');
-      if (lastElement) {
-        lastResultRef(lastElement as HTMLDivElement);
-      }
-    }
-  }, [inView, lastResultRef]);
+  const isLiked = (id: string | number) => likedDiagrams.has(String(id));
 
-  const handleDownload = (url: string, title: string) => {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    toast.success("Diagram downloaded successfully!");
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 },
-  };
-
-  const handleBookmarkClick = (id: string | number) => {
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
-
-    if (onSaveDiagram) {
-      onSaveDiagram(id);
+  const handleLike = (id: string | number) => {
+    if (onLike) {
+      onLike(id);
     }
   };
-
-  const renderEmptyState = () => (
-    <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-      <div className="rounded-full bg-muted/50 p-6 mb-6">
-        <Search className="h-10 w-10 text-muted-foreground" />
-      </div>
-      <h3 className="text-xl font-semibold mb-2">No results found</h3>
-      <p className="text-muted-foreground max-w-md mb-6">
-        We couldn't find any diagrams matching your search criteria. Try
-        different keywords or filters.
-      </p>
-      <Button size="lg" onClick={onNewSearch}>
-        Try Another Search
-      </Button>
-    </div>
-  );
-
-  const renderLoading = () => (
-    <div className="flex flex-col items-center justify-center py-20 px-4">
-      <div className="rounded-full bg-primary/10 p-6 mb-6">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-        >
-          <RefreshCw className="h-10 w-10 text-primary" />
-        </motion.div>
-      </div>
-      <h3 className="text-xl font-semibold mb-2">
-        {lastAction === "search" ? "Searching for diagrams..." : "Generating your diagram..."}
-      </h3>
-      <p className="text-muted-foreground max-w-md text-center mb-6">
-        {lastAction === "search"
-          ? `We're finding the best diagram results for "${searchTerm}"`
-          : `Our AI is creating a custom diagram for "${searchTerm}"`}
-      </p>
-      <div className="flex items-center gap-2 text-xs text-muted-foreground/70 italic mt-4">
-        <Clock className="h-3 w-3" />
-        <span>
-          {lastAction === "search"
-            ? "This usually takes a few seconds"
-            : "This could take up to 20 seconds"}
-        </span>
-      </div>
-    </div>
-  );
-
-  const renderResults = () => (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
-      className="pt-4 pb-16"
-    >
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-semibold mb-1 flex items-center gap-2">
-            {lastAction === "search" ? (
-              <>
-                <span>Results for</span>
-                <span className="text-primary">"{searchTerm}"</span>
-              </>
-            ) : (
-              <>
-                <span>Generated diagram for</span>
-                <span className="text-primary">"{searchTerm}"</span>
-              </>
-            )}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {results.length} diagram
-            {results.length !== 1 ? "s" : ""} found
-          </p>
-        </div>
-        <Button variant="outline" onClick={onNewSearch} className="gap-2">
-          <Search className="h-4 w-4" />
-          <span className="hidden sm:inline">New Search</span>
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-        {results.map((result, index) => (
-          <motion.div
-            key={result.id}
-            variants={itemVariants}
-            className={index === results.length - 1 ? "last-result" : ""}
-            ref={index === results.length - 1 ? ref : null}
-          >
-            <div className="diagram-card overflow-hidden group">
-              <div className="diagram-card-image relative">
-                <img
-                  src={result.imageSrc}
-                  alt={result.title}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                />
-
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300"></div>
-
-                <div className="absolute top-2 right-2 flex gap-1">
-                  {result.isGenerated && (
-                    <Badge variant="secondary" className="text-xs px-2 py-0.5 h-auto bg-background/80 backdrop-blur-sm">
-                      AI-Generated
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background/90"
-                    onClick={() => handleBookmarkClick(result.id)}
-                  >
-                    {savedDiagrams.has(String(result.id)) ? (
-                      <BookmarkCheck className="h-4 w-4 text-primary" />
-                    ) : (
-                      <Bookmark className="h-4 w-4" />
-                    )}
-                  </Button>
-
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background/90"
-                    onClick={() => handleDownload(result.imageSrc, result.title)}
-                    onMouseEnter={() => setShowDownloadTooltip(Number(result.id))}
-                    onMouseLeave={() => setShowDownloadTooltip(null)}
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {showDownloadTooltip === Number(result.id) && (
-                  <div className="absolute bottom-12 right-2 bg-black/70 text-white text-xs py-1 px-2 rounded pointer-events-none">
-                    Download
-                  </div>
-                )}
-              </div>
-
-              <div className="p-3">
-                <h3 className="font-medium text-sm line-clamp-2">{result.title}</h3>
-                
-                {result.author && (
-                  <div className="text-xs text-muted-foreground mt-1 flex items-center">
-                    By: {result.author}
-                  </div>
-                )}
-                
-                {result.tags && result.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {result.tags.slice(0, 3).map((tag, i) => (
-                      <Badge 
-                        key={i} 
-                        variant="secondary" 
-                        className="text-[0.65rem] px-1.5 py-0 h-auto border-none bg-secondary/50"
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                    {result.tags.length > 3 && (
-                      <span className="text-[0.65rem] text-muted-foreground">
-                        +{result.tags.length - 3}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-      
-      <div className="mt-12 text-center">
-        <p className="text-xs text-muted-foreground italic mb-2">
-          Diagramr is in beta and constantly improving. Results may vary in quality and relevance.
-        </p>
-        
-        <Button 
-          variant="outline" 
-          onClick={onNewSearch} 
-          className="mx-auto mt-2"
-        >
-          New Search
-        </Button>
-      </div>
-    </motion.div>
-  );
 
   return (
-    <div className="container max-w-7xl mx-auto px-4 pt-8 pb-12">
-      <div className="w-full max-w-3xl mx-auto mb-8">
-        <SearchLimitIndicator compact className="mx-auto" />
+    <div className="container py-8 pb-16">
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <motion.div
+          ref={titleRef}
+          initial={{ opacity: 0, y: 20 }}
+          animate={titleInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+              {lastAction === "search" ? "Search Results" : "AI Generated"}
+            </Badge>
+            {lastAction === "generate" && (
+              <Badge variant="outline" className="bg-secondary/40">Beta</Badge>
+            )}
+          </div>
+          <h1 className="text-2xl font-bold">{searchTerm}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {isLoading ? (
+              "Finding the best diagrams..."
+            ) : results.length > 0 ? (
+              `Found ${results.length} diagram${results.length > 1 ? "s" : ""}`
+            ) : (
+              "No diagrams found. Try a different search term."
+            )}
+          </p>
+        </motion.div>
+
+        <div className="flex items-center gap-2">
+          <SimpleSearchBar onSearch={onNewSearch} />
+        </div>
       </div>
 
-      {isLoading ? (
-        renderLoading()
-      ) : results.length === 0 ? (
-        renderEmptyState()
-      ) : (
-        renderResults()
+      {/* Filters and sorting */}
+      <div className="flex flex-wrap items-center justify-between mb-6 gap-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge 
+            variant={lastAction === "search" ? "default" : "outline"} 
+            className="px-3 py-1 cursor-pointer"
+          >
+            <SearchIcon className="h-3 w-3 mr-1" />
+            Search
+          </Badge>
+          <Badge 
+            variant={lastAction === "generate" ? "default" : "outline"} 
+            className="px-3 py-1 cursor-pointer"
+          >
+            <Wand2Icon className="h-3 w-3 mr-1" />
+            Generated
+          </Badge>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <FilterIcon className="h-4 w-4" />
+            <span>Sort by:</span>
+            <select 
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value as "relevance" | "newest")}
+              className="bg-transparent border-none text-sm focus:outline-none focus:ring-0"
+            >
+              <option value="relevance">Relevance</option>
+              <option value="newest">Newest</option>
+            </select>
+          </div>
+          
+          <Button variant="outline" size="sm" onClick={onNewSearch}>
+            New Search
+          </Button>
+        </div>
+      </div>
+
+      {/* Results grid with animation */}
+      <AnimatePresence>
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <AnimatedContainer className="flex flex-col items-center justify-center">
+              {lastAction === "search" ? (
+                <SearchIcon className="h-12 w-12 text-muted-foreground mb-4 animate-pulse" />
+              ) : (
+                <Wand2Icon className="h-12 w-12 text-muted-foreground mb-4 animate-pulse" />
+              )}
+              <h3 className="text-xl font-medium mb-2">
+                {lastAction === "search" ? "Searching for diagrams..." : "Generating your diagram..."}
+              </h3>
+              <p className="text-muted-foreground max-w-md text-center">
+                {lastAction === "search" 
+                  ? "We're finding the most relevant diagrams for your search." 
+                  : "Our AI is crafting a custom diagram based on your description."}
+              </p>
+              <div className="mt-4 flex items-center gap-2">
+                <Loader2Icon className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-muted-foreground">This may take a moment</span>
+              </div>
+            </AnimatedContainer>
+          </div>
+        ) : results.length === 0 ? (
+          <div className="text-center py-16">
+            <AnimatedContainer className="flex flex-col items-center">
+              <AlertCircleIcon className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-xl font-medium mb-2">No diagrams found</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                We couldn't find any diagrams matching your search. Try using different keywords or generate a custom diagram.
+              </p>
+              <Button onClick={onNewSearch} className="mt-6">Try a different search</Button>
+            </AnimatedContainer>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {results.map((result, index) => {
+              // Check if this is the last item to attach the ref for infinite scrolling
+              if (results.length === index + 1) {
+                return (
+                  <div ref={lastResultRef} key={result.id}>
+                    <DiagramCard
+                      title={result.title}
+                      imageSrc={result.imageSrc}
+                      author={result.author}
+                      authorUsername={result.authorUsername}
+                      sourceUrl={result.sourceUrl}
+                      tags={result.tags}
+                      isGenerated={result.isGenerated}
+                      isLiked={isLiked(result.id)}
+                      onLike={() => handleLike(result.id)}
+                    />
+                  </div>
+                );
+              } else {
+                return (
+                  <DiagramCard
+                    key={result.id}
+                    title={result.title}
+                    imageSrc={result.imageSrc}
+                    author={result.author}
+                    authorUsername={result.authorUsername}
+                    sourceUrl={result.sourceUrl}
+                    tags={result.tags}
+                    isGenerated={result.isGenerated}
+                    isLiked={isLiked(result.id)}
+                    onLike={() => handleLike(result.id)}
+                  />
+                );
+              }
+            })}
+          </div>
+        )}
+      </AnimatePresence>
+      
+      {/* Loading more results indicator */}
+      {!isLoading && results.length > 0 && hasMore && (
+        <div className="flex justify-center mt-8">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2Icon className="h-4 w-4 animate-spin" />
+            <span className="text-sm">Loading more results...</span>
+          </div>
+        </div>
+      )}
+      
+      {!isLoading && results.length > 0 && !hasMore && (
+        <div className="text-center mt-8 py-4">
+          <p className="text-muted-foreground text-sm">You've reached the end of the results</p>
+          <Button variant="outline" onClick={onNewSearch} className="mt-4">
+            New Search
+          </Button>
+        </div>
       )}
     </div>
   );

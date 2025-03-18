@@ -11,13 +11,12 @@ import { useNavigate } from "react-router-dom";
 import { useInfiniteSearch, DiagramResult } from "@/hooks/use-infinite-search";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Json } from "@/integrations/supabase/types";
 
 const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   const [showSearchField, setShowSearchField] = useState(true);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showLoginRequired, setShowLoginRequired] = useState(false);
-  const [savedDiagrams, setSavedDiagrams] = useState<Set<string>>(new Set());
+  const [likedDiagrams, setLikedDiagrams] = useState<Set<string>>(new Set());
   
   const { user, profile } = useAuth();
   const navigate = useNavigate();
@@ -53,21 +52,17 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   }, [isLoading, hasMore, loadMore]);
 
   const handleAIPrompt = async (prompt: string, mode: "search" | "generate") => {
-    if (requiresLogin) {
-      setShowLoginRequired(true);
-      return;
-    }
+    // During beta, make everything free - no login required
+    // But we'll still track usage for logged-in users
     
-    if (hasReachedLimit && mode !== 'generate') {
-      setShowPremiumDialog(true);
-      return;
-    }
-    
-    if (mode === "search") {
-      const success = await incrementCount();
-      if (!success) {
-        setShowPremiumDialog(true);
-        return;
+    // If we're logged in, increment count but don't block usage
+    if (user) {
+      if (mode === "search") {
+        incrementCount();
+      } else {
+        // For generate mode, we'll track separately
+        const { incrementGenerationCount } = useSearchLimit();
+        incrementGenerationCount();
       }
     }
     
@@ -80,20 +75,28 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     resetSearch();
   };
 
-  const handleSaveDiagram = async (diagramId: string | number) => {
+  const handleLikeDiagram = async (diagramId: string | number) => {
     if (!user) {
-      setShowLoginRequired(true);
+      // Allow likes without login during beta
+      const newLiked = new Set(likedDiagrams);
+      if (newLiked.has(String(diagramId))) {
+        newLiked.delete(String(diagramId));
+        toast.success("Removed from your liked diagrams");
+      } else {
+        newLiked.add(String(diagramId));
+        toast.success("Added to your liked diagrams");
+      }
+      setLikedDiagrams(newLiked);
       return;
     }
     
     try {
-      const diagramToSave = results.find(r => r.id === diagramId);
-      if (diagramToSave) {
-        // Save diagram logic
-        const isSaved = savedDiagrams.has(String(diagramId));
+      const diagramToLike = results.find(r => r.id === diagramId);
+      if (diagramToLike) {
+        const isLiked = likedDiagrams.has(String(diagramId));
         
-        if (isSaved) {
-          // Remove from saved
+        if (isLiked) {
+          // Remove from liked
           const { error } = await supabase
             .from('saved_diagrams')
             .delete()
@@ -103,22 +106,22 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
           if (error) throw error;
           
           // Update local state
-          const newSaved = new Set(savedDiagrams);
-          newSaved.delete(String(diagramId));
-          setSavedDiagrams(newSaved);
+          const newLiked = new Set(likedDiagrams);
+          newLiked.delete(String(diagramId));
+          setLikedDiagrams(newLiked);
           
-          toast.success(`"${diagramToSave.title}" removed from your bookmarks`);
+          toast.success(`"${diagramToLike.title}" removed from your liked diagrams`);
         } else {
-          // Add to saved - Convert diagramToSave to a proper JSON object
+          // Add to liked
           const diagramData = {
-            id: String(diagramToSave.id),
-            title: diagramToSave.title,
-            imageSrc: diagramToSave.imageSrc,
-            author: diagramToSave.author || "",
-            authorUsername: diagramToSave.authorUsername || "",
-            tags: diagramToSave.tags || [],
-            sourceUrl: diagramToSave.sourceUrl || "",
-            isGenerated: diagramToSave.isGenerated || false
+            id: String(diagramToLike.id),
+            title: diagramToLike.title,
+            imageSrc: diagramToLike.imageSrc,
+            author: diagramToLike.author || "",
+            authorUsername: diagramToLike.authorUsername || "",
+            tags: diagramToLike.tags || [],
+            sourceUrl: diagramToLike.sourceUrl || "",
+            isGenerated: diagramToLike.isGenerated || false
           };
           
           const { error } = await supabase
@@ -126,26 +129,26 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
             .insert({
               user_id: user.id,
               diagram_id: String(diagramId),
-              diagram_data: diagramData as Json
+              diagram_data: diagramData
             });
           
           if (error) throw error;
           
           // Update local state
-          const newSaved = new Set(savedDiagrams);
-          newSaved.add(String(diagramId));
-          setSavedDiagrams(newSaved);
+          const newLiked = new Set(likedDiagrams);
+          newLiked.add(String(diagramId));
+          setLikedDiagrams(newLiked);
           
-          toast.success(`"${diagramToSave.title}" saved to your bookmarks!`);
+          toast.success(`"${diagramToLike.title}" saved to your liked diagrams!`);
         }
       }
     } catch (error) {
       console.error('Error saving diagram:', error);
-      toast.error('Failed to save diagram. Please try again.');
+      toast.error('Failed to update liked diagrams. Please try again.');
     }
   };
 
-  const fetchSavedDiagrams = useCallback(async () => {
+  const fetchLikedDiagrams = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -157,11 +160,11 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
       if (error) throw error;
       
       if (data) {
-        const savedIds = new Set(data.map(item => item.diagram_id));
-        setSavedDiagrams(savedIds);
+        const likedIds = new Set(data.map(item => item.diagram_id));
+        setLikedDiagrams(likedIds);
       }
     } catch (error) {
-      console.error('Error fetching saved diagrams:', error);
+      console.error('Error fetching liked diagrams:', error);
     }
   }, [user]);
 
@@ -174,14 +177,8 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   };
 
   useEffect(() => {
-    fetchSavedDiagrams();
-  }, [fetchSavedDiagrams]);
-
-  useEffect(() => {
-    if (requiresLogin && !user) {
-      setShowLoginRequired(true);
-    }
-  }, [requiresLogin, user]);
+    fetchLikedDiagrams();
+  }, [fetchLikedDiagrams]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -197,8 +194,8 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
             onNewSearch={handleNewSearch} 
             isLoading={isLoading}
             lastAction={lastAction}
-            onSaveDiagram={handleSaveDiagram}
-            savedDiagrams={savedDiagrams}
+            onLike={handleLikeDiagram}
+            likedDiagrams={likedDiagrams}
             lastResultRef={lastResultRef}
           />
         )}

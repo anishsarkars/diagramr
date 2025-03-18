@@ -24,11 +24,11 @@ export function Logo({
   showBeta = true
 }: LogoProps) {
   const sizeClasses = {
-    sm: "h-6 w-6",
-    md: "h-8 w-8",
-    lg: "h-12 w-12", 
-    xl: "h-16 w-16",
-    "2xl": "h-20 w-20"
+    sm: "h-6 w-auto",
+    md: "h-8 w-auto",
+    lg: "h-12 w-auto", 
+    xl: "h-16 w-auto",
+    "2xl": "h-20 w-auto"
   };
   
   return (
@@ -45,9 +45,9 @@ export function Logo({
         } : {}}
       >
         <img 
-          src="/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png" 
+          src="/lovable-uploads/f8176116-d343-4392-ba84-07f1bfbf8709.png" 
           alt="Diagramr Logo" 
-          className="h-full w-full object-contain drop-shadow-md" 
+          className="h-full w-auto object-contain drop-shadow-md" 
         />
       </motion.div>
       
