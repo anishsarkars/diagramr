@@ -28,6 +28,10 @@ export function SearchLimitIndicator({ className, compact = false }: SearchLimit
   
   const isPremium = profile?.is_premium || false;
   
+  // If the user has a profile and it's a premium user, don't show this indicator
+  // unless they've reached a limit
+  if (user && isPremium) return null;
+  
   // If the user has a profile, they've signed up - don't show this indicator
   // unless they've reached a limit
   if (user && !hasReachedLimit && !hasReachedGenerationLimit) return null;
@@ -69,9 +73,9 @@ export function SearchLimitIndicator({ className, compact = false }: SearchLimit
         ) : (
           <div className="flex items-center gap-2">
             <p className="text-xs text-muted-foreground">
-              <span className="font-medium">{Math.max(0, remainingSearches)}</span> trial searches left
+              <span className="font-medium">{Math.max(0, remainingSearches)}</span> {user ? "daily" : "guest"} searches left
             </p>
-            {!compact && (
+            {!compact && !user && (
               <Button 
                 size="sm" 
                 variant="ghost" 

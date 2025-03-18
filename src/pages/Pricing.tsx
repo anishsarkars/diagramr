@@ -79,8 +79,7 @@ export default function Pricing() {
             Simple, transparent pricing
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Get unlimited access to educational diagrams with our early adopter pricing.
-            Most features are free during beta testing.
+            During our beta period, all features are available to free users. Premium subscriptions help support our development and get early access to new features.
           </p>
         </motion.div>
 
@@ -103,14 +102,22 @@ export default function Pricing() {
                   <span className="ml-1 text-muted-foreground">/forever</span>
                 </div>
                 <CardDescription className="mt-2">
-                  Perfect for casual learners and students.
+                  Perfect for casual users, students, and professionals.
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg mb-4">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-500 shrink-0 mt-0.5" />
+                    <p className="text-sm text-green-800 dark:text-green-400">
+                      <span className="font-semibold">Beta Special:</span> During our beta, all users get access to premium features at no cost!
+                    </p>
+                  </div>
+                </div>
                 <ul className="space-y-3 mt-4">
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>Access to high-quality educational diagrams</span>
+                    <span>Access to high-quality educational and professional diagrams</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
@@ -118,7 +125,7 @@ export default function Pricing() {
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>5 AI generations per day</span>
+                    <span>5 AI-generated diagrams per day</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
@@ -126,7 +133,7 @@ export default function Pricing() {
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>Basic filter options</span>
+                    <span>All filtering and sorting options (during beta)</span>
                   </li>
                 </ul>
               </CardContent>
@@ -157,7 +164,7 @@ export default function Pricing() {
                   <span className="ml-1 text-muted-foreground">/month</span>
                 </div>
                 <CardDescription className="mt-2">
-                  Early beta special offer, available now.
+                  Early beta special offer, lock in this price forever.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -165,7 +172,7 @@ export default function Pricing() {
                   <div className="flex items-start gap-2">
                     <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 shrink-0 mt-0.5" />
                     <p className="text-sm text-yellow-800 dark:text-yellow-400">
-                      <span className="font-semibold">Beta Special:</span> Most premium features are available to free users during the beta period. Enjoy!
+                      <span className="font-semibold">Beta Special:</span> Support our development while getting future premium features automatically!
                     </p>
                   </div>
                 </div>
@@ -181,7 +188,7 @@ export default function Pricing() {
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>Advanced filters and sorting</span>
+                    <span>Advanced filters and sorting options</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
@@ -189,11 +196,11 @@ export default function Pricing() {
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>Enhanced study mode with notes</span>
+                    <span>Priority access to AI diagram generation</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>Early access to new features</span>
+                    <span>Early access to all upcoming features</span>
                   </li>
                 </ul>
               </CardContent>
@@ -217,12 +224,15 @@ export default function Pricing() {
           className="mt-24 text-center max-w-2xl mx-auto"
         >
           <h2 className="text-2xl font-bold mb-4">Join Our Beta Program</h2>
-          <p className="text-muted-foreground">
-            During our beta testing phase, most premium features are available to all users for free. 
-            Sign up now to get early access and provide feedback to help us improve Diagramr.
+          <p className="text-muted-foreground mb-4">
+            During our beta testing phase, all users get access to premium features. We're constantly improving 
+            our diagram search and generation capabilities based on user feedback.
+          </p>
+          <p className="text-sm text-muted-foreground/70 italic mb-6">
+            Diagramr is in early development. Results may occasionally vary in quality or relevance as we refine our systems.
           </p>
           <Button 
-            className="mt-6" 
+            className="mt-2" 
             size="lg"
             onClick={() => navigate("/auth")}
           >

@@ -6,7 +6,7 @@ import { useTheme } from "@/components/theme-provider";
 
 interface DiagramrLogoProps {
   className?: string;
-  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
   isLoading?: boolean;
   showBeta?: boolean;
   showText?: boolean;
@@ -21,12 +21,13 @@ export function DiagramrLogo({
 }: DiagramrLogoProps) {
   const { theme } = useTheme();
   const sizeClasses = {
-    sm: "h-8 w-8",
-    md: "h-12 w-12",
-    lg: "h-16 w-16", 
-    xl: "h-24 w-24",
-    "2xl": "h-32 w-32",
-    "3xl": "h-40 w-40"
+    sm: "h-10 w-10",
+    md: "h-14 w-14",
+    lg: "h-20 w-20", 
+    xl: "h-28 w-28",
+    "2xl": "h-36 w-36",
+    "3xl": "h-44 w-44",
+    "4xl": "h-52 w-52"
   };
   
   return (
@@ -52,11 +53,12 @@ export function DiagramrLogo({
           scale: 1,
           transition: { duration: 0.5 }
         }}
+        whileHover={{ scale: 1.05 }}
       >
         <img 
           src={theme === 'dark' 
-            ? "/lovable-uploads/5aa6a42f-771c-4e89-a3ba-e58ff53c701e.png" 
-            : "/lovable-uploads/a837a9a5-a83f-42b8-835c-261565ed609f.png"}
+            ? "/lovable-uploads/ec798833-9785-43fd-9962-8c826d437f27.png" 
+            : "/lovable-uploads/4de5a600-5de6-4ff0-a535-1b409d5c2393.png"}
           alt="Diagramr Logo" 
           className="h-full w-full object-contain drop-shadow-md transition-all duration-300" 
         />

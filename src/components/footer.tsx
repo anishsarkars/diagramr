@@ -12,7 +12,8 @@ import {
   Users,
   BarChart,
   Lightbulb,
-  RefreshCw
+  RefreshCw,
+  Sparkles
 } from "lucide-react";
 import { useAuth } from "@/components/auth-context";
 import { Link } from "react-router-dom";
@@ -77,30 +78,48 @@ export function Footer() {
   };
 
   return (
-    <footer className="bg-background border-t">
-      <div className="container px-4 py-12 mx-auto">
+    <footer className="bg-background border-t relative overflow-hidden">
+      {/* 3D-like gradient decorative elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute -top-24 -left-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/4 right-1/4 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl"></div>
+      </div>
+      
+      <div className="container px-4 py-12 mx-auto relative z-10">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
           <div className="lg:col-span-2 space-y-6">
             <DiagramrLogo size="md" />
             
             <p className="max-w-xs text-sm text-muted-foreground mt-4">
-              Diagramr helps students, educators, and professionals discover and create 
-              high-quality educational diagrams for better learning and knowledge sharing.
+              Diagramr helps students, educators, professionals, and businesses discover and create 
+              high-quality diagrams for learning, presentations, research, and business documentation.
             </p>
             
             <div className="flex space-x-3">
-              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
-                <Twitter className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
-                <Github className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
-                <Linkedin className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
-                <Mail className="h-5 w-5" />
-              </Button>
+              <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 500 }}>
+                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
+                  <Twitter className="h-5 w-5" />
+                </Button>
+              </motion.div>
+              
+              <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 500 }}>
+                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
+                  <Github className="h-5 w-5" />
+                </Button>
+              </motion.div>
+              
+              <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 500 }}>
+                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
+                  <Linkedin className="h-5 w-5" />
+                </Button>
+              </motion.div>
+              
+              <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 500 }}>
+                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
+                  <Mail className="h-5 w-5" />
+                </Button>
+              </motion.div>
             </div>
           </div>
           
@@ -138,26 +157,32 @@ export function Footer() {
         <div className="py-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             <div className="flex justify-center md:justify-start">
-              <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+              <motion.div 
+                className="flex items-center space-x-1 text-sm text-muted-foreground"
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 400 }}
+              >
                 <Heart className="h-3 w-3 text-red-500" />
-                <span>Made with love for educators and learners</span>
-              </div>
+                <span>Built with 💖 by <span className="font-semibold">@Anish</span></span>
+              </motion.div>
             </div>
             
             <div className="flex justify-center space-x-8 text-center">
               <motion.div
                 className="flex items-center gap-2 text-muted-foreground"
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 400 }}
               >
-                <BookOpen className="h-4 w-4" />
-                <span className="text-xs font-medium">Learning Made Visual</span>
+                <Sparkles className="h-4 w-4 text-amber-500" />
+                <span className="text-xs font-medium">Premium Quality</span>
               </motion.div>
               
               <motion.div
                 className="flex items-center gap-2 text-muted-foreground"
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 400 }}
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className="h-4 w-4 text-blue-500" />
                 <span className="text-xs font-medium">Daily Updates</span>
               </motion.div>
             </div>
@@ -168,6 +193,13 @@ export function Footer() {
               </p>
             </div>
           </div>
+        </div>
+        
+        <div className="mt-6 text-center">
+          <p className="text-xs text-muted-foreground/70 italic">
+            Diagramr is in the initial stages of development. Results may occasionally vary in quality.
+            We're constantly improving to deliver the best experience for our users.
+          </p>
         </div>
       </div>
     </footer>

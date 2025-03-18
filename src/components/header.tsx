@@ -72,14 +72,24 @@ export function Header() {
       )}
     >
       <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-2">
+        <motion.div 
+          className="flex items-center gap-2"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           <Link to="/" className="flex items-center gap-2">
-            <DiagramrLogo size="sm" className="h-10 w-auto" showText showBeta={false} />
+            <DiagramrLogo size="md" className="h-12 w-auto" showBeta={false} />
           </Link>
-        </div>
+        </motion.div>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
+        <motion.nav 
+          className="hidden md:flex items-center gap-6"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
           <Link
             to="/"
             className={cn(
@@ -201,7 +211,7 @@ export function Header() {
               </Button>
             </Link>
           )}
-        </nav>
+        </motion.nav>
 
         {/* Mobile Menu Button */}
         <div className="md:hidden flex items-center gap-2">

@@ -1,13 +1,9 @@
 
-import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, ExternalLink, AlertCircle, Zap } from "lucide-react";
 import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { useAuth } from "@/components/auth-context";
-import { useNavigate } from "react-router-dom";
+import { Sparkles, Star, Infinity, ArrowRight, Zap, CheckCircle2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface PremiumPlanDialogProps {
   open: boolean;
@@ -16,165 +12,153 @@ interface PremiumPlanDialogProps {
   onLoginClick?: () => void;
 }
 
-export function PremiumPlanDialog({ open, onClose, showLogin = false, onLoginClick }: PremiumPlanDialogProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
-  const handleUpgrade = async () => {
-    if (!user && showLogin) {
-      if (onLoginClick) {
-        onLoginClick();
-      } else {
-        navigate("/auth");
-      }
-      onClose();
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    try {
-      window.open("https://diagramr.lemonsqueezy.com/buy/5c0b7ecd-65a5-4e74-95c3-fa001496e2e2", "_blank");
-      toast.success("Redirecting to payment page");
-      onClose();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to open payment page");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSignIn = () => {
-    if (onLoginClick) {
-      onLoginClick();
-    } else {
-      navigate("/auth");
-    }
+export function PremiumPlanDialog({ 
+  open, 
+  onClose, 
+  showLogin = false,
+  onLoginClick
+}: PremiumPlanDialogProps) {
+  
+  const handleUpgradeClick = () => {
+    window.open("https://diagramr.lemonsqueezy.com/buy/5c0b7ecd-65a5-4e74-95c3-fa001496e2e2", "_blank");
     onClose();
   };
-
-  const features = [
-    { title: "Searches per day", free: "30", premium: "Unlimited" },
-    { title: "AI-generated diagrams per day", free: "5", premium: "15" },
-    { title: "High-quality diagram images", free: true, premium: true },
-    { title: "Bookmark favorite diagrams", free: true, premium: true },
-    { title: "Advanced filters & sorting", free: true, premium: true },
-    { title: "Priority support", free: false, premium: true },
-  ];
-
+  
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="text-xl flex items-center gap-2">
-            <Zap className="h-5 w-5 text-primary" />
-            {showLogin && !user ? "Create an Account" : "Upgrade to Premium"}
-          </DialogTitle>
-          <DialogDescription>
-            {showLogin && !user 
-              ? "Create an account and get 30 free searches and 5 AI generations per day."
-              : "Unlock unlimited searches and more AI generations to enhance your experience."}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="grid grid-cols-2 gap-4 py-4">
-          <div className="col-span-2 sm:col-span-1">
-            <div className="text-center p-3 border rounded-lg">
-              <h3 className="font-medium text-sm">Free Plan</h3>
-              <div className="mt-2 text-xl font-bold">₹0</div>
-              <div className="text-xs text-muted-foreground">forever</div>
-            </div>
-          </div>
+          <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full -translate-y-20 translate-x-20 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-blue-500/5 rounded-full blur-2xl pointer-events-none" />
           
-          <div className="col-span-2 sm:col-span-1 rounded-lg border-2 border-primary p-3 relative overflow-hidden">
-            <div className="absolute -right-10 -top-10 rotate-45 bg-primary text-xs text-white py-1 px-10 shadow-md">
-              Beta Special
-            </div>
-            <div className="text-center">
-              <h3 className="font-medium text-sm">Premium</h3>
-              <div className="mt-2 text-xl font-bold">₹89</div>
-              <div className="text-xs text-muted-foreground">monthly</div>
-            </div>
-          </div>
-          
-          <div className="col-span-2 space-y-3 mt-2">
-            {features.map((feature, i) => (
-              <motion.div 
-                key={feature.title}
-                className="grid grid-cols-3 items-center text-sm"
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 * i }}
-              >
-                <div className="col-span-1 font-medium">{feature.title}</div>
-                <div className="col-span-1 text-center">
-                  {typeof feature.free === 'boolean' ? (
-                    feature.free ? (
-                      <CheckCircle className="h-4 w-4 mx-auto text-green-500" />
-                    ) : (
-                      <XCircle className="h-4 w-4 mx-auto text-muted-foreground/50" />
-                    )
-                  ) : (
-                    <span className="text-xs font-medium">{feature.free}</span>
-                  )}
-                </div>
-                <div className="col-span-1 text-center">
-                  {typeof feature.premium === 'boolean' ? (
-                    feature.premium ? (
-                      <CheckCircle className="h-4 w-4 mx-auto text-primary" />
-                    ) : (
-                      <XCircle className="h-4 w-4 mx-auto text-muted-foreground/50" />
-                    )
-                  ) : (
-                    <span className="text-xs font-medium text-primary">{feature.premium}</span>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-lg mb-3">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 shrink-0 mt-0.5" />
-            <p className="text-sm text-yellow-800 dark:text-yellow-400">
-              <span className="font-semibold">Beta Special:</span> Most premium features are available to free users during the beta period. Enjoy!
-            </p>
-          </div>
-        </div>
-
-        <div className="text-xs text-muted-foreground/60 text-center italic mb-2">
-          Diagramr is in early beta. Features and results may vary in quality as we improve the service.
-        </div>
-
-        <DialogFooter className="flex flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={onClose} className="sm:w-auto w-full">
-            Maybe later
-          </Button>
-          
-          {showLogin && !user ? (
-            <Button onClick={handleSignIn} className="sm:w-auto w-full">
-              Sign in / Sign up
-            </Button>
+          {showLogin ? (
+            <>
+              <DialogTitle className="flex items-center gap-2">
+                <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
+                Sign in to continue
+              </DialogTitle>
+              <DialogDescription>
+                Create a free account to get more daily searches and AI-generated diagrams.
+              </DialogDescription>
+            </>
           ) : (
-            <Button 
-              onClick={handleUpgrade}
-              className="gap-1.5 sm:w-auto w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  <span>Get Premium (₹89/month)</span>
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </>
-              )}
-            </Button>
+            <>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-amber-500" />
+                Upgrade to Premium
+              </DialogTitle>
+              <DialogDescription>
+                Get unlimited searches and more AI-generated diagrams.
+              </DialogDescription>
+            </>
+          )}
+        </DialogHeader>
+        
+        {showLogin ? (
+          <div className="space-y-4 py-2">
+            <div className="rounded-lg border p-3">
+              <h3 className="font-medium text-sm mb-2">Free account benefits:</h3>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                  <span>30 searches per day</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                  <span>5 AI diagram generations per day</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                  <span>Save favorites to your account</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div className="text-xs text-muted-foreground italic text-center">
+              During beta, all account features are free including bookmarks and advanced filters!
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4 py-2">
+            <div className="bg-card/60 p-4 rounded-lg border relative overflow-hidden">
+              <div className="absolute -top-4 -right-4 w-20 h-20 bg-primary/10 rounded-full blur-xl pointer-events-none" />
+              
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="font-semibold text-base">Premium Plan</h3>
+                <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-500 hover:to-orange-600">
+                  <Star className="h-3 w-3 mr-1 fill-white" />
+                  Beta Price
+                </Badge>
+              </div>
+              
+              <div className="flex items-baseline gap-2 mb-3">
+                <span className="text-2xl font-bold">₹89</span>
+                <span className="text-muted-foreground font-medium line-through">₹599</span>
+                <span className="text-xs text-muted-foreground">/month</span>
+              </div>
+              
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <Infinity className="h-4 w-4 text-primary" />
+                  <span>Unlimited searches</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-primary" />
+                  <span>15 AI diagram generations daily</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <span>Advanced features & priority access</span>
+                </li>
+              </ul>
+              
+              <div className="text-xs text-muted-foreground italic mt-3">
+                Special pricing during beta - lock in this discount forever!
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <DialogFooter className="flex flex-col sm:flex-row gap-2">
+          {showLogin ? (
+            <>
+              <Button 
+                variant="outline" 
+                onClick={onClose} 
+                className="sm:w-1/2"
+              >
+                Continue as Guest
+              </Button>
+              <Button 
+                onClick={onLoginClick} 
+                className="sm:w-1/2 gap-1"
+              >
+                Sign in
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button 
+                variant="outline" 
+                onClick={onClose} 
+                className="sm:w-1/2"
+              >
+                Maybe Later
+              </Button>
+              <Button 
+                onClick={handleUpgradeClick} 
+                className="sm:w-1/2 gap-1"
+              >
+                <Sparkles className="h-4 w-4" />
+                Upgrade Now
+              </Button>
+            </>
           )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
+export default PremiumPlanDialog;

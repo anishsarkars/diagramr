@@ -32,7 +32,7 @@ export function BuiltByBadge({ className, position = "bottom-left" }: BuiltByBad
       >
         <Badge 
           variant="secondary" 
-          className="gap-1 py-1 px-2 shadow-sm backdrop-blur-sm bg-background/90 hover:bg-accent border border-border/30 transition-all group"
+          className="gap-1 py-1 px-2 shadow-md backdrop-blur-sm bg-background/90 hover:bg-accent border border-border/30 transition-all group scale-90"
         >
           <span className="text-xs font-medium">Built by @Anish</span>
           <LinkedinIcon className="h-3.5 w-3.5 text-[#0077B5] group-hover:text-[#0077B5]/80 transition-colors" />

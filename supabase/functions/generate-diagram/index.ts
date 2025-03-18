@@ -5,8 +5,6 @@ const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "AIzaSyCL-wB_Ym_40vV17e
 const STABILITY_API_KEY = Deno.env.get("STABILITY_API_KEY") || "sk-glNeUMg8H2IIBEKoPNftbAIQ97EnAl5QrBAETnqxIT76zTCS";
 const CLOUDFLARE_API_KEY = Deno.env.get("CLOUDFLARE_API_KEY") || "69Jz-coOYL8VI8fPR2MtES0-N7bTS02FVlA34D-e";
 
-const API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent";
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -28,28 +26,31 @@ serve(async (req) => {
       );
     }
 
-    // Enhanced prompt to generate higher quality, more relevant diagrams
+    // Enhanced prompt engineering for better diagram generation
     const enhancedPrompt = detailedPrompt 
       ? `Create a high-quality, professional diagram illustrating: "${prompt}". 
-         Create this as a professional-looking, visually appealing diagram that would be suitable for
-         educational materials, presentations, research papers, or business documentation.
+         The diagram must be suitable for professional and educational use in presentations, 
+         technical documentation, research papers, or educational materials.
          
-         Make the diagram:
-         1. Clear and precise - focus exactly on what is being asked
-         2. Visually attractive with appropriate colors and styling
-         3. Well-structured with logical flow and professional layout
-         4. Properly labeled with detailed annotations
-         5. High resolution (at least 1920x1080)
-         6. Include appropriate legends, titles, and explanations when needed
+         Create this as:
+         1. Clear and precise - focusing exactly on what's being asked
+         2. Highly detailed with accurate technical elements
+         3. Professionally designed with clean layout and organization
+         4. Well-labeled with clear annotations and legends
+         5. Using appropriate visual hierarchy and structure
+         6. High resolution (at least 1920x1080) with sharp lines and text
+         7. Using a professional color scheme appropriate for the subject matter
          
-         The diagram must be extremely relevant to the specific request and contain appropriate technical details.
-         Please respond only with a clear, high-quality diagram image that can be directly displayed.
-         No additional text explanations are needed in the response.`
+         The diagram should follow best practices for information visualization and be immediately 
+         understandable to viewers in educational, research, or professional contexts.
+         
+         Make the diagram extremely relevant to "${prompt}" with detailed visual elements that 
+         accurately represent the concept or system being illustrated.`
       : prompt;
     
     console.log("Generating diagram with prompt:", enhancedPrompt);
     
-    // Try with Cloudflare Workers AI first
+    // Try with Cloudflare Workers AI first (fastest option)
     try {
       console.log("Trying Cloudflare Workers AI...");
       const response = await fetch("https://api.cloudflare.com/client/v4/accounts/e5fad8b4d6ca29e53d57831b4e45ebd7/ai/run/@cf/stabilityai/stable-diffusion-xl-base-1.0", {
@@ -59,10 +60,12 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          prompt: enhancedPrompt + ", professional diagram, high quality, detailed, educational, vectorized, sharp, clean lines, infographic style, minimalist, educational diagram",
-          num_steps: 40,
+          prompt: enhancedPrompt + ", professional diagram, high quality, detailed, vector art, educational, vectorized, sharp clean lines, infographic style, technical diagram, minimalist, high resolution",
+          negative_prompt: "blurry, distorted, ugly, low resolution, poor quality, photograph, photo-realistic, text, word, handwritten",
+          num_steps: 50,
           height: 1024,
-          width: 1024
+          width: 1024,
+          seed: Math.floor(Math.random() * 1000000)
         })
       });
       
@@ -88,7 +91,7 @@ serve(async (req) => {
     } catch (cloudflareError) {
       console.error("Cloudflare API error:", cloudflareError);
       
-      // Try with Stability AI
+      // Try with Stability AI as fallback (highest quality)
       try {
         console.log("Trying Stability API...");
         const stabilityResponse = await fetch("https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image", {
@@ -101,19 +104,20 @@ serve(async (req) => {
           body: JSON.stringify({
             text_prompts: [
               {
-                text: enhancedPrompt + ", professional diagram, high quality, detailed, educational, vectorized, sharp, clean lines, infographic style",
+                text: enhancedPrompt + ", professional diagram, high quality, detailed, educational, vectorized, sharp, clean lines, infographic style, technical illustration, minimalist, schematic",
                 weight: 1
               },
               {
-                text: "blurry, distorted, low quality, ugly, unrealistic, photographic, photograph, photo, text, words",
+                text: "blurry, distorted, low quality, ugly, unrealistic, photographic, photograph, photo, person, face, hands",
                 weight: -1
               }
             ],
-            cfg_scale: 7,
+            cfg_scale: 9,
             height: 1024,
             width: 1024,
-            steps: 40,
-            samples: 1
+            steps: 50,
+            samples: 1,
+            style_preset: "digital-art"
           })
         });
         
@@ -141,7 +145,7 @@ serve(async (req) => {
         // Try with Gemini Pro as final fallback
         try {
           console.log("Trying Gemini Pro as fallback...");
-          const geminiResponse = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
+          const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -149,11 +153,11 @@ serve(async (req) => {
             body: JSON.stringify({
               contents: [{
                 parts: [{
-                  text: enhancedPrompt
+                  text: enhancedPrompt + "\n\nPlease generate a detailed diagram image. Respond only with a URL to an image or an inline image."
                 }]
               }],
               generationConfig: {
-                temperature: 0.1, // Very low temperature for precise results
+                temperature: 0.2,
                 topK: 32,
                 topP: 0.95,
                 maxOutputTokens: 4096,
@@ -174,15 +178,13 @@ serve(async (req) => {
           const fallbackResponse = `
             I'm having trouble generating a direct image for "${prompt}". 
             
-            But here's a detailed description of what such a diagram would include:
+            The diagram would include:
+            • Complete visual representation of ${prompt}
+            • Detailed labels and annotations
+            • Logical structure and organization
+            • Professional design elements
             
-            A comprehensive diagram about ${prompt} would include key components like:
-            1. Main concepts clearly labeled
-            2. Visual representation of relationships
-            3. Color-coded sections for different aspects
-            4. Clear organization with a logical flow
-            
-            Please try again or search for "${prompt} diagram" to find similar resources.
+            Please try again or refine your search terms.
           `;
           
           return new Response(

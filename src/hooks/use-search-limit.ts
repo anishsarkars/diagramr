@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect, useCallback } from 'react';
 
 // For non-logged-in users
-const GUEST_DAILY_SEARCH_LIMIT = 4;
+const GUEST_DAILY_SEARCH_LIMIT = 3;
 const GUEST_DAILY_GENERATION_LIMIT = 1;
 
 // For logged-in free users
