@@ -11,7 +11,7 @@ export async function searchGoogleImages(
     console.log(`Fetching diagrams for: "${query}" (Page ${page})`);
     
     // Add diagram-specific terms to improve search quality
-    const enhancedQuery = `${query} diagram visualization infographic schema high quality`;
+    const enhancedQuery = `${query} diagram visualization infographic schema high quality professional`;
     
     const startIndex = (page - 1) * 10 + 1;
     const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(enhancedQuery)}&searchType=image&num=10&start=${startIndex}&safe=active&imgSize=large&imgType=photo,clipart,lineart,stock&rights=cc_publicdomain,cc_attribute,cc_sharealike`;
@@ -89,37 +89,42 @@ function getAlternativeSearchResults(query: string, page: number): DiagramResult
     network: [
       "https://www.lucidchart.com/pages/templates/network-diagram/lucidchart-complete-network-diagram-template",
       "https://www.edrawsoft.com/templates/pdf/network-diagram-example.pdf",
-      "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/networkdiagram.svg"
+      "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/networkdiagram.svg",
+      "/lovable-uploads/5aa6a42f-771c-4e89-a3ba-e58ff53c701e.png"
     ],
     flowchart: [
       "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/flowchart-examples/hiring-process-flowchart.svg",
       "https://www.lucidchart.com/pages/templates/flowchart/blank-flowchart-template",
-      "https://www.edrawsoft.com/templates/images/hr-flowchart.png"
+      "https://www.edrawsoft.com/templates/images/hr-flowchart.png",
+      "/lovable-uploads/a837a9a5-a83f-42b8-835c-261565ed609f.png"
     ],
     sequence: [
       "https://www.lucidchart.com/pages/templates/sequence-diagram/sequence-diagram-tutorial-example",
       "https://www.visual-paradigm.com/guide/uml-unified-modeling-language/what-is-sequence-diagram/",
-      "https://www.uml-diagrams.org/sequence-diagrams/sequence-diagram-example.png"
+      "https://www.uml-diagrams.org/sequence-diagrams/sequence-diagram-example.png",
+      "/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png"
     ],
     uml: [
       "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/discovery-page/UML-class-diagram/UML-class-diagram-example.png",
       "https://www.lucidchart.com/pages/templates/class-diagram/lucidchart-class-diagram-with-relationships-template",
-      "https://www.uml-diagrams.org/examples/use-case-example-airline.png"
+      "https://www.uml-diagrams.org/examples/use-case-example-airline.png",
+      "/lovable-uploads/ca791211-179d-415b-87a8-97ea4fcfa0cd.png"
     ],
     architecture: [
       "https://d2slcw3kip6qmk.cloudfront.net/marketing/blog/2018Q4/system-architecture/system-architecture-diagram.png",
       "https://aws.amazon.com/architecture/reference-architecture-diagrams/",
-      "https://d1.awsstatic.com/architecture-diagrams/ArchitectureDiagrams/aws-reference-architecture-gaming-small.pdf"
+      "/lovable-uploads/d13f2dfc-b974-424f-83a2-a060b3a74cb5.png"
     ],
     er: [
       "https://www.lucidchart.com/pages/templates/er-diagram/er-diagram-example-template",
       "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/ER-diagram-tutorial/ER-diagram-tutorial.png",
-      "https://www.visual-paradigm.com/guide/data-modeling/what-is-entity-relationship-diagram/"
+      "https://www.visual-paradigm.com/guide/data-modeling/what-is-entity-relationship-diagram/",
+      "/lovable-uploads/ec798833-9785-43fd-9962-8c826d437f27.png"
     ],
     database: [
       "https://www.lucidchart.com/pages/templates/database-design/mysql-database-template",
       "https://d2slcw3kip6qmk.cloudfront.net/marketing/blog/2018Q4/database-diagram-tool/database-diagram.png",
-      "https://www.edrawsoft.com/templates/pdf/database-model-diagram.pdf"
+      "/lovable-uploads/6fded565-6442-486f-9eea-5259f0fe2811.png"
     ]
   };
   
@@ -128,6 +133,12 @@ function getAlternativeSearchResults(query: string, page: number): DiagramResult
     "/lovable-uploads/5aa6a42f-771c-4e89-a3ba-e58ff53c701e.png",
     "/lovable-uploads/a837a9a5-a83f-42b8-835c-261565ed609f.png",
     "/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png",
+    "/lovable-uploads/ec798833-9785-43fd-9962-8c826d437f27.png",
+    "/lovable-uploads/ca791211-179d-415b-87a8-97ea4fcfa0cd.png",
+    "/lovable-uploads/d13f2dfc-b974-424f-83a2-a060b3a74cb5.png",
+    "/lovable-uploads/6fded565-6442-486f-9eea-5259f0fe2811.png",
+    "/lovable-uploads/a6ccf758-c406-414d-8f2e-e5e6d69439ff.png",
+    "/lovable-uploads/29c6874b-2503-4a4a-ac77-228929a96128.png",
     "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/network-diagram.png",
     "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/discovery-page/UML-class-diagram/UML-class-diagram-example.png",
     "https://d2slcw3kip6qmk.cloudfront.net/marketing/blog/2018Q4/system-architecture/system-architecture-diagram.png",

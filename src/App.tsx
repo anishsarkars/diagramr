@@ -9,7 +9,6 @@ import { AuthProvider, useAuth } from "@/components/auth-context";
 import { useState, useEffect } from "react";
 import Index from "./pages/Index";
 import Auth from "./pages/auth";
-import Favorites from "./pages/Favorites";
 import Liked from "./pages/Liked";
 import Account from "./pages/Account";
 import Pricing from "./pages/Pricing";
@@ -53,7 +52,7 @@ function AppContent() {
 
   // Protected route handler
   useEffect(() => {
-    const protectedRoutes = ['/account', '/liked', '/favorites'];
+    const protectedRoutes = ['/account', '/liked'];
     if (protectedRoutes.includes(location.pathname) && !user) {
       navigate('/auth', { state: { returnTo: location.pathname } });
     }
@@ -81,7 +80,6 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<Index onLoginClick={handleLoginClick} />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/favorites" element={<Favorites />} />
             <Route path="/liked" element={<Liked />} />
             <Route path="/account" element={<Account />} />
             <Route path="/pricing" element={<Pricing />} />
@@ -101,7 +99,7 @@ function AppContent() {
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system">
+      <ThemeProvider defaultTheme="light">
         <AuthProvider>
           <TooltipProvider>
             <BrowserRouter>

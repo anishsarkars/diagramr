@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { DiagramrLogo } from "@/components/diagramr-logo";
 import { 
   Search, 
   Menu, 
@@ -12,7 +11,6 @@ import {
   LogOut, 
   Moon, 
   Sun, 
-  Bookmark, 
   Heart, 
   Settings,
   BadgeCheck,
@@ -32,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { Logo } from "./logo";
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -52,6 +51,13 @@ export function Header() {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
+  useEffect(() => {
+    // Default to light mode on initial load
+    if (!theme || theme === 'system') {
+      setTheme('light');
+    }
+  }, [theme, setTheme]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -79,7 +85,7 @@ export function Header() {
           transition={{ duration: 0.5 }}
         >
           <Link to="/" className="flex items-center gap-2">
-            <DiagramrLogo size="md" className="h-12 w-auto" showBeta={false} />
+            <Logo size="md" className="h-12 w-auto" showBeta={false} />
           </Link>
         </motion.div>
 
@@ -115,30 +121,17 @@ export function Header() {
           </Link>
           
           {user && (
-            <>
-              <Link
-                to="/favorites"
-                className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary",
-                  location.pathname === "/favorites"
-                    ? "text-foreground"
-                    : "text-foreground/60"
-                )}
-              >
-                Bookmarks
-              </Link>
-              <Link
-                to="/liked"
-                className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary",
-                  location.pathname === "/liked"
-                    ? "text-foreground"
-                    : "text-foreground/60"
-                )}
-              >
-                Liked
-              </Link>
-            </>
+            <Link
+              to="/liked"
+              className={cn(
+                "text-sm font-medium transition-colors hover:text-primary",
+                location.pathname === "/liked"
+                  ? "text-foreground"
+                  : "text-foreground/60"
+              )}
+            >
+              Liked
+            </Link>
           )}
           
           <Button 
@@ -172,11 +165,6 @@ export function Header() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                
-                <DropdownMenuItem onClick={() => navigate('/favorites')}>
-                  <Bookmark className="mr-2 h-4 w-4 text-blue-500" />
-                  <span>My Bookmarks</span>
-                </DropdownMenuItem>
                 
                 <DropdownMenuItem onClick={() => navigate('/liked')}>
                   <Heart className="mr-2 h-4 w-4 text-rose-500" />
@@ -268,14 +256,6 @@ export function Header() {
             
             {user && (
               <>
-                <button
-                  className="flex items-center w-full py-2 text-foreground/70 hover:text-foreground"
-                  onClick={() => handleMenuClick('/favorites')}
-                >
-                  <Bookmark className="h-4 w-4 inline mr-2 text-blue-500" />
-                  Bookmarks
-                </button>
-                
                 <button
                   className="flex items-center w-full py-2 text-foreground/70 hover:text-foreground"
                   onClick={() => handleMenuClick('/liked')}

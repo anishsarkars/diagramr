@@ -71,7 +71,7 @@ export function DiagramCard({
       <div className="diagram-card-image relative">
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <div 
-            className="cursor-zoom-in relative" 
+            className="cursor-zoom-in relative overflow-hidden" 
             onClick={() => {
               if (onClick) {
                 onClick();
@@ -80,9 +80,9 @@ export function DiagramCard({
               }
             }}
           >
-            <AspectRatio ratio={aspectRatio}>
+            <AspectRatio ratio={aspectRatio} className="bg-muted/30">
               {!imageLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
+                <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
               )}
@@ -91,8 +91,7 @@ export function DiagramCard({
                 alt={title}
                 className={cn(
                   "object-cover w-full h-full transition-transform duration-500 group-hover:scale-105",
-                  !imageLoaded && "opacity-0",
-                  imageLoaded && "opacity-100"
+                  imageLoaded ? "opacity-100" : "opacity-0"
                 )}
                 loading="lazy"
                 onLoad={() => setImageLoaded(true)}
@@ -141,7 +140,6 @@ export function DiagramCard({
                   size="sm" 
                   className="gap-1.5 bg-background/40 backdrop-blur-sm hover:bg-background/60"
                   onClick={() => {
-                    // Download image logic
                     const link = document.createElement('a');
                     link.href = imageSrc;
                     link.download = `${title.replace(/\s+/g, '-').toLowerCase()}.jpg`;
@@ -159,7 +157,6 @@ export function DiagramCard({
                   size="sm" 
                   className="gap-1.5 bg-background/40 backdrop-blur-sm hover:bg-background/60"
                   onClick={() => {
-                    // Share image logic
                     if (navigator.share) {
                       navigator.share({
                         title: title,

@@ -45,7 +45,7 @@ export function Logo({
         } : {}}
       >
         <img 
-          src="/lovable-uploads/f8176116-d343-4392-ba84-07f1bfbf8709.png" 
+          src="/lovable-uploads/ade8aaaa-293a-4a73-bf2d-2490956a1578.png" 
           alt="Diagramr Logo" 
           className="h-full w-auto object-contain drop-shadow-md" 
         />
@@ -54,7 +54,7 @@ export function Logo({
       {showBeta && (
         <Badge 
           variant="outline" 
-          className="ml-1 text-[0.6rem] px-1.5 py-0 h-auto border-primary/30 text-primary-foreground/70"
+          className="ml-1 text-[0.6rem] px-1.5 py-0 h-auto border-primary/30 text-primary font-medium"
         >
           BETA
         </Badge>
