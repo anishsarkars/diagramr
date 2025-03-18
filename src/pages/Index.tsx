@@ -197,6 +197,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
             onLike={handleLikeDiagram}
             likedDiagrams={likedDiagrams}
             lastResultRef={lastResultRef}
+            hasMore={hasMore} // Pass the hasMore prop
           />
         )}
       </main>

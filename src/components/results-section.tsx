@@ -26,6 +26,7 @@ interface ResultsSectionProps {
   onLike?: (id: string | number) => void;
   likedDiagrams?: Set<string>;
   lastResultRef?: (node: HTMLDivElement) => void;
+  hasMore: boolean; // Added hasMore property to the interface
 }
 
 export function ResultsSection({ 
@@ -36,7 +37,8 @@ export function ResultsSection({
   lastAction,
   onLike,
   likedDiagrams = new Set(),
-  lastResultRef
+  lastResultRef,
+  hasMore // Added hasMore to the destructured props
 }: ResultsSectionProps) {
   const [sortOption, setSortOption] = useState<"relevance" | "newest">("relevance");
   const { ref: titleRef, inView: titleInView } = useInView({ triggerOnce: true });
