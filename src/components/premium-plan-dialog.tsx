@@ -55,11 +55,11 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false, onLoginCli
   };
 
   const features = [
-    { title: "Searches per day", free: "3", account: "50", premium: "Unlimited" },
-    { title: "AI-generated diagrams per day", free: "1", account: "5", premium: "20" },
+    { title: "Searches per day", free: "30", account: "30", premium: "Unlimited" },
+    { title: "AI-generated diagrams per day", free: "5", account: "5", premium: "15" },
     { title: "High-quality diagram images", free: true, account: true, premium: true },
-    { title: "Bookmark favorite diagrams", free: false, account: true, premium: true },
-    { title: "Advanced filters & sorting", free: false, account: true, premium: true },
+    { title: "Bookmark favorite diagrams", free: true, account: true, premium: true },
+    { title: "Advanced filters & sorting", free: true, account: true, premium: true },
     { title: "Priority support", free: false, account: false, premium: true },
   ];
 
@@ -73,29 +73,21 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false, onLoginCli
           </DialogTitle>
           <DialogDescription>
             {showLogin && !user 
-              ? "Create an account and get 50 free searches and 5 AI generations per day."
+              ? "Create an account and get 30 free searches and 5 AI generations per day."
               : "Unlock unlimited searches and more AI generations to enhance your learning experience."}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-3 gap-4 py-4">
-          <div className="col-span-3 sm:col-span-1">
+        <div className="grid grid-cols-2 gap-4 py-4">
+          <div className="col-span-2 sm:col-span-1">
             <div className="text-center p-3 border rounded-lg">
-              <h3 className="font-medium text-sm">Free Trial</h3>
+              <h3 className="font-medium text-sm">Free Plan</h3>
               <div className="mt-2 text-xl font-bold">₹0</div>
-              <div className="text-xs text-muted-foreground">no account</div>
+              <div className="text-xs text-muted-foreground">forever</div>
             </div>
           </div>
           
-          <div className="col-span-3 sm:col-span-1">
-            <div className="text-center p-3 border rounded-lg bg-muted/30">
-              <h3 className="font-medium text-sm">Free Account</h3>
-              <div className="mt-2 text-xl font-bold">₹0</div>
-              <div className="text-xs text-muted-foreground">sign up required</div>
-            </div>
-          </div>
-          
-          <div className="col-span-3 sm:col-span-1 rounded-lg border-2 border-primary p-3 relative overflow-hidden">
+          <div className="col-span-2 sm:col-span-1 rounded-lg border-2 border-primary p-3 relative overflow-hidden">
             <div className="absolute -right-10 -top-10 rotate-45 bg-primary text-xs text-white py-1 px-10 shadow-md">
               Beta Special
             </div>
@@ -106,11 +98,11 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false, onLoginCli
             </div>
           </div>
           
-          <div className="col-span-3 space-y-3 mt-2">
+          <div className="col-span-2 space-y-3 mt-2">
             {features.map((feature, i) => (
               <motion.div 
                 key={feature.title}
-                className="grid grid-cols-4 items-center text-sm"
+                className="grid grid-cols-3 items-center text-sm"
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05 * i }}
@@ -125,17 +117,6 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false, onLoginCli
                     )
                   ) : (
                     <span className="text-xs font-medium">{feature.free}</span>
-                  )}
-                </div>
-                <div className="col-span-1 text-center">
-                  {typeof feature.account === 'boolean' ? (
-                    feature.account ? (
-                      <CheckCircle className="h-4 w-4 mx-auto text-green-500" />
-                    ) : (
-                      <XCircle className="h-4 w-4 mx-auto text-muted-foreground/50" />
-                    )
-                  ) : (
-                    <span className="text-xs font-medium">{feature.account}</span>
                   )}
                 </div>
                 <div className="col-span-1 text-center">
@@ -158,7 +139,7 @@ export function PremiumPlanDialog({ open, onClose, showLogin = false, onLoginCli
           <div className="flex items-start gap-2">
             <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 shrink-0 mt-0.5" />
             <p className="text-sm text-yellow-800 dark:text-yellow-400">
-              <span className="font-semibold">Beta Special:</span> Premium plan will only be ₹89/month during the beta period for early adopters.
+              <span className="font-semibold">Beta Special:</span> Most premium features are available to free users during the beta period. Enjoy!
             </p>
           </div>
         </div>

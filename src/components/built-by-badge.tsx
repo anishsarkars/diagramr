@@ -12,8 +12,8 @@ export function BuiltByBadge({ className, position = "bottom-left" }: BuiltByBad
   const positionClasses = {
     "bottom-right": "absolute bottom-4 right-4",
     "bottom-left": "absolute bottom-4 left-4", 
-    "fixed-left": "fixed bottom-6 left-6 z-50",
-    "fixed-right": "fixed bottom-6 right-6 z-50"
+    "fixed-left": "fixed bottom-8 left-8 z-50",
+    "fixed-right": "fixed bottom-8 right-8 z-50"
   };
 
   return (
@@ -32,10 +32,10 @@ export function BuiltByBadge({ className, position = "bottom-left" }: BuiltByBad
       >
         <Badge 
           variant="secondary" 
-          className="gap-1.5 py-2 px-3 shadow-md backdrop-blur-sm bg-background/90 hover:bg-accent border border-border/30 transition-all group"
+          className="gap-2 py-2.5 px-4 shadow-md backdrop-blur-sm bg-background/90 hover:bg-accent border border-border/30 transition-all group text-base"
         >
-          <span className="text-sm font-medium">Built by @Anish</span>
-          <LinkedinIcon className="h-4 w-4 text-[#0077B5] group-hover:text-[#0077B5]/80 transition-colors" />
+          <span className="font-medium">Built by @Anish</span>
+          <LinkedinIcon className="h-5 w-5 text-[#0077B5] group-hover:text-[#0077B5]/80 transition-colors" />
         </Badge>
       </a>
     </motion.div>

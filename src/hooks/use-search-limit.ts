@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth-context";
@@ -16,12 +15,12 @@ interface SearchLimitState {
   incrementGenerationCount: () => Promise<boolean>;
 }
 
-// Define constants for search limits
-const FREE_TIER_LIMIT = 50; // Registered users get 50 searches per day during beta
+// Define constants for search limits as per new requirements
+const FREE_TIER_LIMIT = 30; // Free users get 30 searches per day during beta
 const DEMO_LIMIT = 3; // Anonymous users get 3 searches before requiring login
-const FREE_GENERATION_LIMIT = 5; // Registered users get 5 generations per day
+const FREE_GENERATION_LIMIT = 5; // Free users get 5 generations per day
 const DEMO_GENERATION_LIMIT = 1; // Anonymous users get 1 generation before requiring login
-const PREMIUM_GENERATION_LIMIT = 20; // Premium users get 20 generations per day
+const PREMIUM_GENERATION_LIMIT = 15; // Premium users get 15 generations per day
 
 export function useSearchLimit(): SearchLimitState {
   const { user, profile } = useAuth();
@@ -30,9 +29,6 @@ export function useSearchLimit(): SearchLimitState {
   const [isLoading, setIsLoading] = useState(true);
   
   const isPremium = profile?.is_premium || false;
-  
-  // During beta, all signed-in users get premium search features
-  const isBetaPeriod = true;
   
   // Different logic based on authentication status
   const hasReachedLimit = !user 

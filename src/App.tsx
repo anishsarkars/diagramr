@@ -3,9 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
-import { AuthProvider } from "@/components/auth-context";
+import { AuthProvider, useAuth } from "@/components/auth-context";
 import { useState, useEffect } from "react";
 import Index from "./pages/Index";
 import Auth from "./pages/auth";
@@ -32,7 +32,10 @@ const queryClient = new QueryClient({
 function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
   
+  // Enhanced loading timeout for better UX
   useEffect(() => {
     // Check if user has already visited
     const hasVisited = localStorage.getItem("hasVisited");
@@ -48,8 +51,18 @@ function AppContent() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Protected route handler
+  useEffect(() => {
+    const protectedRoutes = ['/account', '/liked', '/favorites'];
+    if (protectedRoutes.includes(location.pathname) && !user) {
+      navigate('/auth', { state: { returnTo: location.pathname } });
+    }
+  }, [location.pathname, user, navigate]);
+
   const handleLoginClick = () => {
-    navigate('/auth');
+    navigate('/auth', { 
+      state: { returnTo: location.pathname !== '/auth' ? location.pathname : '/' } 
+    });
   };
   
   // Lazy load components for better performance

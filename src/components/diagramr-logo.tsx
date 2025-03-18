@@ -23,11 +23,11 @@ export function DiagramrLogo({
 }: DiagramrLogoProps) {
   const { theme } = useTheme();
   const sizeClasses = {
-    sm: "h-10 w-10",
-    md: "h-14 w-14",
-    lg: "h-20 w-20", 
-    xl: "h-28 w-28",
-    "2xl": "h-36 w-36"
+    sm: "h-8 w-8",
+    md: "h-12 w-12",
+    lg: "h-16 w-16", 
+    xl: "h-24 w-24",
+    "2xl": "h-32 w-32"
   };
   
   return (
@@ -62,17 +62,6 @@ export function DiagramrLogo({
           className="h-full w-full object-contain drop-shadow-lg transition-all duration-300" 
         />
       </motion.div>
-      
-      {showText && (
-        <motion.div 
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-          className={cn("font-bold text-2xl md:text-3xl bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent", textClassName)}
-        >
-          Diagramr
-        </motion.div>
-      )}
       
       {showBeta && (
         <Badge 

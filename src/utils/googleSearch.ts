@@ -14,11 +14,11 @@ type SearchResult = {
 export const searchGoogleImages = async (
   query: string,
   apiKey: string = "",
-  searchEngineId: string = ""
+  searchEngineId: string = "",
+  page: number = 1
 ): Promise<SearchResult[]> => {
   try {
-    // Create an enhanced query that focuses on educational diagrams and the exact search term
-    // Adding specificity to get more relevant results
+    // Create an enhanced query that focuses on educational diagrams
     const coreTerms = query.toLowerCase().split(' ').filter(t => t.length > 2);
     
     // Domain-specific modifiers to improve relevance
@@ -36,18 +36,20 @@ export const searchGoogleImages = async (
     // Construct final query with exact phrase matching and enhancements
     const enhancedQuery = `"${query}" ${enhancementTerms.slice(0, 5).join(' ')}`;
     
+    // Calculate start index for pagination
+    const startIndex = (page - 1) * 10 + 1;
+    
     // Add more specific search parameters for better results
     const searchParams = new URLSearchParams({
       key: apiKey,
       cx: searchEngineId,
       q: enhancedQuery,
       searchType: 'image',
-      num: '12',
+      num: '10',
+      start: startIndex.toString(),
       imgSize: 'xlarge',
       imgType: 'photo',
       safe: 'active',
-      highRange: '1',
-      imgColorType: 'color',
       rights: 'cc_publicdomain,cc_attribute,cc_sharealike',
       fileType: 'jpg,png',
       sort: 'relevance'
@@ -55,8 +57,7 @@ export const searchGoogleImages = async (
     
     const url = `https://www.googleapis.com/customsearch/v1?${searchParams.toString()}`;
     
-    console.log("Fetching high-quality educational diagrams for:", query);
-    console.log("Enhanced search query:", enhancedQuery);
+    console.log(`Fetching diagrams for: "${query}" (Page ${page})`);
     
     const response = await fetch(url);
     
@@ -67,66 +68,75 @@ export const searchGoogleImages = async (
     const data = await response.json();
     
     if (data.items && data.items.length > 0) {
-      console.log(`Found ${data.items.length} educational diagram results`);
+      console.log(`Found ${data.items.length} results for page ${page}`);
       
-      // More advanced filtering and relevance scoring
+      // Map and format the results
       return data.items
         .map((item: any, index: number) => {
-          // Calculate relevance score for this result
-          const relevanceScore = calculateRelevanceScore(item, query);
-          
           // Generate more specific and meaningful tags
           const tags = generateTags(item, query);
           
           return {
-            id: `google-${Date.now()}-${index}`,
+            id: `google-${Date.now()}-${index}-${page}`,
             title: item.title,
             imageSrc: item.link,
             author: item.displayLink,
             authorUsername: item.displayLink.replace(/\./g, '_').replace(/^www\./, ''),
             tags: tags,
-            sourceUrl: item.image.contextLink,
-            relevanceScore: relevanceScore // Add relevance score to sort by later
+            sourceUrl: item.image?.contextLink || '#'
           };
         })
         .filter((item: any) => {
-          // Filter out low relevance results
-          return item.relevanceScore > 0.3 && 
-                 // Filter out non-diagram images by checking title and tags
-                 (item.title.toLowerCase().includes('diagram') || 
-                  item.tags.some((tag: string) => ['diagram', 'chart', 'infographic', 'flowchart', 'graph'].includes(tag)));
-        })
-        .sort((a: any, b: any) => b.relevanceScore - a.relevanceScore) // Sort by relevance
-        .map(({ relevanceScore, ...item }: any) => item); // Remove the relevance score field
+          // Basic filtering to ensure we only get diagram-like images
+          const title = item.title.toLowerCase();
+          const hasDiagramTerms = title.includes('diagram') || 
+                                title.includes('chart') || 
+                                title.includes('graph') || 
+                                title.includes('map') ||
+                                title.includes('concept');
+          
+          return hasDiagramTerms || 
+                 item.tags.some((tag: string) => 
+                    ['diagram', 'chart', 'infographic', 'flowchart', 'graph'].includes(tag)
+                 );
+        });
     }
     
-    // Fallback search if initial search fails or returns no results
-    return performFallbackSearch(query, apiKey, searchEngineId);
+    // If no results, try a different query
+    if (page === 1) {
+      return performAlternativeSearch(query, apiKey, searchEngineId);
+    }
+    
+    return [];
   } catch (error) {
     console.error("Error searching Google Images:", error);
-    return performFallbackSearch(query, apiKey, searchEngineId);
+    if (page === 1) {
+      return performAlternativeSearch(query, apiKey, searchEngineId);
+    }
+    return [];
   }
 };
 
-// Fallback search with broader terms
-const performFallbackSearch = async (
+// Alternative search with different query structure
+const performAlternativeSearch = async (
   query: string,
   apiKey: string,
   searchEngineId: string
 ): Promise<SearchResult[]> => {
   try {
-    console.log("Performing fallback search for:", query);
+    console.log("Performing alternative search for:", query);
     
-    // Simpler, more direct query for fallback
-    const fallbackQuery = `${query} diagram educational`;
+    // Different query approach
+    const alternativeQuery = `${query} diagram educational concept visualization`;
     
     const searchParams = new URLSearchParams({
       key: apiKey,
       cx: searchEngineId,
-      q: fallbackQuery,
+      q: alternativeQuery,
       searchType: 'image',
       num: '10',
       imgSize: 'large',
+      rights: 'cc_publicdomain,cc_attribute,cc_sharealike',
     });
     
     const url = `https://www.googleapis.com/customsearch/v1?${searchParams.toString()}`;
@@ -135,90 +145,28 @@ const performFallbackSearch = async (
     const data = await response.json();
     
     if (data.items && data.items.length > 0) {
-      console.log(`Found ${data.items.length} results in fallback search`);
+      console.log(`Found ${data.items.length} results in alternative search`);
       
       return data.items.map((item: any, index: number) => {
         const tags = generateTags(item, query);
         
         return {
-          id: `google-fb-${Date.now()}-${index}`,
+          id: `google-alt-${Date.now()}-${index}`,
           title: item.title,
           imageSrc: item.link,
           author: item.displayLink,
           authorUsername: item.displayLink.replace(/\./g, '_').replace(/^www\./, ''),
           tags: tags,
-          sourceUrl: item.image.contextLink
+          sourceUrl: item.image?.contextLink || '#'
         };
       });
     }
     
     return [];
   } catch (error) {
-    console.error("Error in fallback search:", error);
+    console.error("Error in alternative search:", error);
     return [];
   }
-};
-
-// Helper function to calculate relevance score (0-1) for search results
-const calculateRelevanceScore = (item: any, query: string): number => {
-  let score = 0;
-  const maxScore = 10;
-  const queryTerms = query.toLowerCase().split(' ').filter(t => t.length > 2);
-  const title = item.title?.toLowerCase() || '';
-  const snippet = item.snippet?.toLowerCase() || '';
-  const displayLink = item.displayLink?.toLowerCase() || '';
-  const imageUrl = item.link?.toLowerCase() || '';
-  
-  // Check for exact phrase match (highest relevance)
-  if (title.includes(query.toLowerCase())) {
-    score += 3;
-  }
-  
-  // Check for all terms appearing in title
-  const allTermsInTitle = queryTerms.every(term => title.includes(term));
-  if (allTermsInTitle) {
-    score += 2;
-  }
-  
-  // Check individual terms in title
-  queryTerms.forEach(term => {
-    if (title.includes(term)) {
-      score += 0.5;
-    }
-  });
-  
-  // Check if image URL contains terms like "diagram" or "chart"
-  const diagramTerms = ['diagram', 'chart', 'infographic', 'flowchart', 'graph'];
-  if (diagramTerms.some(term => imageUrl.includes(term) || title.includes(term))) {
-    score += 2;
-  }
-  
-  // Educational content indicators
-  const educationalTerms = ['diagram', 'concept', 'study', 'learn', 'education', 'model', 'theory', 'framework'];
-  educationalTerms.forEach(term => {
-    if (title.includes(term) || snippet.includes(term)) {
-      score += 0.3;
-    }
-  });
-  
-  // Check for scholarly or educational domains
-  const educationalDomains = ['.edu', 'school', 'university', 'college', 'academy', 'institute'];
-  if (educationalDomains.some(domain => displayLink.includes(domain))) {
-    score += 1;
-  }
-  
-  // Image quality indicators in URL or snippet
-  const qualityIndicators = ['high-resolution', 'hd', 'high-quality', 'detailed'];
-  qualityIndicators.forEach(indicator => {
-    if (imageUrl.includes(indicator) || 
-        snippet.includes(indicator) || 
-        title.includes(indicator)) {
-      score += 0.5;
-    }
-  });
-  
-  // Normalize score to 0-1 range
-  return Math.min(score / maxScore, 1);
 };
 
 // Generate meaningful tags for results
@@ -236,14 +184,14 @@ const generateTags = (item: any, query: string): string[] => {
     .filter(word => word.length > 3 && !queryTerms.includes(word));
   
   // Extract keywords from snippet
-  const snippetWords = snippet.split(' ')
+  const snippetWords = (snippet || '').split(' ')
     .map(word => word.toLowerCase().replace(/[^a-z0-9]/g, ''))
     .filter(word => word.length > 3 && !queryTerms.includes(word) && !titleWords.includes(word));
   
   // Educational keywords to include if relevant
   const educationalKeywords = ['diagram', 'concept', 'visual', 'model', 'theory', 'framework', 'map', 'chart', 'infographic'];
   const additionalTags = educationalKeywords.filter(keyword => 
-    title.includes(keyword) || snippet.includes(keyword)
+    title.includes(keyword) || snippet?.includes(keyword)
   );
   
   // Combine all potential tags and remove duplicates

@@ -1,137 +1,175 @@
 
-import { motion } from "framer-motion";
-import { DiagramrLogo } from "./diagramr-logo";
-import { Button } from "./ui/button";
+import { DiagramrLogo } from "@/components/diagramr-logo";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { 
+  Github, 
+  Twitter, 
+  Linkedin, 
+  Mail, 
+  Heart,
+  BookOpen,
+  Users,
+  BarChart,
+  Lightbulb,
+  RefreshCw
+} from "lucide-react";
+import { useAuth } from "@/components/auth-context";
 import { Link } from "react-router-dom";
-import { Github, Linkedin, Twitter, Heart } from "lucide-react";
+import { motion } from "framer-motion";
 
 export function Footer() {
+  const { user } = useAuth();
   const currentYear = new Date().getFullYear();
   
+  const footerLinks = [
+    {
+      title: "Product",
+      links: [
+        { name: "Home", href: "/" },
+        { name: "Pricing", href: "/pricing" },
+        { name: "Upgrade to Premium", href: "/pricing" },
+        { name: "API (Coming Soon)", href: "#" },
+      ]
+    },
+    {
+      title: "Resources",
+      links: [
+        { name: "Educational Diagrams", href: "/" },
+        { name: "Study Guide", href: "#" },
+        { name: "Blog", href: "#" },
+        { name: "FAQs", href: "#" },
+      ]
+    },
+    {
+      title: "Account",
+      links: [
+        { name: "My Account", href: "/account" },
+        { name: "Saved Diagrams", href: "/liked" },
+        { name: "Settings", href: "/account" },
+        { name: "Get Help", href: "#" },
+      ]
+    },
+    {
+      title: "Company",
+      links: [
+        { name: "About Us", href: "#" },
+        { name: "Careers", href: "#" },
+        { name: "Contact", href: "#" },
+        { name: "Privacy", href: "#" },
+      ]
+    }
+  ];
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
-    <motion.footer 
-      className="bg-muted/30 backdrop-blur-sm border-t border-border/30"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.5, duration: 0.5 }}
-    >
-      <div className="container py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="md:col-span-1">
-            <DiagramrLogo size="sm" className="mb-4" showText showBeta={false} />
-            <p className="text-sm text-muted-foreground mb-4 max-w-xs">
-              Discover and generate educational diagrams to visualize complex concepts instantly.
+    <footer className="bg-background border-t">
+      <div className="container px-4 py-12 mx-auto">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+          <div className="lg:col-span-2 space-y-6">
+            <DiagramrLogo size="md" />
+            
+            <p className="max-w-xs text-sm text-muted-foreground mt-4">
+              Diagramr helps students, educators, and professionals discover and create 
+              high-quality educational diagrams for better learning and knowledge sharing.
             </p>
-            <div className="flex gap-3">
-              <Button variant="ghost" size="icon" asChild>
-                <a href="https://github.com" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
-                  <Github className="h-4 w-4" />
-                </a>
+            
+            <div className="flex space-x-3">
+              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
+                <Twitter className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" asChild>
-                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
-                  <Twitter className="h-4 w-4" />
-                </a>
+              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
+                <Github className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" asChild>
-                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
-                  <Linkedin className="h-4 w-4" />
-                </a>
+              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
+                <Linkedin className="h-5 w-5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
+                <Mail className="h-5 w-5" />
               </Button>
             </div>
           </div>
           
-          <div className="md:col-span-1">
-            <h3 className="font-medium mb-4 text-sm">Product</h3>
-            <ul className="space-y-3">
-              <li>
-                <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Pricing
-                </Link>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  API
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Integrations
-                </a>
-              </li>
-            </ul>
-          </div>
-          
-          <div className="md:col-span-1">
-            <h3 className="font-medium mb-4 text-sm">Resources</h3>
-            <ul className="space-y-3">
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Documentation
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Blog
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Support
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Contact
-                </a>
-              </li>
-            </ul>
-          </div>
-          
-          <div className="md:col-span-1">
-            <h3 className="font-medium mb-4 text-sm">Legal</h3>
-            <ul className="space-y-3">
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Terms of Service
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  GDPR
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Cookie Policy
-                </a>
-              </li>
-            </ul>
-          </div>
+          <motion.div 
+            className="col-span-3 grid grid-cols-2 sm:grid-cols-4 gap-8"
+            variants={container}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+          >
+            {footerLinks.map((group) => (
+              <div key={group.title} className="space-y-3">
+                <motion.h3 variants={item} className="text-sm font-medium">
+                  {group.title}
+                </motion.h3>
+                <ul className="space-y-2">
+                  {group.links.map((link) => (
+                    <motion.li variants={item} key={link.name}>
+                      <Link 
+                        to={link.href} 
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {link.name}
+                      </Link>
+                    </motion.li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </motion.div>
         </div>
         
-        <div className="border-t border-border/30 mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center">
-          <p className="text-sm text-muted-foreground">
-            © {currentYear} Diagramr. All rights reserved.
-          </p>
-          
-          <div className="flex items-center mt-4 sm:mt-0">
-            <span className="text-sm text-muted-foreground flex items-center">
-              Made with <Heart className="h-3 w-3 mx-1 text-red-500" /> by Anish
-            </span>
+        <Separator className="my-8" />
+        
+        <div className="py-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+            <div className="flex justify-center md:justify-start">
+              <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+                <Heart className="h-3 w-3 text-red-500" />
+                <span>Made with love for educators and learners</span>
+              </div>
+            </div>
+            
+            <div className="flex justify-center space-x-8 text-center">
+              <motion.div
+                className="flex items-center gap-2 text-muted-foreground"
+                whileHover={{ scale: 1.05 }}
+              >
+                <BookOpen className="h-4 w-4" />
+                <span className="text-xs font-medium">Learning Made Visual</span>
+              </motion.div>
+              
+              <motion.div
+                className="flex items-center gap-2 text-muted-foreground"
+                whileHover={{ scale: 1.05 }}
+              >
+                <RefreshCw className="h-4 w-4" />
+                <span className="text-xs font-medium">Daily Updates</span>
+              </motion.div>
+            </div>
+            
+            <div className="flex justify-center md:justify-end">
+              <p className="text-sm text-muted-foreground">
+                &copy; {currentYear} Diagramr. All rights reserved.
+              </p>
+            </div>
           </div>
         </div>
       </div>
-    </motion.footer>
+    </footer>
   );
 }

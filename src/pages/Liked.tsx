@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Bookmark, Search, Loader2, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Json } from "@/integrations/supabase/types";
 
 interface DiagramData {
   id: string;
@@ -35,7 +36,7 @@ export default function Liked() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Redirect if not logged in or not premium
+  // Redirect if not logged in
   useEffect(() => {
     if (!user) {
       navigate('/auth');
@@ -51,8 +52,6 @@ export default function Liked() {
       try {
         setIsLoading(true);
         
-        // For now, we'll use the saved_diagrams table with a different query
-        // In a real app, you might want a separate liked_diagrams table
         const { data, error } = await supabase
           .from('saved_diagrams')
           .select('*')
@@ -62,7 +61,16 @@ export default function Liked() {
         if (error) throw error;
         
         if (data) {
-          setLikedDiagrams(data as LikedDiagram[]);
+          // Fix the type conversion issue by properly mapping the JSON data
+          const formattedData = data.map(item => ({
+            id: item.id,
+            user_id: item.user_id,
+            diagram_id: item.diagram_id,
+            created_at: item.created_at,
+            diagram_data: item.diagram_data as unknown as DiagramData
+          }));
+          
+          setLikedDiagrams(formattedData);
         }
       } catch (error) {
         console.error('Error fetching liked diagrams:', error);

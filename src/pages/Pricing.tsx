@@ -52,13 +52,13 @@ export default function Pricing() {
     <div className="min-h-screen bg-background">
       <div className="container max-w-7xl mx-auto py-10 px-4 sm:px-6">
         <div className="flex justify-between items-center mb-12">
-          <DiagramrLogo size="md" showText />
+          <DiagramrLogo size="md" />
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={() => navigate("/")}>
               Home
             </Button>
             {user ? (
-              <Button onClick={() => navigate("/favorites")}>My Favorites</Button>
+              <Button onClick={() => navigate("/account")}>My Account</Button>
             ) : (
               <Button onClick={() => navigate("/auth")}>Sign in</Button>
             )}
@@ -80,7 +80,7 @@ export default function Pricing() {
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Get unlimited access to educational diagrams with our early adopter pricing.
-            All features are free during beta testing.
+            Most features are free during beta testing.
           </p>
         </motion.div>
 
@@ -114,7 +114,11 @@ export default function Pricing() {
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>50 searches per day</span>
+                    <span>30 searches per day</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
+                    <span>5 AI generations per day</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
@@ -123,10 +127,6 @@ export default function Pricing() {
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
                     <span>Basic filter options</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>Study mode</span>
                   </li>
                 </ul>
               </CardContent>
@@ -157,7 +157,7 @@ export default function Pricing() {
                   <span className="ml-1 text-muted-foreground">/month</span>
                 </div>
                 <CardDescription className="mt-2">
-                  Early beta special offer, limited time only.
+                  Early beta special offer, available now.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -165,7 +165,7 @@ export default function Pricing() {
                   <div className="flex items-start gap-2">
                     <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 shrink-0 mt-0.5" />
                     <p className="text-sm text-yellow-800 dark:text-yellow-400">
-                      <span className="font-semibold">Beta Special:</span> All premium features are free during beta testing!
+                      <span className="font-semibold">Beta Special:</span> Most premium features are available to free users during the beta period. Enjoy!
                     </p>
                   </div>
                 </div>
@@ -173,11 +173,11 @@ export default function Pricing() {
                 <ul className="space-y-3 mt-4">
                   <li className="flex items-start">
                     <Infinity className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span className="font-medium">Unlimited searches & generations</span>
+                    <span className="font-medium">Unlimited searches</span>
                   </li>
                   <li className="flex items-start">
                     <Zap className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span className="font-medium">AI-generated diagrams (Gemini powered)</span>
+                    <span className="font-medium">15 AI-generated diagrams per day</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
@@ -213,14 +213,21 @@ export default function Pricing() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1, duration: 0.5 }}
+          transition={{ delay: 0.8, duration: 0.5 }}
           className="mt-24 text-center max-w-2xl mx-auto"
         >
           <h2 className="text-2xl font-bold mb-4">Join Our Beta Program</h2>
           <p className="text-muted-foreground">
-            During our beta testing phase, all premium features are available to all users for free. 
+            During our beta testing phase, most premium features are available to all users for free. 
             Sign up now to get early access and provide feedback to help us improve Diagramr.
           </p>
+          <Button 
+            className="mt-6" 
+            size="lg"
+            onClick={() => navigate("/auth")}
+          >
+            Get Started For Free
+          </Button>
         </motion.div>
       </div>
       

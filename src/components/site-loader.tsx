@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 export function SiteLoader({ className }: { className?: string }) {
   return (
     <div className={cn("fixed inset-0 flex flex-col items-center justify-center bg-background", className)}>
-      <div className="flex flex-col items-center space-y-4">
+      <div className="flex flex-col items-center space-y-6">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -15,11 +15,11 @@ export function SiteLoader({ className }: { className?: string }) {
             ease: [0.22, 1, 0.36, 1]
           }}
         >
-          <DiagramrLogo size="xl" isLoading showBeta={false} showText />
+          <DiagramrLogo size="2xl" isLoading showBeta={false} />
         </motion.div>
         
         <motion.div 
-          className="w-40 h-1.5 bg-muted rounded-full overflow-hidden mt-2"
+          className="w-48 h-2 bg-muted rounded-full overflow-hidden mt-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
