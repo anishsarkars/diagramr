@@ -1,10 +1,9 @@
-
 import { DiagramResult } from "@/hooks/use-infinite-search";
 import { searchGoogleImages } from "@/utils/googleSearch";
 import { toast } from "sonner";
 
 // Maximum number of search results to cache
-const MAX_CACHE_SIZE = 100;
+const MAX_CACHE_SIZE = 200;
 
 // Cache for search results
 const searchCache = new Map<string, {
@@ -71,14 +70,17 @@ export async function searchDiagrams(
       return [];
     }
     
+    // Sort results by relevance
+    const enhancedResults = enhanceSearchResults(results, query);
+    
     // Cache the results
     searchCache.set(cacheKey, {
       timestamp: Date.now(),
-      results
+      results: enhancedResults
     });
     
-    console.log(`[SearchService] Found ${results.length} results for "${query}"`);
-    return results;
+    console.log(`[SearchService] Found ${enhancedResults.length} results for "${query}"`);
+    return enhancedResults;
   } catch (error) {
     console.error(`[SearchService] Error searching for "${query}":`, error);
     toast.error("Search failed. Please try again.");
@@ -86,6 +88,54 @@ export async function searchDiagrams(
     // Return empty results on error
     return [];
   }
+}
+
+// Function to enhance search results with better relevance sorting and tags
+function enhanceSearchResults(results: DiagramResult[], query: string): DiagramResult[] {
+  // Extract terms from the query for relevance scoring
+  const queryTerms = query.toLowerCase().split(/\s+/).filter(term => term.length > 2);
+  
+  // Score function for relevance
+  const scoreResult = (result: DiagramResult): number => {
+    let score = 0;
+    const title = result.title.toLowerCase();
+    
+    // Title contains query terms
+    for (const term of queryTerms) {
+      if (title.includes(term)) score += 3;
+    }
+    
+    // Tags contain query terms
+    if (result.tags) {
+      for (const term of queryTerms) {
+        for (const tag of result.tags) {
+          if (tag.includes(term)) score += 2;
+        }
+      }
+    }
+    
+    // Boost diagrams and educational content
+    const diagramKeywords = ['diagram', 'chart', 'flowchart', 'infographic', 'visualization'];
+    const educationalKeywords = ['educational', 'learning', 'academic', 'textbook'];
+    
+    for (const keyword of diagramKeywords) {
+      if (title.includes(keyword)) score += 5;
+    }
+    
+    for (const keyword of educationalKeywords) {
+      if (title.includes(keyword)) score += 3;
+    }
+    
+    return score;
+  };
+  
+  // Clone results to avoid mutating the original array
+  const enhancedResults = [...results];
+  
+  // Sort results by relevance score
+  enhancedResults.sort((a, b) => scoreResult(b) - scoreResult(a));
+  
+  return enhancedResults;
 }
 
 // Function to get search suggestions
