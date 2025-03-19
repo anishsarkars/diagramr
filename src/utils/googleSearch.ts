@@ -1,4 +1,3 @@
-
 import { DiagramResult } from "@/hooks/use-infinite-search";
 import { toast } from "sonner";
 
@@ -25,7 +24,7 @@ export async function searchGoogleImages(
     // Build the API URL with appropriate parameters
     const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(enhancedQuery)}&searchType=image&num=10&start=${startIndex}&safe=active&imgSize=large&imgType=photo,clipart,lineart,stock&rights=cc_publicdomain,cc_attribute,cc_sharealike`;
     
-    console.log(`[GoogleSearch] Sending request to Google CSE API`);
+    console.log(`[GoogleSearch] Sending request to Google CSE API: ${url}`);
     
     // Make the API request
     const response = await fetch(url, {
@@ -53,6 +52,7 @@ export async function searchGoogleImages(
     
     // Parse the response
     const data = await response.json();
+    console.log("[GoogleSearch] API response:", data);
     
     // Log number of results received
     console.log(`[GoogleSearch] Received ${data.items?.length || 0} results`);
@@ -135,7 +135,6 @@ function getWebDiagrams(query: string, page: number): DiagramResult[] {
     "https://www.uml-diagrams.org/sequence-diagrams/sequence-diagram-example.png",
     "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/discovery-page/UML-class-diagram/UML-class-diagram-example.png",
     "https://d2slcw3kip6qmk.cloudfront.net/marketing/blog/2018Q4/system-architecture/system-architecture-diagram.png",
-    "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/ER-diagram-tutorial/ER-diagram-tutorial.png",
     "https://d2slcw3kip6qmk.cloudfront.net/marketing/blog/2018Q4/database-diagram-tool/database-diagram.png",
     "https://www.edrawsoft.com/templates/images/software-engineering-diagram.png",
     "https://www.edrawsoft.com/templates/images/website-structure-diagram.png",
@@ -151,7 +150,7 @@ function getWebDiagrams(query: string, page: number): DiagramResult[] {
     "https://cdn.sketchbubble.com/pub/media/catalog/product/optimized1/d/a/da3e13b35a385b3dfd56dfd1adb266c7d91fe7fd558d4bfb2f136d1c9ff6c29b/data-flow-diagram-mc-slide1.png",
     "https://www.smartdraw.com/entity-relationship-diagram/img/entity-relationship-diagram.jpg",
     "https://www.researchgate.net/profile/Panagiotis-Chrysanthis/publication/221313562/figure/fig1/AS:305499943374850@1449846334866/An-example-of-an-ER-diagram-for-a-small-database-of-students-departments-courses.png",
-    "https://www.researchgate.net/profile/Stefano-Bistarelli/publication/304581105/figure/fig3/AS:374866106339339@1466386332697/Attack-tree-example-The-tree-is-decorated-with-local-costs-to-achieve-the-attacks.png",
+    "https://www.researchgate.net/profile/Stefano-Bistarelli/publication/304581105/figure/fig3/AS:1024480481259522@1621362767835/Attack-tree-example-The-tree-is-decorated-with-local-costs-to-achieve-the-attacks.png",
     "https://www.researchgate.net/profile/Mohd-Nazri-Kama-2/publication/329732510/figure/fig4/AS:705181818576897@1545138948594/Example-of-class-diagram.jpg",
     "https://www.researchgate.net/profile/Huseyin-Oktay-2/publication/351648093/figure/fig2/AS:1024480481259522@1621362767835/A-simple-architecture-diagram-showing-the-main-components-of-the-hybrid-cloud-based.png",
     "https://www.researchgate.net/profile/Md-Mustafizur-Rahman-3/publication/265729293/figure/fig2/AS:392186310193154@1470516376616/Activity-diagram-for-an-inventory-management-system.png",

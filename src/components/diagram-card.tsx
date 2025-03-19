@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { HeartIcon, Sparkles, ExternalLinkIcon } from "lucide-react";
+import { HeartIcon, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface DiagramCardProps {
@@ -46,7 +46,7 @@ export function DiagramCard({
     >
       <Card className="diagram-card overflow-hidden h-full flex flex-col">
         <div 
-          className="diagram-card-image cursor-pointer"
+          className="diagram-card-image cursor-pointer aspect-[4/3]"
           onClick={onClick}
           role="button" 
           tabIndex={0}
@@ -55,7 +55,7 @@ export function DiagramCard({
           <motion.img
             src={imageSrc}
             alt={title}
-            className="w-full h-full object-cover aspect-[4/3]"
+            className="w-full h-full object-cover"
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.3 }}
             onError={(e) => {
@@ -65,7 +65,6 @@ export function DiagramCard({
           />
           {isGenerated && (
             <Badge className="absolute top-2 right-2 bg-primary/70 backdrop-blur-sm">
-              <Sparkles className="h-3 w-3 mr-1" />
               AI Generated
             </Badge>
           )}
@@ -133,7 +132,7 @@ export function DiagramCard({
                 window.open(sourceUrl, "_blank", "noopener,noreferrer");
               }}
             >
-              <ExternalLinkIcon className="h-4 w-4" />
+              <ExternalLink className="h-4 w-4" />
             </Button>
           )}
         </CardFooter>

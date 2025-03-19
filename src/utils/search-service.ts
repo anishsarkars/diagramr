@@ -4,7 +4,7 @@ import { searchGoogleImages } from "@/utils/googleSearch";
 import { toast } from "sonner";
 
 // Maximum number of search results to cache
-const MAX_CACHE_SIZE = 50;
+const MAX_CACHE_SIZE = 100;
 
 // Cache for search results
 const searchCache = new Map<string, {
@@ -42,7 +42,9 @@ setInterval(cleanCache, 5 * 60 * 1000);
 // Main search function
 export async function searchDiagrams(
   query: string,
-  page: number = 1
+  page: number = 1,
+  apiKey: string = "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4",
+  searchId: string = "260090575ae504419"
 ): Promise<DiagramResult[]> {
   if (!query.trim()) {
     return [];
@@ -61,7 +63,13 @@ export async function searchDiagrams(
     console.log(`[SearchService] Fetching results for "${query}" page ${page}`);
     
     // Get search results from Google Images 
-    const results = await searchGoogleImages(query);
+    const results = await searchGoogleImages(query, apiKey, searchId, page);
+    
+    if (results.length === 0) {
+      console.warn(`[SearchService] No results found for "${query}"`);
+      toast.warning("No diagrams found. Try a different search term.");
+      return [];
+    }
     
     // Cache the results
     searchCache.set(cacheKey, {

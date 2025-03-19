@@ -25,7 +25,9 @@ export function useInfiniteScroll<T>({
   
   // Update visible items when items change
   useEffect(() => {
-    setVisibleItems(items.slice(0, Math.min(items.length, pageSize)));
+    if (items.length > 0) {
+      setVisibleItems(items.slice(0, Math.min(items.length, pageSize)));
+    }
   }, [items, pageSize]);
   
   // Show more items from the already loaded ones

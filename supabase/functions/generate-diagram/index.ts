@@ -1,9 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "AIzaSyCL-wB_Ym_40vV17e1gFhyyL-o2864KQN8";
-const STABILITY_API_KEY = Deno.env.get("STABILITY_API_KEY") || "sk-glNeUMg8H2IIBEKoPNftbAIQ97EnAl5QrBAETnqxIT76zTCS";
-const CLOUDFLARE_API_KEY = Deno.env.get("CLOUDFLARE_API_KEY") || "69Jz-coOYL8VI8fPR2MtES0-N7bTS02FVlA34D-e";
+const STABILITY_API_KEY = "sk-glNeUMg8H2IIBEKoPNftbAIQ97EnAl5QrBAETnqxIT76zTCS";
+const CLOUDFLARE_API_KEY = "t7wnDSddEAtH26r9pvoxWGR0k6rByUTZmw4CBn7B";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -166,59 +165,24 @@ serve(async (req) => {
       } catch (cloudflareError) {
         console.error("Cloudflare API error:", cloudflareError);
         
-        // Try with Gemini Pro as final fallback
-        try {
-          console.log("Trying Gemini Pro as fallback...");
-          const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              contents: [{
-                parts: [{
-                  text: enhancedPrompt + "\n\nPlease generate a detailed diagram image. Respond only with a URL to an image or an inline image."
-                }]
-              }],
-              generationConfig: {
-                temperature: 0.2,
-                topK: 32,
-                topP: 0.95,
-                maxOutputTokens: 4096,
-              }
-            })
-          });
-          
-          if (!geminiResponse.ok) {
-            const errorText = await geminiResponse.text();
-            console.error("Gemini API error:", errorText);
-            throw new Error(`Gemini API request failed with status: ${geminiResponse.status}`);
-          }
-          
-          const data = await geminiResponse.json();
-          return handleGeminiResponse(data, corsHeaders);
-        } catch (geminiError) {
-          console.error("Gemini API error:", geminiError);
-          
-          // All methods failed, return a fallback image
-          const fallbackImages = [
-            "/lovable-uploads/5aa6a42f-771c-4e89-a3ba-e58ff53c701e.png",
-            "/lovable-uploads/a837a9a5-a83f-42b8-835c-261565ed609f.png",
-            "/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png",
-            "/lovable-uploads/ec798833-9785-43fd-9962-8c826d437f27.png"
-          ];
-          
-          const fallbackImage = fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
-          
-          return new Response(
-            JSON.stringify({ 
-              imageUrl: fallbackImage,
-              error: "All generation methods failed, returning fallback image",
-              success: true
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
+        // All methods failed, return a fallback image
+        const fallbackImages = [
+          "/lovable-uploads/5aa6a42f-771c-4e89-a3ba-e58ff53c701e.png",
+          "/lovable-uploads/a837a9a5-a83f-42b8-835c-261565ed609f.png",
+          "/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png",
+          "/lovable-uploads/ec798833-9785-43fd-9962-8c826d437f27.png"
+        ];
+        
+        const fallbackImage = fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
+        
+        return new Response(
+          JSON.stringify({ 
+            imageUrl: fallbackImage,
+            error: "All generation methods failed, returning fallback image",
+            success: true
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
     }
   } catch (error) {
@@ -232,49 +196,3 @@ serve(async (req) => {
     );
   }
 });
-
-// Helper function to process Gemini response data
-function handleGeminiResponse(data: any, corsHeaders: any) {
-  if (data.candidates && data.candidates[0]?.content?.parts) {
-    // Look for an image or text in the response
-    const parts = data.candidates[0].content.parts;
-    const textPart = parts.find((part: any) => part.text);
-    
-    if (textPart) {
-      // Extract the image URL if it exists in the text
-      const imgMatch = textPart.text.match(/https:\/\/[^)\s]+\.(png|jpg|jpeg|gif)/i);
-      if (imgMatch) {
-        return new Response(
-          JSON.stringify({ 
-            imageUrl: imgMatch[0],
-            success: true
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      // No direct image URL, return the text for processing
-      return new Response(
-        JSON.stringify({ 
-          text: textPart.text,
-          success: true
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // Check for inline image parts
-    const inlineImagePart = parts.find((part: any) => part.inlineData);
-    if (inlineImagePart && inlineImagePart.inlineData) {
-      return new Response(
-        JSON.stringify({ 
-          imageData: inlineImagePart.inlineData,
-          success: true
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-  }
-  
-  throw new Error("No valid diagram generation in response");
-}
