@@ -1,13 +1,13 @@
 
-import { AIInput } from "@/components/ai-input";
 import { motion } from "framer-motion";
 import { DiagramrLogo } from "@/components/diagramr-logo";
 import { SearchLimitIndicator } from "./search-limit-indicator";
 import { useState, useEffect } from "react";
-import { CheckCircle2, Search, Sparkles, ImageIcon, LineChart, Network, Database, Users, BookOpen, PresentationIcon } from "lucide-react";
+import { Search } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
+import { SimpleSearchBar } from "./simple-search-bar";
 
 interface HeroSectionProps {
   onSearch: (query: string, mode: "search" | "generate") => void;
@@ -15,19 +15,16 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
-  const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
   const { user } = useAuth();
   const navigate = useNavigate();
   
+  // Simplified for cleaner UI
+  const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
   const features = [
-    { icon: Search, label: "Find professional diagrams & visualizations" },
-    { icon: Sparkles, label: "Generate custom diagrams with AI" },
-    { icon: BookOpen, label: "Educational resources for students" },
-    { icon: PresentationIcon, label: "Visual aids for presentations" },
-    { icon: Database, label: "Technical diagrams for documentation" },
-    { icon: Users, label: "Visual explanations for teams" },
-    { icon: Network, label: "Visualize complex concepts & relationships" },
-    { icon: LineChart, label: "Understand difficult topics faster" },
+    { label: "Find professional diagrams & visualizations" },
+    { label: "Visual aids for presentations" },
+    { label: "Technical diagrams for documentation" },
+    { label: "Understand difficult topics faster" },
   ];
   
   useEffect(() => {
@@ -40,7 +37,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
 
   return (
     <motion.div 
-      className="container pt-16 md:pt-20 pb-16 text-center flex flex-col items-center justify-center relative"
+      className="container pt-16 md:pt-20 pb-10 text-center flex flex-col items-center justify-center relative"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.7 }}
@@ -56,27 +53,26 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <DiagramrLogo size="xl" showBeta className="mb-4" />
+        <DiagramrLogo size="2xl" showBeta className="mb-6" />
       </motion.div>
       
       <motion.h1 
-        className="font-bold text-3xl md:text-5xl lg:text-6xl mb-6 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent"
+        className="font-bold text-3xl md:text-5xl lg:text-6xl mb-4 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.3 }}
       >
-        Visualize Knowledge Instantly
+        Find Perfect Diagrams
       </motion.h1>
       
       <motion.div
-        className="mb-8 text-muted-foreground text-lg max-w-2xl"
+        className="mb-8 text-muted-foreground text-lg max-w-xl"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.4 }}
       >
         <p>
-          Find or create professional diagrams for learning, presentations, research, and development.
-          Diagramr helps students, educators, and professionals visualize concepts with ease.
+          Helping students, researchers, and professionals find the best educational diagrams
         </p>
       </motion.div>
       
@@ -99,7 +95,6 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
             }}
             transition={{ duration: 0.5 }}
           >
-            <feature.icon className="h-5 w-5" />
             <span className="font-medium">{feature.label}</span>
           </motion.div>
         ))}
@@ -111,65 +106,40 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.6 }}
       >
-        <AIInput 
-          onSubmit={onSearch} 
-          placeholder="Search for diagrams or describe a diagram to generate..." 
+        <SimpleSearchBar 
+          onSearch={(query, mode) => onSearch(query, mode === "generate" ? "search" : mode)} 
           isLoading={isLoading}
+          className="shadow-lg"
         />
       </motion.div>
       
       <motion.div
-        className="flex justify-center flex-wrap gap-4"
+        className="flex justify-center"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.7 }}
       >
         <SearchLimitIndicator />
-        
-        {!user && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.2 }}
+      </motion.div>
+      
+      {!user && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1 }}
+          className="mt-4"
+        >
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/auth')}
+            className="gap-2 shadow-sm"
           >
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/auth')}
-              className="gap-2 shadow-sm"
-            >
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              <span>Sign up for 30 daily searches</span>
-            </Button>
-          </motion.div>
-        )}
-      </motion.div>
-      
-      <motion.div
-        className="mt-16 flex flex-wrap justify-center gap-6 md:gap-8"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1, duration: 0.7 }}
-      >
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Search className="h-4 w-4" />
-          <span>30 searches daily for free users</span>
-        </div>
-        
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Sparkles className="h-4 w-4" />
-          <span>5 AI-generated diagrams daily</span>
-        </div>
-        
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <ImageIcon className="h-4 w-4" />
-          <span>High-quality professional diagrams</span>
-        </div>
-      </motion.div>
-      
-      <div className="text-xs text-muted-foreground/60 mt-4 italic max-w-md text-center">
-        Diagramr is in early beta and actively improving. Results and features may vary in quality as we enhance our service.
-      </div>
+            <Search className="h-3.5 w-3.5" />
+            <span>Sign up for more searches</span>
+          </Button>
+        </motion.div>
+      )}
     </motion.div>
   );
 }

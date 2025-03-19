@@ -28,10 +28,10 @@ export function Logo({
   
   const sizeClasses = {
     sm: "h-6 w-auto",
-    md: "h-8 w-auto",
-    lg: "h-12 w-auto", 
-    xl: "h-16 w-auto",
-    "2xl": "h-24 w-auto"
+    md: "h-10 w-auto", // Increased size
+    lg: "h-16 w-auto", // Increased size
+    xl: "h-20 w-auto", // Increased size
+    "2xl": "h-28 w-auto" // Increased size
   };
   
   // Use different logo based on theme

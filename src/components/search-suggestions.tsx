@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { SearchIcon, Sparkles, ClockIcon, TrendingUpIcon } from "lucide-react";
+import { SearchIcon, ClockIcon, TrendingUpIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/components/theme-provider";
 
@@ -24,7 +24,7 @@ export function SearchSuggestions({
   const [trendingSearches, setTrendingSearches] = useState<string[]>([]);
   const { isDarkMode } = useTheme();
   
-  // Popular diagram searches that would be useful suggestions
+  // Popular diagram searches that would be useful for students and researchers
   const popularDiagramTypes = [
     "data flow diagram",
     "entity relationship diagram",
@@ -41,11 +41,17 @@ export function SearchSuggestions({
     "state diagram",
     "activity diagram",
     "cloud architecture",
-    "component diagram",
-    "deployment diagram",
-    "microservices architecture",
-    "infrastructure diagram",
-    "aws architecture"
+    "biochemical pathway",
+    "neural network architecture",
+    "circuit diagram",
+    "molecular structure",
+    "physics force diagram",
+    "mathematical graph",
+    "statistical distribution",
+    "genetic pathway",
+    "anatomical diagram",
+    "ecosystem diagram",
+    "geological formation"
   ];
   
   useEffect(() => {
@@ -59,13 +65,13 @@ export function SearchSuggestions({
       console.error('Error loading search history:', e);
     }
     
-    // Set some trending searches (in a real app, this would come from an API)
+    // Set some trending searches for educational and research diagrams
     setTrendingSearches([
       "microservices architecture",
-      "data flow diagram",
-      "cloud infrastructure",
-      "MERN stack architecture",
-      "devops pipeline"
+      "dna transcription diagram",
+      "climate system diagram",
+      "neural network architecture",
+      "database schema design"
     ]);
     
   }, []);
@@ -98,25 +104,26 @@ export function SearchSuggestions({
       );
     }
     
-    // Database related
-    if (lowerQuery.includes('data') || lowerQuery.includes('database') || 
-        lowerQuery.includes('sql') || lowerQuery.includes('schema')) {
+    // Science related
+    if (lowerQuery.includes('science') || lowerQuery.includes('biology') || 
+        lowerQuery.includes('chemistry') || lowerQuery.includes('physics')) {
       domainSpecificSuggestions.push(
-        "database schema diagram",
-        "data warehouse architecture",
-        "SQL query execution plan",
-        "NoSQL data model"
+        "cell structure diagram",
+        "atomic structure",
+        "physics force diagram",
+        "periodic table",
+        "molecular structure"
       );
     }
     
-    // Cloud/infrastructure related
-    if (lowerQuery.includes('cloud') || lowerQuery.includes('aws') || 
-        lowerQuery.includes('azure') || lowerQuery.includes('infrastructure')) {
+    // Math related
+    if (lowerQuery.includes('math') || lowerQuery.includes('algorithm') || 
+        lowerQuery.includes('calculus') || lowerQuery.includes('statistics')) {
       domainSpecificSuggestions.push(
-        "AWS architecture diagram",
-        "Azure infrastructure diagram",
-        "cloud migration strategy",
-        "hybrid cloud architecture"
+        "algorithm flowchart",
+        "mathematical graph",
+        "statistical distribution diagram",
+        "calculus concept map"
       );
     }
     
@@ -137,7 +144,7 @@ export function SearchSuggestions({
       }
     }
     
-    setSuggestions(allSuggestions.slice(0, 8));
+    setSuggestions(allSuggestions.slice(0, 7));
   }, [query]);
 
   if (!isVisible) return null;
@@ -172,18 +179,6 @@ export function SearchSuggestions({
             </div>
           )}
 
-          {query.length > 2 && (
-            <div className="px-2 py-1.5 border-t border-border/20">
-              <div
-                className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/50 rounded-md cursor-pointer"
-                onClick={() => onSuggestionClick(`Generate diagram for ${query}`)}
-              >
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                <span className="text-sm">Generate diagram for <span className="font-medium">{query}</span></span>
-              </div>
-            </div>
-          )}
-
           {!query && (
             <>
               {recentSearches.length > 0 && (
@@ -205,7 +200,7 @@ export function SearchSuggestions({
               )}
 
               <div className="px-2 py-1.5 border-t border-border/20">
-                <p className="text-xs text-muted-foreground font-medium px-2 mb-1.5">Trending</p>
+                <p className="text-xs text-muted-foreground font-medium px-2 mb-1.5">Popular Educational Diagrams</p>
                 {trendingSearches.map((search, index) => (
                   <div
                     key={`trend-${index}`}

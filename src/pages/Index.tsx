@@ -2,8 +2,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
+import {Header} from "@/components/header";
+import {Footer} from "@/components/footer";
 import { useAuth } from "@/components/auth-context";
 import { useSearchLimit } from "@/hooks/use-search-limit";
 import { PremiumPlanDialog } from "@/components/premium-plan-dialog";
@@ -18,12 +18,12 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   const [showLoginRequired, setShowLoginRequired] = useState(false);
   const [likedDiagrams, setLikedDiagrams] = useState<Set<string>>(new Set());
   
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { 
     hasReachedLimit, 
     incrementCount, 
-    requiresLogin
+    requiresLogin 
   } = useSearchLimit();
   
   const { 
@@ -51,23 +51,17 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     if (node) observer.current.observe(node);
   }, [isLoading, hasMore, loadMore]);
 
-  const handleAIPrompt = async (prompt: string, mode: "search" | "generate") => {
+  const handleSearch = async (prompt: string, mode: "search" | "generate") => {
     // During beta, make everything free - no login required
     // But we'll still track usage for logged-in users
     
     // If we're logged in, increment count but don't block usage
     if (user) {
-      if (mode === "search") {
-        incrementCount();
-      } else {
-        // For generate mode, we'll track separately
-        const { incrementGenerationCount } = useSearchLimit();
-        incrementGenerationCount();
-      }
+      incrementCount();
     }
     
     setShowSearchField(false);
-    await searchFor(prompt, mode);
+    await searchFor(prompt, "search"); // Always use search mode, hiding generate
   };
 
   const handleNewSearch = () => {
@@ -186,7 +180,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
       
       <main className="flex-1 pt-16">
         {showSearchField ? (
-          <HeroSection onSearch={handleAIPrompt} isLoading={isLoading} />
+          <HeroSection onSearch={handleSearch} isLoading={isLoading} />
         ) : (
           <ResultsSection 
             results={results} 

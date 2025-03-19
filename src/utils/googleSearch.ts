@@ -23,9 +23,16 @@ export async function searchGoogleImages(
     
     try {
       // Add debug logging
-      console.log("Sending request to Google API:", url);
+      console.log("Sending request to Google API:", url.substring(0, 100) + "...");
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        cache: 'no-store'
+      });
+      
       const responseStatus = response.status;
       console.log("Google API response status:", responseStatus);
       
@@ -35,7 +42,6 @@ export async function searchGoogleImages(
         console.error("Google API error response:", errorText);
         
         if (response.status === 429) {
-          toast.error("Search limit exceeded. Using alternative results.");
           console.log("Google API quota exceeded, using alternative search results");
           return getAlternativeDiagrams(query, page);
         }
@@ -50,12 +56,11 @@ export async function searchGoogleImages(
       // Fallback to alternative data if the API has no items
       if (!data.items || data.items.length === 0) {
         console.log("No results found from API, using alternative search");
-        toast.info("No search results found, showing similar diagrams");
         return getAlternativeDiagrams(query, page);
       }
       
       // Map the results to our DiagramResult type
-      return data.items.map((item: any, index: number) => ({
+      const results = data.items.map((item: any, index: number) => ({
         id: `${new Date().getTime()}-${page}-${index}`,
         title: item.title || `Diagram: ${query}`,
         imageSrc: item.link,
@@ -65,14 +70,15 @@ export async function searchGoogleImages(
         sourceUrl: item.image?.contextLink || "",
         isGenerated: false
       }));
+      
+      console.log("Successfully mapped results:", results.length);
+      return results;
     } catch (error) {
       console.error("Google API search failed:", error);
-      toast.error("Search failed. Showing alternative results.");
       return getAlternativeDiagrams(query, page);
     }
   } catch (error) {
     console.error("Error searching Google Images:", error);
-    toast.error("Search error. Showing alternative results.");
     
     // If API fails, still show some results
     console.log("Performing alternative search for:", query);
@@ -113,14 +119,11 @@ function generateTags(title: string, query: string): string[] {
   return Array.from(new Set(tags)).slice(0, 8);
 }
 
-// Cache to store diagram sets by type
-const diagramCache: Record<string, string[]> = {};
-
-// Function to provide real-world alternative diagrams that look professional
+// Enhanced function to provide real-world alternative diagrams
 function getAlternativeDiagrams(query: string, page: number): DiagramResult[] {
   console.log(`Generating alternative diagrams for: "${query}" (page ${page})`);
   
-  // List of public domain diagram images from across the web
+  // High-quality diagram image sources from educational and professional sites
   const webDiagramSources = [
     "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/networkdiagram.svg",
     "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/flowchart-examples/hiring-process-flowchart.svg",
@@ -136,72 +139,70 @@ function getAlternativeDiagrams(query: string, page: number): DiagramResult[] {
     "https://static.javatpoint.com/tutorial/uml/images/uml-class-diagram.png",
     "https://i.pinimg.com/originals/b4/5e/a8/b45ea8d6c29cb4b3c941d5b6aaeaf852.png",
     "https://images.edrawsoft.com/articles/network-diagram-software/network-diagram.png",
-    "https://www.conceptdraw.com/solution-park/resource/images/solutions/network-diagram/NETWORK-DIAGRAM-Network-Topology-Network-Diagram.png"
+    "https://www.conceptdraw.com/solution-park/resource/images/solutions/network-diagram/NETWORK-DIAGRAM-Network-Topology-Network-Diagram.png",
+    "https://blog.planview.com/wp-content/uploads/2021/01/PERT-Chart-Example.jpg",
+    "https://www.researchgate.net/profile/Syed-Muhammad-Ahmad-14/publication/332690739/figure/fig1/AS:750946110275590@1556036316072/System-architecture-of-cloud-based-Big-Data-Analytics-as-a-Service.png",
+    "https://d2slcw3kip6qmk.cloudfront.net/marketing/blog/2019Q1/project-planning/WBS-diagram.png",
+    "https://cdn.sketchbubble.com/pub/media/catalog/product/optimized1/d/a/da3e13b35a385b3dfd56dfd1adb266c7d91fe7fd558d4bfb2f136d1c9ff6c29b/data-flow-diagram-mc-slide1.png",
+    "https://www.smartdraw.com/entity-relationship-diagram/img/entity-relationship-diagram.jpg"
   ];
   
-  // Add our local fallback images as a last resort
-  const localFallbackImages = [
-    "/lovable-uploads/5aa6a42f-771c-4e89-a3ba-e58ff53c701e.png",
-    "/lovable-uploads/a837a9a5-a83f-42b8-835c-261565ed609f.png",
-    "/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png",
-    "/lovable-uploads/ec798833-9785-43fd-9962-8c826d437f27.png",
-    "/lovable-uploads/ca791211-179d-415b-87a8-97ea4fcfa0cd.png",
-    "/lovable-uploads/d13f2dfc-b974-424f-83a2-a060b3a74cb5.png",
-    "/lovable-uploads/6fded565-6442-486f-9eea-5259f0fe2811.png",
-    "/lovable-uploads/a6ccf758-c406-414d-8f2e-e5e6d69439ff.png",
-    "/lovable-uploads/29c6874b-2503-4a4a-ac77-228929a96128.png",
-    "/lovable-uploads/00280548-0e69-4df9-9d87-4dfdca65bb09.png"
+  // Additional professional diagram sources
+  const additionalDiagrams = [
+    "https://www.researchgate.net/profile/Panagiotis-Chrysanthis/publication/221313562/figure/fig1/AS:305499943374850@1449846334866/An-example-of-an-ER-diagram-for-a-small-database-of-students-departments-courses.png",
+    "https://www.researchgate.net/profile/Stefano-Bistarelli/publication/304581105/figure/fig3/AS:374866106339339@1466386332697/Attack-tree-example-The-tree-is-decorated-with-local-costs-to-achieve-the-attacks.png",
+    "https://www.researchgate.net/profile/Mohd-Nazri-Kama-2/publication/329732510/figure/fig4/AS:705181818576897@1545138948594/Example-of-class-diagram.jpg",
+    "https://www.researchgate.net/profile/Huseyin-Oktay-2/publication/351648093/figure/fig2/AS:1024480481259522@1621362767835/A-simple-architecture-diagram-showing-the-main-components-of-the-hybrid-cloud-based.png",
+    "https://www.researchgate.net/profile/Md-Mustafizur-Rahman-3/publication/265729293/figure/fig2/AS:392186310193154@1470516376616/Activity-diagram-for-an-inventory-management-system.png"
   ];
+  
+  // Combine all sources
+  const allDiagramSources = [...webDiagramSources, ...additionalDiagrams];
   
   // Categorized diagram sets
   const diagramImageSets: Record<string, string[]> = {
     network: [
-      webDiagramSources[0],
-      webDiagramSources[13],
-      webDiagramSources[14],
-      localFallbackImages[0]
+      "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/examples/networkdiagram.svg",
+      "https://images.edrawsoft.com/articles/network-diagram-software/network-diagram.png",
+      "https://www.conceptdraw.com/solution-park/resource/images/solutions/network-diagram/NETWORK-DIAGRAM-Network-Topology-Network-Diagram.png"
     ],
     flowchart: [
-      webDiagramSources[1],
-      webDiagramSources[9],
-      webDiagramSources[11],
-      localFallbackImages[1]
+      "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/flowchart-examples/hiring-process-flowchart.svg",
+      "https://www.edrawsoft.com/templates/images/basic-workflow-diagram.png",
+      "https://static.javatpoint.com/tutorial/uml/images/uml-class-diagram.png"
     ],
     sequence: [
-      webDiagramSources[2],
-      webDiagramSources[7],
-      webDiagramSources[10],
-      localFallbackImages[2]
+      "https://www.uml-diagrams.org/sequence-diagrams/sequence-diagram-example.png",
+      "https://www.edrawsoft.com/templates/images/software-engineering-diagram.png",
+      "https://miro.medium.com/v2/resize:fit:1400/1*-hMKkxEVu-_0q-R85Xu84Q.png"
     ],
     uml: [
-      webDiagramSources[3],
-      webDiagramSources[11],
-      webDiagramSources[12],
-      localFallbackImages[3]
+      "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/discovery-page/UML-class-diagram/UML-class-diagram-example.png",
+      "https://static.javatpoint.com/tutorial/uml/images/uml-class-diagram.png",
+      "https://www.researchgate.net/profile/Mohd-Nazri-Kama-2/publication/329732510/figure/fig4/AS:705181818576897@1545138948594/Example-of-class-diagram.jpg"
     ],
     architecture: [
-      webDiagramSources[4],
-      webDiagramSources[7],
-      webDiagramSources[8],
-      localFallbackImages[4]
+      "https://d2slcw3kip6qmk.cloudfront.net/marketing/blog/2018Q4/system-architecture/system-architecture-diagram.png",
+      "https://www.edrawsoft.com/templates/images/software-engineering-diagram.png",
+      "https://www.edrawsoft.com/templates/images/website-structure-diagram.png",
+      "https://www.researchgate.net/profile/Huseyin-Oktay-2/publication/351648093/figure/fig2/AS:1024480481259522@1621362767835/A-simple-architecture-diagram-showing-the-main-components-of-the-hybrid-cloud-based.png"
     ],
     er: [
-      webDiagramSources[5],
-      webDiagramSources[6],
-      webDiagramSources[10],
-      localFallbackImages[5]
+      "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/ER-diagram-tutorial/ER-diagram-tutorial.png",
+      "https://d2slcw3kip6qmk.cloudfront.net/marketing/blog/2018Q4/database-diagram-tool/database-diagram.png",
+      "https://www.smartdraw.com/entity-relationship-diagram/img/entity-relationship-diagram.jpg",
+      "https://www.researchgate.net/profile/Panagiotis-Chrysanthis/publication/221313562/figure/fig1/AS:305499943374850@1449846334866/An-example-of-an-ER-diagram-for-a-small-database-of-students-departments-courses.png"
     ],
     database: [
-      webDiagramSources[6],
-      webDiagramSources[5],
-      webDiagramSources[11],
-      localFallbackImages[6]
+      "https://d2slcw3kip6qmk.cloudfront.net/marketing/blog/2018Q4/database-diagram-tool/database-diagram.png",
+      "https://d2slcw3kip6qmk.cloudfront.net/marketing/pages/chart/ER-diagram-tutorial/ER-diagram-tutorial.png",
+      "https://www.smartdraw.com/entity-relationship-diagram/img/entity-relationship-diagram.jpg"
     ],
     data: [
-      webDiagramSources[6],
-      webDiagramSources[10],
-      webDiagramSources[12],
-      localFallbackImages[7]
+      "https://d2slcw3kip6qmk.cloudfront.net/marketing/blog/2018Q4/database-diagram-tool/database-diagram.png",
+      "https://miro.medium.com/v2/resize:fit:1400/1*-hMKkxEVu-_0q-R85Xu84Q.png",
+      "https://i.pinimg.com/originals/b4/5e/a8/b45ea8d6c29cb4b3c941d5b6aaeaf852.png",
+      "https://cdn.sketchbubble.com/pub/media/catalog/product/optimized1/d/a/da3e13b35a385b3dfd56dfd1adb266c7d91fe7fd558d4bfb2f136d1c9ff6c29b/data-flow-diagram-mc-slide1.png"
     ]
   };
   
@@ -211,31 +212,31 @@ function getAlternativeDiagrams(query: string, page: number): DiagramResult[] {
   const queryLower = query.toLowerCase();
   for (const [key, images] of Object.entries(diagramImageSets)) {
     if (queryLower.includes(key)) {
-      // Cache the result for this query type if not already cached
-      if (!diagramCache[key]) {
-        diagramCache[key] = shuffleArray([...images, ...webDiagramSources]);
-      }
-      imagesToUse = diagramCache[key];
+      console.log(`Found matching category: ${key} for query: ${query}`);
+      imagesToUse = [...images, ...shuffleArray(allDiagramSources).slice(0, 15)];
       break;
     }
   }
   
   // If no specific match, use a mix of web diagrams
   if (imagesToUse.length === 0) {
-    // Shuffle the web sources for variety
-    imagesToUse = shuffleArray([...webDiagramSources, ...localFallbackImages.slice(0, 5)]);
+    console.log("No specific category match, using general diagrams");
+    // Use all available sources for variety
+    imagesToUse = shuffleArray(allDiagramSources);
   }
   
   // Ensure we have enough results for pagination
-  while (imagesToUse.length < 20) {
-    imagesToUse = [...imagesToUse, ...webDiagramSources];
+  while (imagesToUse.length < 30) {
+    imagesToUse = [...imagesToUse, ...shuffleArray(allDiagramSources)];
   }
   
   // Calculate starting index based on page
-  const startIndex = ((page - 1) % 2) * 10;
+  const startIndex = ((page - 1) % 3) * 10; 
   const selectedImages = imagesToUse.slice(startIndex, startIndex + 10);
   
-  // Generate mock results with high-quality information
+  console.log(`Returning ${selectedImages.length} alternative diagrams for page ${page}`);
+  
+  // Generate results with high-quality information
   return selectedImages.map((imageUrl, index) => {
     const id = `alt-${new Date().getTime()}-${page}-${index}`;
     const tags = generateTags(`${query} diagram visualization chart`, query);

@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Sparkles, X, RefreshCcw } from "lucide-react";
+import { Search, X, RefreshCcw } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSearchLimit } from "@/hooks/use-search-limit";
 import { PremiumPlanDialog } from "@/components/premium-plan-dialog";
@@ -21,7 +21,6 @@ interface SimpleSearchBarProps {
 
 export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearchBarProps) {
   const [query, setQuery] = useState("");
-  const [mode, setMode] = useState<"search" | "generate">("search");
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -33,9 +32,6 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
     incrementCount, 
     requiresLogin,
     remainingSearches,
-    hasReachedGenerationLimit,
-    incrementGenerationCount,
-    remainingGenerations
   } = useSearchLimit();
   
   const { profile } = useAuth();
@@ -49,28 +45,15 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
     setSearchError(null);
     
     try {
-      if (mode === "generate") {
-        if (hasReachedGenerationLimit) {
-          setShowPremiumDialog(true);
-          return;
-        }
-        
-        const success = await incrementGenerationCount();
-        if (!success) {
-          setShowPremiumDialog(true);
-          return;
-        }
-      } else {
-        if (hasReachedLimit) {
-          setShowPremiumDialog(true);
-          return;
-        }
-        
-        const success = await incrementCount();
-        if (!success) {
-          setShowPremiumDialog(true);
-          return;
-        }
+      if (hasReachedLimit) {
+        setShowPremiumDialog(true);
+        return;
+      }
+      
+      const success = await incrementCount();
+      if (!success) {
+        setShowPremiumDialog(true);
+        return;
       }
       
       // Add to search history
@@ -88,7 +71,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
       const newHistory = [query, ...history.filter(item => item !== query)].slice(0, 10);
       localStorage.setItem('diagramr-search-history', JSON.stringify(newHistory));
       
-      onSearch(query, mode);
+      onSearch(query, "search");
       setShowSuggestions(false);
     } catch (error) {
       console.error("Search error:", error);
@@ -111,7 +94,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
     setQuery(suggestion);
     setShowSuggestions(false);
     setTimeout(() => {
-      onSearch(suggestion, mode);
+      onSearch(suggestion, "search");
       
       // Add to search history
       const savedHistory = localStorage.getItem('diagramr-search-history');
@@ -167,7 +150,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
           <div className="relative flex-1">
             <Input
               type="text"
-              placeholder={mode === "search" ? "Search for diagrams and visualizations..." : "Describe a diagram to generate..."}
+              placeholder="Search for diagrams and visualizations..."
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -186,11 +169,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
               )}
               disabled={isLoading}
             />
-            {mode === "search" ? (
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            ) : (
-              <Sparkles className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            )}
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             
             {query && (
               <Button
@@ -224,31 +203,12 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
                 <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  {mode === "search" ? (
-                    <Search className="h-4 w-4 mr-2" />
-                  ) : (
-                    <Sparkles className="h-4 w-4 mr-2" />
-                  )}
-                  {mode === "search" ? "Search" : "Generate"}
+                  <Search className="h-4 w-4 mr-2" />
+                  Search
                 </>
               )}
             </Button>
           )}
-          
-          <Button
-            type="button" 
-            variant="outline"
-            size="icon"
-            className="h-12 w-12"
-            onClick={() => setMode(mode === "search" ? "generate" : "search")}
-            title={mode === "search" ? "Switch to Generate" : "Switch to Search"}
-          >
-            {mode === "search" ? (
-              <Sparkles className="h-4 w-4" />
-            ) : (
-              <Search className="h-4 w-4" />
-            )}
-          </Button>
         </div>
         
         {searchError && (
@@ -266,15 +226,9 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
         />
       </form>
       
-      <div className="mt-2 flex justify-between items-center">
-        <SearchLimitIndicator compact={true} className="opacity-70 scale-90" />
-        
+      <div className="mt-2 flex justify-end items-center">
         <div className="text-xs text-muted-foreground">
-          {mode === "search" ? (
-            <span>{remainingSearches} searches left{!isPremium && " today"}</span>
-          ) : (
-            <span>{remainingGenerations} generations left{!isPremium && " today"}</span>
-          )}
+          <span>{remainingSearches} searches left{!isPremium && " today"}</span>
         </div>
       </div>
       
