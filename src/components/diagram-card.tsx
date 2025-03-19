@@ -37,11 +37,8 @@ export function DiagramCard({
   onLike,
   onClick,
 }: DiagramCardProps) {
-  // Add state to track image loading errors and loading state
+  // Add state to track image loading errors
   const [imageError, setImageError] = React.useState(false);
-  const [isLoading, setIsLoading] = React.useState(true);
-  
-  const fallbackImage = "/lovable-uploads/7950c6cb-34b4-4e5f-b4da-a9a7d68d9d1d.png";
   
   return (
     <motion.div
@@ -49,7 +46,6 @@ export function DiagramCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="h-full"
     >
       <Card className="diagram-card overflow-hidden h-full flex flex-col">
         <div 
@@ -59,29 +55,19 @@ export function DiagramCard({
           tabIndex={0}
           onKeyDown={(e) => e.key === "Enter" && onClick?.()}
         >
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
-              <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-            </div>
-          )}
-          
           <motion.img
-            src={imageError ? fallbackImage : imageSrc}
+            src={imageError ? "/lovable-uploads/7950c6cb-34b4-4e5f-b4da-a9a7d68d9d1d.png" : imageSrc}
             alt={title}
-            className="w-full h-full object-cover transition-opacity duration-300"
-            style={{ opacity: isLoading ? 0 : 1 }}
+            className="w-full h-full object-cover"
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.3 }}
             onError={(e) => {
               console.log(`Image error for: ${imageSrc}`);
               setImageError(true);
-              setIsLoading(false);
               (e.target as HTMLImageElement).onerror = null;
             }}
-            onLoad={() => setIsLoading(false)}
             loading="lazy"
           />
-          
           {isGenerated && (
             <Badge className="absolute top-2 right-2 bg-primary/70 backdrop-blur-sm">
               AI Generated
