@@ -37,6 +37,9 @@ export function DiagramCard({
   onLike,
   onClick,
 }: DiagramCardProps) {
+  // Add state to track image loading errors
+  const [imageError, setImageError] = React.useState(false);
+  
   return (
     <motion.div
       whileHover={{ y: -5, transition: { duration: 0.2 } }}
@@ -46,22 +49,24 @@ export function DiagramCard({
     >
       <Card className="diagram-card overflow-hidden h-full flex flex-col">
         <div 
-          className="diagram-card-image cursor-pointer aspect-[4/3]"
+          className="diagram-card-image cursor-pointer aspect-[4/3] relative bg-muted/50"
           onClick={onClick}
           role="button" 
           tabIndex={0}
           onKeyDown={(e) => e.key === "Enter" && onClick?.()}
         >
           <motion.img
-            src={imageSrc}
+            src={imageError ? "/lovable-uploads/7950c6cb-34b4-4e5f-b4da-a9a7d68d9d1d.png" : imageSrc}
             alt={title}
             className="w-full h-full object-cover"
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.3 }}
             onError={(e) => {
+              console.log(`Image error for: ${imageSrc}`);
+              setImageError(true);
               (e.target as HTMLImageElement).onerror = null;
-              (e.target as HTMLImageElement).src = "/lovable-uploads/7950c6cb-34b4-4e5f-b4da-a9a7d68d9d1d.png";
             }}
+            loading="lazy"
           />
           {isGenerated && (
             <Badge className="absolute top-2 right-2 bg-primary/70 backdrop-blur-sm">

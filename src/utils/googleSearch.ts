@@ -1,3 +1,4 @@
+
 import { DiagramResult } from "@/hooks/use-infinite-search";
 import { toast } from "sonner";
 
@@ -22,7 +23,8 @@ export async function searchGoogleImages(
     const startIndex = (page - 1) * 10 + 1;
     
     // Build the API URL with appropriate parameters
-    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(enhancedQuery)}&searchType=image&num=10&start=${startIndex}&safe=active&imgSize=large&imgType=photo,clipart,lineart,stock&rights=cc_publicdomain,cc_attribute,cc_sharealike`;
+    // Note: removed the invalid imgType parameter that was causing 400 errors
+    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(enhancedQuery)}&searchType=image&num=10&start=${startIndex}&safe=active&imgSize=large&rights=cc_publicdomain,cc_attribute,cc_sharealike`;
     
     console.log(`[GoogleSearch] Sending request to Google CSE API: ${url}`);
     

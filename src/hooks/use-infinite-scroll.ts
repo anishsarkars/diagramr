@@ -8,6 +8,7 @@ interface UseInfiniteScrollOptions<T> {
   isLoading: boolean;
   threshold?: number;
   pageSize?: number;
+  initialItems?: number;
 }
 
 export function useInfiniteScroll<T>({
@@ -16,7 +17,8 @@ export function useInfiniteScroll<T>({
   loadMore,
   isLoading,
   threshold = 300,
-  pageSize = 20
+  pageSize = 20,
+  initialItems = 20
 }: UseInfiniteScrollOptions<T>) {
   const [visibleItems, setVisibleItems] = useState<T[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -26,9 +28,11 @@ export function useInfiniteScroll<T>({
   // Update visible items when items change
   useEffect(() => {
     if (items.length > 0) {
-      setVisibleItems(items.slice(0, Math.min(items.length, pageSize)));
+      setVisibleItems(items.slice(0, Math.min(items.length, initialItems)));
+    } else {
+      setVisibleItems([]);
     }
-  }, [items, pageSize]);
+  }, [items, initialItems]);
   
   // Show more items from the already loaded ones
   const showMoreItems = useCallback(() => {
@@ -59,19 +63,29 @@ export function useInfiniteScroll<T>({
     if (observer.current) observer.current.disconnect();
     
     observer.current = new IntersectionObserver(entries => {
-      // If the last item is visible and we have more items to show from the current list
-      if (entries[0].isIntersecting && visibleItems.length < items.length) {
-        showMoreItems();
-      } 
-      // If the last item is visible and we need to fetch more items
-      else if (entries[0].isIntersecting && visibleItems.length === items.length && hasMore) {
-        fetchMoreItems();
+      // If the last item is visible
+      if (entries[0].isIntersecting) {
+        console.log("Last item is visible, current items:", visibleItems.length, "total:", items.length);
+        
+        // If we have more items locally to show
+        if (visibleItems.length < items.length) {
+          console.log("Showing more items from loaded results");
+          showMoreItems();
+        } 
+        // If we need to fetch more from backend
+        else if (hasMore) {
+          console.log("Loading more items from backend");
+          fetchMoreItems();
+        }
       }
     }, {
       rootMargin: `0px 0px ${threshold}px 0px`,
     });
     
-    if (node) observer.current.observe(node);
+    if (node) {
+      console.log("Observing last item");
+      observer.current.observe(node);
+    }
   }, [isLoading, isLoadingMore, visibleItems.length, items.length, hasMore, showMoreItems, fetchMoreItems, threshold]);
   
   return {
