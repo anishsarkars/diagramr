@@ -2,9 +2,10 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { SearchIcon, ClockIcon, TrendingUpIcon } from "lucide-react";
+import { SearchIcon, ClockIcon, TrendingUpIcon, BookmarkIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/components/theme-provider";
+import { getSearchSuggestions } from "@/utils/search-service";
 
 interface SearchSuggestionsProps {
   isVisible: boolean;
@@ -24,56 +25,15 @@ export function SearchSuggestions({
   const [trendingSearches, setTrendingSearches] = useState<string[]>([]);
   const { isDarkMode } = useTheme();
   
-  // Popular diagram searches that would be useful for students and researchers
-  const popularDiagramTypes = [
-    "data flow diagram",
-    "entity relationship diagram",
-    "uml class diagram",
-    "network architecture",
-    "system architecture",
-    "process flow diagram",
-    "sequence diagram",
-    "flowchart",
-    "mind map",
-    "organization chart",
-    "database schema",
-    "use case diagram",
-    "state diagram",
-    "activity diagram",
-    "cloud architecture",
-    "biochemical pathway",
-    "neural network architecture",
-    "circuit diagram",
-    "molecular structure",
-    "physics force diagram",
-    "mathematical graph",
-    "statistical distribution",
-    "genetic pathway",
-    "anatomical diagram",
-    "ecosystem diagram",
-    "geological formation"
-  ];
-  
+  // Set up trending searches for educational and research diagrams
   useEffect(() => {
-    // Load recent searches from localStorage
-    try {
-      const savedHistory = localStorage.getItem('diagramr-search-history');
-      if (savedHistory) {
-        setRecentSearches(JSON.parse(savedHistory).slice(0, 5));
-      }
-    } catch (e) {
-      console.error('Error loading search history:', e);
-    }
-    
-    // Set some trending searches for educational and research diagrams
     setTrendingSearches([
-      "microservices architecture",
-      "dna transcription diagram",
-      "climate system diagram",
+      "microservices architecture diagram",
+      "data flow diagram",
       "neural network architecture",
-      "database schema design"
+      "entity relationship diagram",
+      "system architecture diagram"
     ]);
-    
   }, []);
   
   // Generate suggestions based on user query
@@ -83,68 +43,24 @@ export function SearchSuggestions({
       return;
     }
     
-    const lowerQuery = query.toLowerCase();
+    // Get search suggestions
+    const results = getSearchSuggestions(query);
+    setSuggestions(results);
     
-    // Filter popular diagram types that match the query
-    const matchingSuggestions = popularDiagramTypes
-      .filter(type => type.toLowerCase().includes(lowerQuery))
-      .slice(0, 7);
-    
-    // Add domain-specific suggestions based on query terms
-    const domainSpecificSuggestions: string[] = [];
-    
-    // Programming/development related
-    if (lowerQuery.includes('code') || lowerQuery.includes('program') || 
-        lowerQuery.includes('software') || lowerQuery.includes('develop')) {
-      domainSpecificSuggestions.push(
-        "software development lifecycle",
-        "git workflow diagram",
-        "agile scrum process",
-        "CI/CD pipeline diagram"
-      );
-    }
-    
-    // Science related
-    if (lowerQuery.includes('science') || lowerQuery.includes('biology') || 
-        lowerQuery.includes('chemistry') || lowerQuery.includes('physics')) {
-      domainSpecificSuggestions.push(
-        "cell structure diagram",
-        "atomic structure",
-        "physics force diagram",
-        "periodic table",
-        "molecular structure"
-      );
-    }
-    
-    // Math related
-    if (lowerQuery.includes('math') || lowerQuery.includes('algorithm') || 
-        lowerQuery.includes('calculus') || lowerQuery.includes('statistics')) {
-      domainSpecificSuggestions.push(
-        "algorithm flowchart",
-        "mathematical graph",
-        "statistical distribution diagram",
-        "calculus concept map"
-      );
-    }
-    
-    // Combine and deduplicate suggestions
-    const filteredDomainSuggestions = domainSpecificSuggestions
-      .filter(s => s.toLowerCase().includes(lowerQuery))
-      .filter(s => !matchingSuggestions.includes(s));
-    
-    const allSuggestions = [...matchingSuggestions, ...filteredDomainSuggestions];
-    
-    // Add the exact query with a prefix if it's not already in the list
-    if (query.length > 3 && !allSuggestions.some(s => s.toLowerCase() === lowerQuery)) {
-      if (lowerQuery.includes('diagram') || lowerQuery.includes('chart') || 
-          lowerQuery.includes('graph') || lowerQuery.includes('flow')) {
-        allSuggestions.unshift(query);
-      } else {
-        allSuggestions.unshift(`${query} diagram`);
+    // Load recent searches from localStorage
+    try {
+      const savedHistory = localStorage.getItem('diagramr-search-history');
+      if (savedHistory) {
+        const history = JSON.parse(savedHistory);
+        const filteredHistory = history.filter((item: string) => 
+          item.toLowerCase().includes(query.toLowerCase())
+        ).slice(0, 3);
+        
+        setRecentSearches(filteredHistory);
       }
+    } catch (e) {
+      console.error('Error loading search history:', e);
     }
-    
-    setSuggestions(allSuggestions.slice(0, 7));
   }, [query]);
 
   if (!isVisible) return null;
@@ -155,69 +71,90 @@ export function SearchSuggestions({
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.15 }}
         className={cn(
-          "absolute z-50 mt-1 w-full rounded-lg border shadow-md",
-          isDarkMode ? "bg-background/95 backdrop-blur-md border-border/50" : "bg-background border-border/30",
+          "absolute z-50 w-full bg-background border rounded-lg shadow-lg",
+          "mt-1 overflow-hidden",
+          isDarkMode ? "border-border/50" : "border-border",
           className
         )}
       >
-        <div className="py-2">
-          {query && suggestions.length > 0 && (
-            <div className="px-2 py-1.5">
-              <p className="text-xs text-muted-foreground font-medium px-2 mb-1.5">Suggestions</p>
-              {suggestions.map((suggestion, index) => (
-                <div
-                  key={`suggestion-${index}`}
-                  className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/50 rounded-md cursor-pointer"
-                  onClick={() => onSuggestionClick(suggestion)}
-                >
-                  <SearchIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-sm">{suggestion}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {!query && (
+        <div className="p-2">
+          {(suggestions.length > 0 || recentSearches.length > 0) ? (
             <>
               {recentSearches.length > 0 && (
-                <div className="px-2 py-1.5">
-                  <p className="text-xs text-muted-foreground font-medium px-2 mb-1.5">Recent Searches</p>
+                <div className="mb-2">
+                  <div className="px-2 py-1 text-xs font-medium text-muted-foreground flex items-center">
+                    <ClockIcon className="h-3 w-3 mr-1" />
+                    Recent Searches
+                  </div>
                   {recentSearches.map((search, index) => (
-                    <div
+                    <div 
                       key={`recent-${index}`}
-                      className="flex items-center justify-between px-2 py-1.5 hover:bg-muted/50 rounded-md cursor-pointer"
+                      className="px-3 py-2 hover:bg-muted rounded cursor-pointer flex items-center"
                       onClick={() => onSuggestionClick(search)}
                     >
-                      <div className="flex items-center gap-2">
-                        <ClockIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="text-sm">{search}</span>
-                      </div>
+                      <ClockIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>{search}</span>
                     </div>
                   ))}
                 </div>
               )}
-
-              <div className="px-2 py-1.5 border-t border-border/20">
-                <p className="text-xs text-muted-foreground font-medium px-2 mb-1.5">Popular Educational Diagrams</p>
-                {trendingSearches.map((search, index) => (
-                  <div
-                    key={`trend-${index}`}
-                    className="flex items-center justify-between px-2 py-1.5 hover:bg-muted/50 rounded-md cursor-pointer"
-                    onClick={() => onSuggestionClick(search)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <TrendingUpIcon className="h-3.5 w-3.5 text-primary" />
-                      <span className="text-sm">{search}</span>
-                    </div>
-                    <Badge variant="outline" className="text-xs px-1.5 py-0 h-4">
-                      #{index + 1}
-                    </Badge>
+              
+              {suggestions.length > 0 && (
+                <div>
+                  <div className="px-2 py-1 text-xs font-medium text-muted-foreground flex items-center">
+                    <SearchIcon className="h-3 w-3 mr-1" />
+                    Suggestions
                   </div>
+                  {suggestions.map((suggestion, index) => (
+                    <div 
+                      key={`suggestion-${index}`}
+                      className="px-3 py-2 hover:bg-muted rounded cursor-pointer flex items-center"
+                      onClick={() => onSuggestionClick(suggestion)}
+                    >
+                      <SearchIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>{suggestion}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : !query && trendingSearches.length > 0 ? (
+            <div>
+              <div className="px-2 py-1 text-xs font-medium text-muted-foreground flex items-center">
+                <TrendingUpIcon className="h-3 w-3 mr-1" />
+                Popular Searches
+              </div>
+              <div className="p-2 flex flex-wrap gap-2">
+                {trendingSearches.map((trending, index) => (
+                  <Badge 
+                    key={`trending-${index}`}
+                    variant="secondary"
+                    className="cursor-pointer hover:bg-secondary/80"
+                    onClick={() => onSuggestionClick(trending)}
+                  >
+                    {trending}
+                  </Badge>
                 ))}
               </div>
-            </>
+            </div>
+          ) : query ? (
+            <div className="px-3 py-2 hover:bg-muted rounded cursor-pointer flex items-center" onClick={() => onSuggestionClick(query)}>
+              <SearchIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>Search for "{query}"</span>
+            </div>
+          ) : null}
+          
+          {query && (
+            <div className="border-t mt-1 pt-1">
+              <div 
+                className="px-3 py-2 hover:bg-muted rounded cursor-pointer flex items-center text-primary"
+                onClick={() => onSuggestionClick(query)}
+              >
+                <SearchIcon className="h-4 w-4 mr-2" />
+                <span>Search for "{query}"</span>
+              </div>
+            </div>
           )}
         </div>
       </motion.div>

@@ -1,211 +1,219 @@
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { 
-  X, 
-  Download, 
-  ExternalLink, 
-  Heart, 
-  Share2, 
-  Maximize2, 
-  Info,
+  HeartIcon, 
+  ExternalLinkIcon, 
+  DownloadIcon, 
+  ZoomInIcon, 
+  ZoomOutIcon, 
+  XIcon, 
   Sparkles
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { motion } from "framer-motion";
+import { DiagramResult } from "@/hooks/use-infinite-search";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface DiagramPreviewModalProps {
   open: boolean;
   onClose: () => void;
-  diagram: {
-    title: string;
-    imageSrc: string;
-    author?: string;
-    sourceUrl?: string;
-    tags?: string[];
-    isGenerated?: boolean;
-  } | null;
+  diagram: DiagramResult | null;
   onLike?: () => void;
   isLiked?: boolean;
 }
 
-export function DiagramPreviewModal({ 
-  open, 
-  onClose, 
-  diagram, 
+export function DiagramPreviewModal({
+  open,
+  onClose,
+  diagram,
   onLike,
-  isLiked = false
+  isLiked = false,
 }: DiagramPreviewModalProps) {
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
-  
-  const handleDownload = () => {
-    if (!diagram) return;
-    
-    const link = document.createElement('a');
-    link.href = diagram.imageSrc;
-    link.download = `${diagram.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-  
-  const handleShare = async () => {
-    if (!diagram) return;
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: diagram.title,
-          text: `Check out this diagram: ${diagram.title}`,
-          url: window.location.href
-        });
-      } catch (error) {
-        console.error('Error sharing:', error);
-      }
-    } else {
-      // Fallback - copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      // TODO: Show toast notification
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [imageError, setImageError] = useState(false);
+
+  if (!diagram) return null;
+
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(diagram.imageSrc);
+      const blob = await response.blob();
+      
+      // Create object URL from blob
+      const url = URL.createObjectURL(blob);
+      
+      // Create a link element and trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Extract file extension from URL
+      const extension = diagram.imageSrc.split('.').pop()?.split('?')[0] || 'png';
+      
+      // Generate filename
+      const filename = `diagram-${diagram.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.${extension}`;
+      
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success('Diagram downloaded successfully');
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download image');
     }
   };
-  
+
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.25, 3));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
+  };
+
+  const resetZoom = () => {
+    setZoomLevel(1);
+  };
+
+  const openSourceUrl = () => {
+    if (diagram.sourceUrl && diagram.sourceUrl !== "#") {
+      window.open(diagram.sourceUrl, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className={cn(
-        "sm:max-w-2xl md:max-w-3xl lg:max-w-5xl p-0 gap-0 overflow-hidden",
-        isFullscreen && "w-screen h-screen max-w-none max-h-none rounded-none"
-      )}>
-        <DialogHeader className="p-4 pb-0 flex flex-row items-center justify-between">
-          <DialogTitle className="text-xl font-semibold pr-8 line-clamp-1">
-            {diagram?.title}
-          </DialogTitle>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-5xl w-[90vw] max-h-[90vh] p-0 flex flex-col">
+        <DialogHeader className="p-4 sm:p-6 border-b">
+          <div className="flex items-start justify-between">
+            <div>
+              <DialogTitle className="text-lg sm:text-xl mr-8">
+                {diagram.title}
+              </DialogTitle>
+              <DialogDescription className="mt-1 flex flex-wrap items-center gap-2">
+                <span className="text-muted-foreground text-sm">
+                  By {diagram.author || "Unknown"}
+                </span>
+                
+                {diagram.isGenerated && (
+                  <Badge className="bg-primary/70">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    AI Generated
+                  </Badge>
+                )}
+                
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {diagram.tags?.slice(0, 5).map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="text-xs px-1.5 py-0 h-5"
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </DialogDescription>
+            </div>
+            
+            <Button 
+              variant="ghost" 
               size="icon"
-              className="h-8 w-8"
-              onClick={toggleFullscreen}
-            >
-              <Maximize2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
+              className="absolute top-2 right-2" 
               onClick={onClose}
             >
-              <X className="h-4 w-4" />
+              <XIcon className="h-4 w-4" />
             </Button>
           </div>
         </DialogHeader>
         
-        <div className={cn(
-          "relative overflow-auto",
-          isFullscreen ? "h-[calc(100vh-8rem)]" : "max-h-[70vh]"
-        )}>
-          {!imageLoaded && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/50">
-              <div className="h-8 w-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-            </div>
-          )}
+        <div 
+          className="flex-1 overflow-auto relative p-4 sm:p-6 bg-muted/30"
+          style={{ minHeight: "20rem" }}
+          onDoubleClick={resetZoom}
+        >
+          <div 
+            className="w-full h-full flex items-center justify-center transition-all"
+            style={{ 
+              cursor: zoomLevel !== 1 ? 'zoom-out' : 'zoom-in',
+              overflow: 'auto' 
+            }}
+          >
+            <motion.img
+              src={imageError ? "/lovable-uploads/7950c6cb-34b4-4e5f-b4da-a9a7d68d9d1d.png" : diagram.imageSrc}
+              alt={diagram.title}
+              className={cn(
+                "max-w-full max-h-[60vh] object-contain transition-transform",
+                imageError ? "opacity-80" : ""
+              )}
+              style={{ 
+                transform: `scale(${zoomLevel})`,
+                transformOrigin: 'center center'
+              }}
+              onClick={() => zoomLevel !== 1 ? resetZoom() : handleZoomIn()}
+              onError={() => setImageError(true)}
+            />
+          </div>
           
-          <img 
-            src={diagram?.imageSrc} 
-            alt={diagram?.title || "Diagram preview"} 
-            className={cn(
-              "w-full h-auto object-contain",
-              !imageLoaded && "opacity-0",
-              isFullscreen ? "max-h-[calc(100vh-8rem)]" : "max-h-[70vh]"
-            )}
-            onLoad={() => setImageLoaded(true)}
-          />
+          <div className="absolute bottom-6 right-6 flex items-center gap-2 bg-background/80 backdrop-blur-sm p-1 rounded-lg shadow-sm">
+            <Button variant="ghost" size="icon" onClick={handleZoomOut} disabled={zoomLevel <= 0.5}>
+              <ZoomOutIcon className="h-4 w-4" />
+            </Button>
+            <span className="text-xs font-medium w-12 text-center">
+              {Math.round(zoomLevel * 100)}%
+            </span>
+            <Button variant="ghost" size="icon" onClick={handleZoomIn} disabled={zoomLevel >= 3}>
+              <ZoomInIcon className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         
-        <DialogFooter className="flex flex-col sm:flex-row justify-between items-start gap-4 p-4 pt-3 border-t">
-          <div className="flex flex-col gap-2">
-            {diagram?.author && (
-              <div className="text-sm text-muted-foreground">
-                {diagram.isGenerated ? 'Generated by ' : 'Created by '}
-                <span className="font-medium text-foreground">{diagram.author}</span>
-              </div>
-            )}
-            
-            {diagram?.tags && diagram.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {diagram.tags.map((tag, i) => (
-                  <Badge key={i} variant="outline" className="text-xs px-2 py-0 h-5">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
-          
+        <DialogFooter className="p-4 border-t flex flex-row justify-between items-center">
           <div className="flex items-center gap-2">
-            {diagram?.isGenerated && (
-              <Badge variant="secondary" className="gap-1 font-normal">
-                <Sparkles className="h-3 w-3" />
-                AI Generated
-              </Badge>
-            )}
-            
             <Button
-              size="sm"
-              variant="outline"
-              className="gap-1.5"
-              onClick={handleShare}
+              variant="ghost"
+              size="icon"
+              className={`rounded-full ${isLiked ? "text-red-500 hover:text-red-600" : ""}`}
+              onClick={onLike}
             >
-              <Share2 className="h-4 w-4" />
-              Share
+              <HeartIcon className={`h-5 w-5 ${isLiked ? "fill-current" : ""}`} />
             </Button>
             
             <Button
-              size="sm" 
-              variant="outline"
-              className="gap-1.5"
+              variant="ghost"
+              size="icon"
+              className="rounded-full"
               onClick={handleDownload}
             >
-              <Download className="h-4 w-4" />
-              Download
+              <DownloadIcon className="h-5 w-5" />
             </Button>
-            
-            {onLike && (
-              <Button
-                size="sm"
-                variant={isLiked ? "default" : "outline"}
-                className={cn(
-                  "gap-1.5", 
-                  isLiked && "bg-pink-500 hover:bg-pink-600 border-pink-500"
-                )}
-                onClick={onLike}
-              >
-                <Heart className={cn(
-                  "h-4 w-4",
-                  isLiked ? "fill-white" : "fill-none"
-                )} />
-                {isLiked ? "Liked" : "Like"}
-              </Button>
-            )}
-            
-            {diagram?.sourceUrl && diagram.sourceUrl !== "#" && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5"
-                onClick={() => window.open(diagram.sourceUrl, '_blank')}
-              >
-                <ExternalLink className="h-4 w-4" />
-                Source
-              </Button>
-            )}
           </div>
+          
+          {diagram.sourceUrl && diagram.sourceUrl !== "#" && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="gap-2" 
+              onClick={openSourceUrl}
+            >
+              <ExternalLinkIcon className="h-4 w-4" />
+              View Source
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

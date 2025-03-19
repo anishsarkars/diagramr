@@ -6,12 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { 
   SearchIcon, 
   Loader2Icon, 
-  ArchiveIcon, 
   FilterIcon,
   Wand2Icon, 
   AlertCircleIcon,
   SlidersHorizontal,
-  Sparkles
+  Sparkles,
+  DownloadIcon
 } from "lucide-react";
 import { SimpleSearchBar } from "@/components/simple-search-bar";
 import { useState, useRef } from "react";
