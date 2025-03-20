@@ -3,7 +3,7 @@ import { DiagramrLogo } from "@/components/diagramr-logo";
 import { SearchLimitIndicator } from "./search-limit-indicator";
 import { useState, useEffect } from "react";
 import { Search, LayoutTemplate, Lightbulb, BookOpen, BrainCircuit, GitBranch, 
-  GitFork, BarChart4, FlowChart } from "lucide-react";
+  GitFork, BarChart4, ActivityIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
