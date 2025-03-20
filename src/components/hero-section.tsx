@@ -18,6 +18,16 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   
+  // Example searches
+  const exampleSearches = [
+    "data structure diagram",
+    "UML class diagram",
+    "network topology diagram",
+    "system architecture",
+    "ER diagram",
+    "flowchart"
+  ];
+  
   // Features for animation
   const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
   const features = [
@@ -55,7 +65,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         transition={{ duration: 0.5, delay: 0.2 }}
         className="mb-6"
       >
-        <DiagramrLogo size="2xl" showBeta iconOnly={false} showText className="mb-2" />
+        <DiagramrLogo size="xl" showBeta iconOnly={true} showText={false} className="mb-2" />
       </motion.div>
       
       <motion.h1 
@@ -104,7 +114,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
       </motion.div>
       
       <motion.div 
-        className="w-full max-w-2xl mx-auto mb-8"
+        className="w-full max-w-2xl mx-auto mb-4"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.6 }}
@@ -114,6 +124,27 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           isLoading={isLoading}
           className="shadow-lg"
         />
+      </motion.div>
+      
+      {/* Example searches */}
+      <motion.div
+        className="flex flex-wrap justify-center gap-2 mb-8 max-w-2xl mx-auto"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.65 }}
+      >
+        {exampleSearches.map((example, index) => (
+          <Button
+            key={index}
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            onClick={() => onSearch(example, "search")}
+          >
+            <Search className="h-3 w-3 mr-1.5" />
+            {example}
+          </Button>
+        ))}
       </motion.div>
       
       <motion.div

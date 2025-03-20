@@ -32,34 +32,11 @@ export function DiagramrLogo({
   
   const sizeClasses = {
     sm: "h-5 w-auto",
-    md: "h-7 w-auto",
-    lg: "h-10 w-auto",
-    xl: "h-14 w-auto",
-    "2xl": "h-16 w-auto",
+    md: "h-6 w-auto",
+    lg: "h-8 w-auto",
+    xl: "h-12 w-auto",
+    "2xl": "h-14 w-auto",
   };
-  
-  if (iconOnly) {
-    return (
-      <motion.div 
-        className={cn("flex items-center", className)}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <img
-          src={logoSrc}
-          alt="Diagramr Logo"
-          className={cn(sizeClasses[size], "object-contain")}
-        />
-        
-        {showBeta && (
-          <span className="ml-1 text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">
-            Beta
-          </span>
-        )}
-      </motion.div>
-    );
-  }
   
   return (
     <motion.div 
@@ -73,6 +50,12 @@ export function DiagramrLogo({
         alt="Diagramr Logo"
         className={cn(sizeClasses[size], "object-contain")}
       />
+      
+      {showBeta && (
+        <span className="ml-1 text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">
+          Beta
+        </span>
+      )}
     </motion.div>
   );
 }

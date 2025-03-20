@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { SearchIcon, ClockIcon, TrendingUpIcon, BookmarkIcon, ZapIcon } from "lucide-react";
+import { SearchIcon, ClockIcon, TrendingUpIcon, BookmarkIcon, ZapIcon, CodeIcon, DatabaseIcon, NetworkIcon, FlowChartIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/components/theme-provider";
 import { getSearchSuggestions } from "@/utils/search-service";
@@ -29,12 +29,15 @@ export function SearchSuggestions({
   useEffect(() => {
     setExampleSearches([
       "data structure diagram",
-      "software architecture",
-      "machine learning workflow",
-      "database schema design",
-      "network topology",
+      "software architecture diagram",
       "UML class diagram",
-      "system design"
+      "flowchart",
+      "ER diagram",
+      "network topology diagram",
+      "system design diagram",
+      "algorithm flowchart",
+      "database schema diagram",
+      "state machine diagram"
     ]);
   }, []);
   
@@ -119,11 +122,11 @@ export function SearchSuggestions({
           )}
           
           {/* Example Searches (shown when no query or suggestions) */}
-          {!query && (!suggestions.length || suggestions.length < 2) && (
+          {(!query || (!suggestions.length || suggestions.length < 2)) && (
             <div className="mb-2">
               <div className="px-2 py-1 text-xs font-medium text-muted-foreground flex items-center">
                 <ZapIcon className="h-3 w-3 mr-1" />
-                Popular Searches
+                Popular Diagram Searches
               </div>
               <div className="p-2 flex flex-wrap gap-2">
                 {exampleSearches.map((example, index) => (

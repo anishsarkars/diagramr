@@ -11,7 +11,8 @@ import {
   AlertCircleIcon,
   SlidersHorizontal,
   Sparkles,
-  DownloadIcon
+  DownloadIcon,
+  HomeIcon
 } from "lucide-react";
 import { SimpleSearchBar } from "@/components/simple-search-bar";
 import { useState, useRef } from "react";
@@ -20,6 +21,8 @@ import { AnimatedContainer } from "@/components/animated-container";
 import { useInView } from "react-intersection-observer";
 import { DiagramPreviewModal } from "@/components/diagram-preview-modal";
 import { useTheme } from "@/components/theme-provider";
+import { DiagramrLogo } from "@/components/diagramr-logo";
+import { useNavigate } from "react-router-dom";
 
 interface ResultsSectionProps {
   results: DiagramResult[];
@@ -48,6 +51,7 @@ export function ResultsSection({
   const [filterOption, setFilterOption] = useState<"all" | "generated" | "search">("all");
   const { ref: titleRef, inView: titleInView } = useInView({ triggerOnce: true });
   const { isDarkMode } = useTheme();
+  const navigate = useNavigate();
   
   const [selectedDiagram, setSelectedDiagram] = useState<DiagramResult | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -69,6 +73,10 @@ export function ResultsSection({
     setPreviewOpen(false);
   };
   
+  const goToHome = () => {
+    onNewSearch();
+  };
+  
   const filteredResults = results.filter(result => {
     if (filterOption === "all") return true;
     if (filterOption === "generated") return result.isGenerated;
@@ -79,36 +87,57 @@ export function ResultsSection({
   return (
     <div className="container py-8 pb-16">
       <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <motion.div
-          ref={titleRef}
-          initial={{ opacity: 0, y: 20 }}
-          animate={titleInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <Badge variant="outline" className={cn(
-              "px-2 py-0.5",
-              isDarkMode 
-                ? "bg-primary/20 text-primary border-primary/30" 
-                : "bg-primary/5 text-primary border-primary/20"
-            )}>
-              {lastAction === "search" ? "Search Results" : "AI Generated"}
-            </Badge>
-            {lastAction === "generate" && (
-              <Badge variant="outline" className="bg-secondary/40">Beta</Badge>
-            )}
-          </div>
-          <h1 className="text-2xl font-bold">{searchTerm}</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {isLoading ? (
-              "Finding the best diagrams..."
-            ) : filteredResults.length > 0 ? (
-              `Found ${filteredResults.length} diagram${filteredResults.length > 1 ? "s" : ""}`
-            ) : (
-              "No diagrams found. Try a different search term."
-            )}
-          </p>
-        </motion.div>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={goToHome}
+            className="mr-2 hidden md:flex"
+          >
+            <HomeIcon className="h-5 w-5" />
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={goToHome}
+            className="mr-2 md:hidden"
+          >
+            <HomeIcon className="h-4 w-4 mr-1.5" />
+            <span>Home</span>
+          </Button>
+          
+          <motion.div
+            ref={titleRef}
+            initial={{ opacity: 0, y: 20 }}
+            animate={titleInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Badge variant="outline" className={cn(
+                "px-2 py-0.5",
+                isDarkMode 
+                  ? "bg-primary/20 text-primary border-primary/30" 
+                  : "bg-primary/5 text-primary border-primary/20"
+              )}>
+                {lastAction === "search" ? "Search Results" : "AI Generated"}
+              </Badge>
+              {lastAction === "generate" && (
+                <Badge variant="outline" className="bg-secondary/40">Beta</Badge>
+              )}
+            </div>
+            <h1 className="text-2xl font-bold">{searchTerm}</h1>
+            <p className="text-muted-foreground mt-1 text-sm">
+              {isLoading ? (
+                "Finding the best diagrams..."
+              ) : filteredResults.length > 0 ? (
+                `Found ${filteredResults.length} diagram${filteredResults.length > 1 ? "s" : ""}`
+              ) : (
+                "No diagrams found. Try a different search term."
+              )}
+            </p>
+          </motion.div>
+        </div>
 
         <div className="flex items-center gap-2">
           <SimpleSearchBar onSearch={onNewSearch} />
@@ -146,7 +175,7 @@ export function ResultsSection({
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <SlidersHorizontal className="h-4 w-4" />
-            <span>Sort by:</span>
+            <span className="hidden sm:inline">Sort by:</span>
             <select 
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value as "relevance" | "newest")}

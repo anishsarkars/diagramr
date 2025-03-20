@@ -27,11 +27,11 @@ export function Logo({
   const { theme } = useTheme();
   
   const sizeClasses = {
-    sm: "h-6 w-auto",
-    md: "h-9 w-auto",
-    lg: "h-16 w-auto",
-    xl: "h-20 w-auto",
-    "2xl": "h-28 w-auto"
+    sm: "h-5 w-auto",
+    md: "h-7 w-auto",
+    lg: "h-12 w-auto",
+    xl: "h-16 w-auto",
+    "2xl": "h-20 w-auto"
   };
   
   // Use different logo based on theme
