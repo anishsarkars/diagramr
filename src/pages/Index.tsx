@@ -6,25 +6,18 @@ import {Header} from "@/components/header";
 import {Footer} from "@/components/footer";
 import { useAuth } from "@/components/auth-context";
 import { useSearchLimit } from "@/hooks/use-search-limit";
-import { PremiumPlanDialog } from "@/components/premium-plan-dialog";
 import { useNavigate } from "react-router-dom";
-import { useInfiniteSearch, DiagramResult } from "@/hooks/use-infinite-search";
+import { useInfiniteSearch } from "@/hooks/use-infinite-search";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   const [showSearchField, setShowSearchField] = useState(true);
-  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
-  const [showLoginRequired, setShowLoginRequired] = useState(false);
   const [likedDiagrams, setLikedDiagrams] = useState<Set<string>>(new Set());
   
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { 
-    hasReachedLimit, 
-    incrementCount, 
-    requiresLogin 
-  } = useSearchLimit();
+  const { incrementCount } = useSearchLimit();
   
   const { 
     results,
@@ -52,16 +45,13 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   }, [isLoading, hasMore, loadMore]);
 
   const handleSearch = async (prompt: string, mode: "search" | "generate") => {
-    // During beta, make everything free - no login required
-    // But we'll still track usage for logged-in users
-    
-    // If we're logged in, increment count but don't block usage
+    // Track usage for logged-in users
     if (user) {
       incrementCount();
     }
     
     setShowSearchField(false);
-    await searchFor(prompt, "search"); // Always use search mode, hiding generate
+    await searchFor(prompt, "search");
   };
 
   const handleNewSearch = () => {
@@ -104,7 +94,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
           newLiked.delete(String(diagramId));
           setLikedDiagrams(newLiked);
           
-          toast.success(`"${diagramToLike.title}" removed from your liked diagrams`);
+          toast.success("Diagram removed from favorites");
         } else {
           // Add to liked
           const diagramData = {
@@ -133,12 +123,12 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
           newLiked.add(String(diagramId));
           setLikedDiagrams(newLiked);
           
-          toast.success(`"${diagramToLike.title}" saved to your liked diagrams!`);
+          toast.success("Diagram saved to favorites");
         }
       }
     } catch (error) {
       console.error('Error saving diagram:', error);
-      toast.error('Failed to update liked diagrams. Please try again.');
+      toast.error('Failed to update liked diagrams');
     }
   };
 
@@ -161,14 +151,6 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
       console.error('Error fetching liked diagrams:', error);
     }
   }, [user]);
-
-  const handleLoginRedirect = () => {
-    if (onLoginClick) {
-      onLoginClick();
-    } else {
-      navigate('/auth');
-    }
-  };
 
   useEffect(() => {
     fetchLikedDiagrams();
@@ -197,20 +179,6 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
       </main>
       
       <Footer />
-      
-      <PremiumPlanDialog
-        open={showPremiumDialog}
-        onClose={() => setShowPremiumDialog(false)}
-        showLogin={requiresLogin}
-        onLoginClick={handleLoginRedirect}
-      />
-      
-      <PremiumPlanDialog
-        open={showLoginRequired}
-        onClose={() => setShowLoginRequired(false)}
-        showLogin={true}
-        onLoginClick={handleLoginRedirect}
-      />
     </div>
   );
 };

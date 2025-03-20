@@ -98,7 +98,7 @@
 
 @layer components {
   .diagram-card {
-    @apply overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:shadow-md;
+    @apply overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:shadow-lg;
   }
 
   .diagram-card-image {
@@ -207,15 +207,6 @@ button:focus-visible, a:focus-visible, input:focus-visible {
     rgba(255, 255, 255, 0.1) 25%, 
     transparent 50%);
   background-size: 200% 100%;
-}
-
-/* Hover animations */
-.hover-lift {
-  transition: transform 0.2s ease-out;
-}
-
-.hover-lift:hover {
-  transform: translateY(-5px);
 }
 
 /* Card improvements */
