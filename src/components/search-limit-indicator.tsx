@@ -95,7 +95,7 @@ export function SearchLimitIndicator({ className, compact = false }: SearchLimit
                       ? `Premium users get ${dailySearchLimit} searches per day` 
                       : user 
                         ? `Free users get ${dailySearchLimit} searches per day. Upgrade for more!`
-                        : `Guests get ${dailySearchLimit} searches per day. Sign in for more!`
+                        : `Guests get 3 searches per day. Sign in for 20 free searches!`
                     }
                   </p>
                 </TooltipContent>

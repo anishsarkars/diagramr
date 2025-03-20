@@ -121,11 +121,11 @@ export default function Pricing() {
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>30 searches per day</span>
+                    <span>20 searches per day</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>5 AI-generated diagrams per day</span>
+                    <span>3 AI-generated diagrams per day</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
@@ -179,12 +179,12 @@ export default function Pricing() {
                 
                 <ul className="space-y-3 mt-4">
                   <li className="flex items-start">
-                    <Infinity className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span className="font-medium">Unlimited searches</span>
+                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
+                    <span className="font-medium">50+ searches per day</span>
                   </li>
                   <li className="flex items-start">
                     <Zap className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span className="font-medium">15 AI-generated diagrams per day</span>
+                    <span className="font-medium">10 AI-generated diagrams per day</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />

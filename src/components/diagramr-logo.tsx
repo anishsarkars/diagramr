@@ -31,11 +31,11 @@ export function DiagramrLogo({
   const logoSrc = isDarkMode ? darkModeLogo : lightModeLogo;
   
   const sizeClasses = {
-    sm: "h-6 w-auto",
-    md: "h-8 w-auto",
-    lg: "h-12 w-auto",
-    xl: "h-16 w-auto",
-    "2xl": "h-20 w-auto",
+    sm: "h-5 w-auto",
+    md: "h-7 w-auto",
+    lg: "h-10 w-auto",
+    xl: "h-14 w-auto",
+    "2xl": "h-16 w-auto",
   };
   
   if (iconOnly) {
@@ -73,31 +73,6 @@ export function DiagramrLogo({
         alt="Diagramr Logo"
         className={cn(sizeClasses[size], "object-contain")}
       />
-      
-      {showText && (
-        <div className="ml-2 flex flex-col items-start">
-          <motion.span 
-            className={cn(
-              "font-bold tracking-tight text-foreground", 
-              size === "sm" ? "text-lg" : 
-              size === "lg" ? "text-2xl" : 
-              size === "xl" ? "text-3xl" : 
-              size === "2xl" ? "text-4xl" : "text-xl"
-            )}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            Diagramr
-          </motion.span>
-          
-          {showBeta && (
-            <span className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">
-              Beta
-            </span>
-          )}
-        </div>
-      )}
     </motion.div>
   );
 }

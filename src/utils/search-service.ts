@@ -52,6 +52,9 @@ export async function searchDiagrams(
   
   console.log(`[SearchService] Searching for "${query}" (page ${page})`);
   
+  // Enhance query for better diagram results
+  const enhancedQuery = enhanceSearchQuery(query);
+  
   // Check cache for first page results
   const cacheKey = `search:${query.toLowerCase()}:${page}`;
   if (searchCache.has(cacheKey)) {
@@ -63,7 +66,7 @@ export async function searchDiagrams(
     console.log(`[SearchService] Fetching results for "${query}" page ${page}`);
     
     // Get search results from Google Images 
-    const results = await searchGoogleImages(query, apiKey, searchId, page);
+    const results = await searchGoogleImages(enhancedQuery, apiKey, searchId, page);
     
     if (results.length === 0) {
       console.warn(`[SearchService] No results found for "${query}"`);
@@ -91,6 +94,20 @@ export async function searchDiagrams(
   }
 }
 
+// Function to enhance the search query to find better diagrams
+function enhanceSearchQuery(query: string): string {
+  // Check if the query already contains diagram-related terms
+  const diagramTerms = ['diagram', 'chart', 'flowchart', 'visualization', 'graph', 'schema'];
+  const hasAnyDiagramTerm = diagramTerms.some(term => query.toLowerCase().includes(term));
+  
+  // If query doesn't already specify diagram, add it
+  if (!hasAnyDiagramTerm) {
+    return `${query} diagram`;
+  }
+  
+  return query;
+}
+
 // Function to enhance search results with better relevance sorting and tags
 function enhanceSearchResults(results: DiagramResult[], query: string): DiagramResult[] {
   // Extract terms from the query for relevance scoring
@@ -101,37 +118,43 @@ function enhanceSearchResults(results: DiagramResult[], query: string): DiagramR
     let score = 0;
     const title = result.title.toLowerCase();
     
+    // Title contains exact query
+    if (title.includes(query.toLowerCase())) score += 10;
+    
     // Title contains query terms
     for (const term of queryTerms) {
-      if (title.includes(term)) score += 3;
+      if (title.includes(term)) score += 5;
     }
     
     // Tags contain query terms
     if (result.tags) {
       for (const term of queryTerms) {
         for (const tag of result.tags) {
-          if (tag.includes(term)) score += 2;
+          if (tag.includes(term)) score += 3;
         }
       }
     }
     
-    // Boost diagrams and educational content
+    // Boost educational and diagram content
     const diagramKeywords = ['diagram', 'chart', 'flowchart', 'infographic', 'visualization', 'schema', 'architecture'];
     const educationalKeywords = ['educational', 'learning', 'academic', 'textbook', 'study', 'research', 'concept'];
     
     for (const keyword of diagramKeywords) {
-      if (title.includes(keyword)) score += 5;
+      if (title.includes(keyword)) score += 8;
     }
     
     for (const keyword of educationalKeywords) {
-      if (title.includes(keyword)) score += 3;
+      if (title.includes(keyword)) score += 4;
     }
     
-    // Boost professional-looking and clear diagrams
+    // Boost professional-looking diagrams from reputable sources
     if (result.imageSrc.includes('lucidchart') || 
         result.imageSrc.includes('draw.io') || 
-        result.imageSrc.includes('diagrams.net')) {
-      score += 4;
+        result.imageSrc.includes('diagrams.net') ||
+        result.imageSrc.includes('geeksforgeeks') ||
+        result.imageSrc.includes('javatpoint') ||
+        result.imageSrc.includes('tutorialspoint')) {
+      score += 10;
     }
     
     return score;
@@ -188,7 +211,7 @@ function enhanceSearchResults(results: DiagramResult[], query: string): DiagramR
 // Function to get search suggestions
 export function getSearchSuggestions(query: string): string[] {
   if (!query.trim() || query.length < 2) {
-    return [];
+    return getExampleSearches();
   }
   
   const lowercaseQuery = query.toLowerCase();
@@ -243,32 +266,45 @@ export function getSearchSuggestions(query: string): string[] {
     "geology"
   ];
   
-  // Suggestions based on diagram types
-  const diagramSuggestions = commonDiagramTypes
-    .filter(type => type.includes(lowercaseQuery))
-    .map(type => type);
+  // Popular CS and Programming topics
+  const csProgrammingTopics = [
+    "data structure",
+    "algorithm",
+    "linked list",
+    "binary tree",
+    "hash table",
+    "sorting algorithm",
+    "recursion",
+    "binary search",
+    "graph theory",
+    "dynamic programming",
+    "stack and queue",
+    "database design",
+    "software architecture",
+    "design patterns",
+    "agile methodology",
+    "web architecture",
+    "microservices",
+    "cloud infrastructure",
+    "CI/CD pipeline"
+  ];
   
-  // Suggestions based on academic fields + diagram
-  const fieldSuggestions = academicFields
-    .filter(field => field.includes(lowercaseQuery))
-    .map(field => `${field} diagram`);
+  // Suggestions based on all categories
+  const allPossibleTerms = [...commonDiagramTypes, ...academicFields, ...csProgrammingTopics];
   
-  // Specific educational diagram searches
-  const educationalSuggestions = [
-    "learning process diagram",
-    "educational workflow",
-    "study method diagram",
-    "research methodology",
-    "scientific method diagram",
-    "knowledge graph",
-    "concept relationship diagram"
-  ].filter(term => term.includes(lowercaseQuery));
-  
-  // Combine and select the best suggestions
-  const allSuggestions = [...diagramSuggestions, ...fieldSuggestions, ...educationalSuggestions];
+  // Find matching suggestions
+  const matchingSuggestions = allPossibleTerms
+    .filter(term => term.includes(lowercaseQuery))
+    .map(term => {
+      // Ensure 'diagram' is added for more relevant results if not already present
+      if (!term.includes("diagram") && !commonDiagramTypes.includes(term)) {
+        return `${term} diagram`;
+      }
+      return term;
+    });
   
   // Sort by relevance (exact matches first, then starts with, then includes)
-  return allSuggestions
+  return matchingSuggestions
     .sort((a, b) => {
       // Exact match
       if (a.toLowerCase() === lowercaseQuery) return -1;
@@ -282,4 +318,19 @@ export function getSearchSuggestions(query: string): string[] {
       return a.localeCompare(b);
     })
     .slice(0, 5);
+}
+
+// Example searches to show when no query is entered
+function getExampleSearches(): string[] {
+  return [
+    "data structure diagram",
+    "software architecture",
+    "machine learning workflow",
+    "database schema design",
+    "network topology",
+    "UML class diagram",
+    "system design",
+    "entity relationship model",
+    "microservices architecture"
+  ];
 }
