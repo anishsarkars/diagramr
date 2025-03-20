@@ -3,7 +3,7 @@ import { DiagramrLogo } from "@/components/diagramr-logo";
 import { SearchLimitIndicator } from "./search-limit-indicator";
 import { useState, useEffect } from "react";
 import { Search, LayoutTemplate, Lightbulb, BookOpen, BrainCircuit, GitBranch, 
-  GitFork, BarChart4 } from "lucide-react";
+  GitFork, BarChart4, FlowChart } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
@@ -19,7 +19,6 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   
-  // Enhanced example searches with diagram-specific keywords
   const exampleSearches = [
     "UML class diagram",
     "network topology diagram",
@@ -31,7 +30,6 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
     "database schema"
   ];
   
-  // Category-based example searches
   const categorySearches = {
     "Software Engineering": [
       "microservices architecture",
@@ -50,7 +48,6 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
     ]
   };
   
-  // Features for animation
   const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
   const features = [
     { label: "Find professional diagrams & visualizations", icon: <LayoutTemplate className="h-4 w-4 mr-2" /> },
@@ -75,7 +72,6 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.7 }}
     >
-      {/* Background decorative elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2"></div>
         <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
@@ -148,7 +144,6 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         />
       </motion.div>
       
-      {/* Enhanced example searches */}
       <motion.div
         className="flex flex-wrap justify-center gap-2 mb-6 max-w-2xl mx-auto"
         initial={{ y: 20, opacity: 0 }}
@@ -170,7 +165,6 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         ))}
       </motion.div>
       
-      {/* Category-based example searches */}
       <motion.div
         className="flex flex-wrap justify-center gap-6 mb-8 max-w-4xl mx-auto"
         initial={{ y: 20, opacity: 0 }}
@@ -229,7 +223,6 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         </motion.div>
       )}
       
-      {/* Use cases section */}
       <motion.div
         className="mt-20 max-w-4xl"
         initial={{ opacity: 0, y: 20 }}

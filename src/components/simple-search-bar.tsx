@@ -167,12 +167,13 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
               onFocus={() => setShowSuggestions(query.length > 0)}
               className={cn(
                 "pl-10 py-6 text-base w-full shadow-sm",
-                "focus-visible:ring-1 focus-visible:ring-primary/30",
+                "focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60",
                 "rounded-full border-2", // More rounded search bar
                 isDarkMode 
-                  ? "bg-background/70 border-border/30" 
+                  ? "bg-background/70 border-border/30 backdrop-blur-sm" 
                   : "bg-background border-border/50",
-                searchError ? "border-red-500 focus-visible:ring-red-500/30" : ""
+                searchError ? "border-red-500 focus-visible:ring-red-500/30" : "",
+                "transition-all duration-200"
               )}
               disabled={isLoading}
             />
@@ -195,7 +196,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
             <Button 
               type="button" 
               onClick={retrySearch}
-              className="h-12 px-6 bg-red-500 hover:bg-red-600 rounded-full" // Rounded buttons to match search bar
+              className="h-12 px-6 bg-red-500 hover:bg-red-600 rounded-full shadow-sm" // Rounded buttons to match search bar
             >
               <RefreshCcw className="h-4 w-4 mr-2" />
               Retry
@@ -204,7 +205,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
             <Button 
               type="submit" 
               disabled={!query.trim() || isLoading}
-              className="h-12 px-6 rounded-full" // Rounded buttons to match search bar
+              className="h-12 px-6 rounded-full shadow-sm hover:shadow transition-all duration-200" // Rounded buttons to match search bar
             >
               {isLoading ? (
                 <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />

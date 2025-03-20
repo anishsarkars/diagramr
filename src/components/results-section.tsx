@@ -12,10 +12,14 @@ import {
   SlidersHorizontal,
   Sparkles,
   DownloadIcon,
-  HomeIcon
+  HomeIcon,
+  YoutubeIcon,
+  BookOpenIcon,
+  LinkIcon,
+  GraduationCapIcon
 } from "lucide-react";
 import { SimpleSearchBar } from "@/components/simple-search-bar";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedContainer } from "@/components/animated-container";
 import { useInView } from "react-intersection-observer";
@@ -23,6 +27,14 @@ import { DiagramPreviewModal } from "@/components/diagram-preview-modal";
 import { useTheme } from "@/components/theme-provider";
 import { DiagramrLogo } from "@/components/diagramr-logo";
 import { useNavigate } from "react-router-dom";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
 
 interface ResultsSectionProps {
   results: DiagramResult[];
@@ -34,6 +46,15 @@ interface ResultsSectionProps {
   likedDiagrams?: Set<string>;
   lastResultRef?: (node: HTMLDivElement) => void;
   hasMore: boolean;
+}
+
+interface EducationalResource {
+  id: string;
+  title: string;
+  type: "video" | "article" | "tutorial";
+  url: string;
+  platform: string;
+  thumbnail?: string;
 }
 
 export function ResultsSection({ 
@@ -55,6 +76,9 @@ export function ResultsSection({
   
   const [selectedDiagram, setSelectedDiagram] = useState<DiagramResult | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [educationalResources, setEducationalResources] = useState<EducationalResource[]>([]);
+  const [showResources, setShowResources] = useState(false);
+  const [apiQuotaExhausted, setApiQuotaExhausted] = useState(false);
 
   const isLiked = (id: string | number) => likedDiagrams.has(String(id));
 
@@ -83,6 +107,204 @@ export function ResultsSection({
     if (filterOption === "search") return !result.isGenerated;
     return true;
   });
+
+  // Generate educational resources based on search term
+  useEffect(() => {
+    if (!searchTerm) return;
+    
+    // Check for API quota exhaustion based on network errors
+    const checkForAPIQuotaIssues = () => {
+      // We'll consider the API quota exhausted if we see specific errors in console logs
+      const consoleErrors = [];
+      const originalConsoleError = console.error;
+      console.error = (...args) => {
+        consoleErrors.push(args.join(' '));
+        originalConsoleError(...args);
+      };
+      
+      // Restore original console.error after 1 second
+      setTimeout(() => {
+        console.error = originalConsoleError;
+        const quotaErrors = consoleErrors.filter(err => 
+          err.includes('quota') || 
+          err.includes('rate limit') || 
+          err.includes('429')
+        );
+        
+        if (quotaErrors.length > 0) {
+          setApiQuotaExhausted(true);
+        }
+      }, 1000);
+    };
+    
+    checkForAPIQuotaIssues();
+    
+    // Generate educational resources based on the search term
+    const generateEducationalResources = (query: string): EducationalResource[] => {
+      const lowerQuery = query.toLowerCase();
+      
+      // Educational resources for different diagram categories
+      const resources: { [key: string]: EducationalResource[] } = {
+        // UML and software engineering
+        "uml": [
+          {
+            id: "uml-video-1",
+            title: "UML Class Diagram Tutorial",
+            type: "video",
+            url: "https://www.youtube.com/watch?v=UI6lqHOVHic",
+            platform: "YouTube",
+            thumbnail: "https://img.youtube.com/vi/UI6lqHOVHic/mqdefault.jpg"
+          },
+          {
+            id: "uml-article-1",
+            title: "UML Class Diagram Comprehensive Guide",
+            type: "article",
+            url: "https://www.visual-paradigm.com/guide/uml-unified-modeling-language/uml-class-diagram-tutorial/",
+            platform: "Visual Paradigm",
+          },
+          {
+            id: "uml-tutorial-1",
+            title: "Interactive UML Diagram Tutorial",
+            type: "tutorial",
+            url: "https://www.lucidchart.com/pages/uml-class-diagram",
+            platform: "Lucidchart",
+          }
+        ],
+        
+        // Database diagrams
+        "database": [
+          {
+            id: "database-video-1",
+            title: "Entity Relationship Diagram (ERD) Tutorial",
+            type: "video",
+            url: "https://www.youtube.com/watch?v=QpdhBUYk7Kk",
+            platform: "YouTube",
+            thumbnail: "https://img.youtube.com/vi/QpdhBUYk7Kk/mqdefault.jpg"
+          },
+          {
+            id: "database-article-1",
+            title: "Database Schema Design Best Practices",
+            type: "article",
+            url: "https://www.lucidchart.com/pages/database-diagram/database-design",
+            platform: "Lucidchart",
+          },
+          {
+            id: "database-tutorial-1",
+            title: "Interactive Database Schema Tutorial",
+            type: "tutorial",
+            url: "https://www.vertabelo.com/blog/getting-started-with-vertabelo/",
+            platform: "Vertabelo",
+          }
+        ],
+        
+        // Network diagrams
+        "network": [
+          {
+            id: "network-video-1",
+            title: "Network Topology Diagram Tutorial",
+            type: "video",
+            url: "https://www.youtube.com/watch?v=6G14NrjekLQ",
+            platform: "YouTube",
+            thumbnail: "https://img.youtube.com/vi/6G14NrjekLQ/mqdefault.jpg"
+          },
+          {
+            id: "network-article-1",
+            title: "Network Topology Guide with Examples",
+            type: "article",
+            url: "https://www.lucidchart.com/pages/network-diagram/network-topology-diagram",
+            platform: "Lucidchart",
+          },
+          {
+            id: "network-tutorial-1",
+            title: "Create Professional Network Diagrams",
+            type: "tutorial",
+            url: "https://www.edrawsoft.com/networkdiagram/",
+            platform: "EdrawMax",
+          }
+        ],
+        
+        // System architecture
+        "architecture": [
+          {
+            id: "architecture-video-1",
+            title: "System Design Interview: Architecture Diagrams",
+            type: "video",
+            url: "https://www.youtube.com/watch?v=i_Q6tu-JFz8",
+            platform: "YouTube",
+            thumbnail: "https://img.youtube.com/vi/i_Q6tu-JFz8/mqdefault.jpg"
+          },
+          {
+            id: "architecture-article-1",
+            title: "System Architecture Design Patterns",
+            type: "article",
+            url: "https://martinfowler.com/architecture/",
+            platform: "Martin Fowler",
+          },
+          {
+            id: "architecture-tutorial-1",
+            title: "Interactive C4 Architecture Tutorial",
+            type: "tutorial",
+            url: "https://c4model.com/",
+            platform: "C4 Model",
+          }
+        ],
+        
+        // Default/general diagrams
+        "default": [
+          {
+            id: "general-video-1",
+            title: "How to Create Professional Diagrams",
+            type: "video",
+            url: "https://www.youtube.com/watch?v=WC1ztqw69_Y",
+            platform: "YouTube",
+            thumbnail: "https://img.youtube.com/vi/WC1ztqw69_Y/mqdefault.jpg"
+          },
+          {
+            id: "general-article-1",
+            title: "The Ultimate Guide to Diagram Types",
+            type: "article",
+            url: "https://www.lucidchart.com/blog/types-of-diagrams",
+            platform: "Lucidchart",
+          },
+          {
+            id: "general-tutorial-1",
+            title: "Learn to Create Effective Diagrams",
+            type: "tutorial",
+            url: "https://www.draw.io/",
+            platform: "draw.io",
+          }
+        ]
+      };
+      
+      // Determine which category resources to show
+      let category = "default";
+      
+      if (lowerQuery.includes("uml") || 
+          lowerQuery.includes("class diagram") || 
+          lowerQuery.includes("sequence diagram")) {
+        category = "uml";
+      } else if (lowerQuery.includes("database") || 
+                lowerQuery.includes("er diagram") || 
+                lowerQuery.includes("entity relationship")) {
+        category = "database";
+      } else if (lowerQuery.includes("network") || 
+                lowerQuery.includes("topology") || 
+                lowerQuery.includes("infrastructure")) {
+        category = "network";
+      } else if (lowerQuery.includes("architecture") || 
+                lowerQuery.includes("system design") || 
+                lowerQuery.includes("microservices")) {
+        category = "architecture";
+      }
+      
+      return resources[category] || resources.default;
+    };
+    
+    // Set educational resources and show them if there are search results
+    const newResources = generateEducationalResources(searchTerm);
+    setEducationalResources(newResources);
+    setShowResources(filteredResults.length > 0);
+  }, [searchTerm, filteredResults.length]);
 
   return (
     <div className="container py-8 pb-16">
@@ -124,6 +346,12 @@ export function ResultsSection({
               </Badge>
               {lastAction === "generate" && (
                 <Badge variant="outline" className="bg-secondary/40">Beta</Badge>
+              )}
+              
+              {apiQuotaExhausted && (
+                <Badge variant="outline" className="bg-yellow-500/20 text-yellow-600 border-yellow-500/30 text-[10px]">
+                  API quota exceeded
+                </Badge>
               )}
             </div>
             <h1 className="text-2xl font-bold">{searchTerm}</h1>
@@ -191,6 +419,64 @@ export function ResultsSection({
           </Button>
         </div>
       </div>
+
+      {/* Educational Resources Section */}
+      {showResources && educationalResources.length > 0 && !isLoading && (
+        <motion.div 
+          className="mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium flex items-center">
+              <GraduationCapIcon className="h-5 w-5 mr-2 text-primary" />
+              Educational Resources for "{searchTerm}"
+            </h2>
+            <Badge variant="outline" className="text-xs">Free Learning</Badge>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {educationalResources.map(resource => (
+              <Card key={resource.id} className="hover:shadow-md transition-all duration-300">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center">
+                    {resource.type === "video" && <YoutubeIcon className="h-4 w-4 mr-2 text-red-500" />}
+                    {resource.type === "article" && <BookOpenIcon className="h-4 w-4 mr-2 text-blue-500" />}
+                    {resource.type === "tutorial" && <GraduationCapIcon className="h-4 w-4 mr-2 text-green-500" />}
+                    {resource.title}
+                  </CardTitle>
+                  <CardDescription>{resource.platform}</CardDescription>
+                </CardHeader>
+                <CardContent className="pb-2">
+                  {resource.thumbnail && resource.type === "video" && (
+                    <div className="aspect-video rounded-md overflow-hidden bg-muted mb-2">
+                      <img 
+                        src={resource.thumbnail} 
+                        alt={resource.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter>
+                  <a 
+                    href={resource.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-full"
+                  >
+                    <Button variant="outline" className="w-full" size="sm">
+                      <LinkIcon className="h-3.5 w-3.5 mr-1.5" />
+                      Visit {resource.type === "video" ? "Video" : resource.type === "article" ? "Article" : "Tutorial"}
+                    </Button>
+                  </a>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Results grid with animation */}
       <AnimatePresence>
@@ -277,6 +563,15 @@ export function ResultsSection({
             <Loader2Icon className="h-4 w-4 animate-spin" />
             <span className="text-sm">Loading more results...</span>
           </div>
+        </div>
+      )}
+      
+      {/* API quota notice */}
+      {apiQuotaExhausted && !isLoading && (
+        <div className="mt-4 text-center">
+          <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-xs">
+            API daily quota exceeded. Some results may be limited.
+          </Badge>
         </div>
       )}
       
