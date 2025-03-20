@@ -1,3 +1,4 @@
+
 import { DiagramResult } from "@/hooks/use-infinite-search";
 
 // Cache for search results
@@ -57,6 +58,48 @@ const diagramRepositories = {
     },
     // ... more architecture diagrams
   ],
+  "data_structures": [
+    {
+      id: "ds-1",
+      title: "Common Data Structures Visualization",
+      imageSrc: "/lovable-uploads/6fded565-6442-486f-9eea-5259f0fe2811.png", 
+      author: "CS Education Team",
+      authorUsername: "cs_education",
+      tags: ["data structures", "algorithms", "computer science", "education"],
+      sourceUrl: "https://visualgo.net/en",
+      isGenerated: false
+    },
+    {
+      id: "ds-2",
+      title: "Array vs Linked List Comparison Diagram",
+      imageSrc: "/lovable-uploads/a837a9a5-a83f-42b8-835c-261565ed609f.png", 
+      author: "Algorithm Visualizer",
+      authorUsername: "algo_viz",
+      tags: ["arrays", "linked lists", "data structures", "comparison"],
+      sourceUrl: "https://www.geeksforgeeks.org/data-structures/",
+      isGenerated: false
+    },
+    {
+      id: "ds-3",
+      title: "Binary Search Tree Operations Diagram",
+      imageSrc: "/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png", 
+      author: "CS Academy",
+      authorUsername: "cs_academy",
+      tags: ["binary tree", "bst", "tree traversal", "data structures"],
+      sourceUrl: "https://www.programiz.com/dsa/binary-search-tree",
+      isGenerated: false
+    },
+    {
+      id: "ds-4",
+      title: "Hash Table Implementation Visualization",
+      imageSrc: "/lovable-uploads/ec798833-9785-43fd-9962-8c826d437f27.png", 
+      author: "Algorithm Expert",
+      authorUsername: "algo_expert",
+      tags: ["hash table", "hashing", "data structures", "collision resolution"],
+      sourceUrl: "https://www.hackerearth.com/practice/data-structures/hash-tables/basics-of-hash-tables/tutorial/",
+      isGenerated: false
+    }
+  ],
   "default": [
     {
       id: "default-1",
@@ -92,6 +135,16 @@ function getDiagramCategory(query: string): string {
              lowerQuery.includes("system design") || 
              lowerQuery.includes("microservices")) {
     return "architecture";
+  } else if (lowerQuery.includes("data structure") || 
+             lowerQuery.includes("algorithm") || 
+             lowerQuery.includes("dsa") ||
+             lowerQuery.includes("tree") ||
+             lowerQuery.includes("graph") ||
+             lowerQuery.includes("array") ||
+             lowerQuery.includes("linked list") ||
+             lowerQuery.includes("stack") ||
+             lowerQuery.includes("queue")) {
+    return "data_structures";
   } else {
     return "default";
   }
@@ -100,7 +153,7 @@ function getDiagramCategory(query: string): string {
 // Function to search Google Custom Search Engine for diagram images
 export async function searchGoogleImages(
   query: string,
-  apiKey: string = "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4",
+  apiKey: string = "AIzaSyA1zArEu4m9HzEh-CO2Y7oFw0z_E_cFPsg", // Updated API key
   searchId: string = "260090575ae504419",
   page: number = 1
 ): Promise<DiagramResult[]> {
@@ -114,8 +167,8 @@ export async function searchGoogleImages(
   try {
     console.log('[GoogleSearch] Searching for', `"${query}"`, `(Page ${page})`);
     
-    // Enhance query for better diagram results
-    const enhancedQuery = `${query} diagram visualization infographic schema high quality professional educational`;
+    // Enhance query for better educational diagram results
+    const enhancedQuery = `${query} educational diagram visualization infographic for students learning`;
     
     // Calculate start index (1-based for Google API)
     const startIndex = (page - 1) * 10 + 1;
@@ -130,7 +183,7 @@ export async function searchGoogleImages(
       start: startIndex.toString(),
       safe: 'active',
       imgSize: 'large',
-      imgType: 'clipart', // Updated to fix the API error
+      imgType: 'clipart', // Updated for better diagram results
       rights: 'cc_publicdomain,cc_attribute,cc_sharealike',
       fileType: 'jpg,png,svg'
     });
@@ -168,38 +221,51 @@ export async function searchGoogleImages(
                     authorMatch[1].trim() : 
                     domain.charAt(0).toUpperCase() + domain.slice(1);
                   
-      // Extract tags from title
-      const tags = item.title?.split(/[\s-]+/)
-                  .filter((word: string) => word.length > 3)
-                  .map((word: string) => word.toLowerCase())
-                  .slice(0, 5) || [];
+      // Extract tags from title and query
+      const queryTags = query.toLowerCase().split(/[\s-]+/)
+                      .filter((word: string) => word.length > 3)
+                      .map((word: string) => word.toLowerCase());
+                      
+      const titleTags = item.title?.split(/[\s-]+/)
+                      .filter((word: string) => word.length > 3)
+                      .map((word: string) => word.toLowerCase())
+                      .slice(0, 5) || [];
                   
-      // Make sure we have diagram-related tags
+      // Combine and deduplicate tags
+      const allTags = [...new Set([...queryTags, ...titleTags])];
+      
+      // Make sure we have educational and diagram-related tags
       const diagramTags = ['diagram', 'chart', 'visualization', 'architecture', 'model', 'schema'];
-      const hasDiagramTag = tags.some(tag => 
+      const educationalTags = ['educational', 'learning', 'student', 'academic', 'study'];
+      
+      const hasDiagramTag = allTags.some(tag => 
         diagramTags.some(dTag => tag.includes(dTag))
       );
       
-      if (!hasDiagramTag && diagramTags.some(dt => 
-        item.title?.toLowerCase().includes(dt))) {
-        tags.push('diagram');
+      if (!hasDiagramTag) {
+        allTags.push('diagram');
+      }
+      
+      // Add educational tag
+      if (!allTags.some(tag => educationalTags.some(eTag => tag.includes(eTag)))) {
+        allTags.push('educational');
       }
       
       return {
         id: `google-${page}-${index}-${Date.now()}`,
-        title: item.title || "Untitled Diagram",
+        title: item.title || `Educational ${query.charAt(0).toUpperCase() + query.slice(1)} Diagram`,
         imageSrc: item.link,
         sourceUrl: item.image?.contextLink || item.link,
-        author: author || "Unknown",
-        authorUsername: author ? author.toLowerCase().replace(/\s+/g, '_') : "unknown",
-        tags,
+        author: author || "Educational Resources",
+        authorUsername: author ? author.toLowerCase().replace(/\s+/g, '_') : "educational_resources",
+        tags: allTags.slice(0, 8), // Limit to 8 tags
         isGenerated: false
       };
     });
     
-    // Filter for likely diagram images
+    // Filter for likely educational diagram images
     const filteredResults = results.filter(result => {
-      // Eliminate images that are unlikely to be diagrams
+      // Eliminate images that are unlikely to be educational diagrams
       const nonDiagramKeywords = [
         'photo', 'picture', 'image of person', 'thumbnail', 'stock photo',
         'portrait', 'landscape', 'photograph'
@@ -250,7 +316,7 @@ function fallbackToDiagramRepository(query: string, page: number): DiagramResult
   // Get the base diagrams for this category
   const diagramsForCategory = diagramRepositories[category] || diagramRepositories.default;
   
-  // Calculate which diagrams to return based on the page number (7 per page)
+  // Calculate which diagrams to return based on the page number (10 per page)
   const itemsPerPage = 10;
   const startIdx = (page - 1) * itemsPerPage % diagramsForCategory.length;
   
@@ -271,9 +337,13 @@ function fallbackToDiagramRepository(query: string, page: number): DiagramResult
       .filter(term => term.length > 3)
       .filter(term => !diagram.tags.includes(term));
     
+    // Add educational tags
+    const educationalTags = ['educational', 'learning', 'student'];
+    const missingEduTags = educationalTags.filter(tag => !diagram.tags.includes(tag));
+    
     return {
       ...diagram,
-      tags: [...diagram.tags, ...queryTerms]
+      tags: [...diagram.tags, ...queryTerms, ...missingEduTags].slice(0, 8)
     };
   });
   

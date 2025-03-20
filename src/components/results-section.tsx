@@ -12,7 +12,7 @@ import {
   LinkIcon
 } from "lucide-react";
 import { SimpleSearchBar } from "@/components/simple-search-bar";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedContainer } from "@/components/animated-container";
 import { useInView } from "react-intersection-observer";
@@ -90,17 +90,13 @@ export function ResultsSection({
     onNewSearch();
   };
 
-  // Generate educational resources based on search term
-  useState(() => {
+  useEffect(() => {
     if (!searchTerm) return;
     
-    // Generate educational resources based on the search term
     const generateEducationalResources = (query: string): EducationalResource[] => {
       const lowerQuery = query.toLowerCase();
       
-      // Educational resources for different subject areas
       const resources: { [key: string]: EducationalResource[] } = {
-        // Biology resources
         "biology": [
           {
             id: "biology-video-1",
@@ -129,7 +125,6 @@ export function ResultsSection({
           }
         ],
         
-        // Chemistry resources
         "chemistry": [
           {
             id: "chemistry-video-1",
@@ -150,7 +145,6 @@ export function ResultsSection({
           }
         ],
         
-        // Physics resources
         "physics": [
           {
             id: "physics-video-1",
@@ -171,7 +165,6 @@ export function ResultsSection({
           }
         ],
         
-        // Computer Science resources
         "computer science": [
           {
             id: "cs-video-1",
@@ -200,7 +193,6 @@ export function ResultsSection({
           }
         ],
         
-        // Mathematics resources
         "math": [
           {
             id: "math-video-1",
@@ -221,7 +213,6 @@ export function ResultsSection({
           }
         ],
         
-        // Default/general resources
         "default": [
           {
             id: "general-video-1",
@@ -251,7 +242,6 @@ export function ResultsSection({
         ]
       };
       
-      // Determine which category resources to show
       let category = "default";
       
       if (lowerQuery.includes("biology") || 
@@ -273,7 +263,9 @@ export function ResultsSection({
                 lowerQuery.includes("uml") ||
                 lowerQuery.includes("programming") ||
                 lowerQuery.includes("database") ||
-                lowerQuery.includes("algorithm")) {
+                lowerQuery.includes("algorithm") ||
+                lowerQuery.includes("data structure") ||
+                lowerQuery.includes("dsa")) {
         category = "computer science";
       } else if (lowerQuery.includes("math") ||
                 lowerQuery.includes("graph") ||
@@ -285,11 +277,10 @@ export function ResultsSection({
       return resources[category] || resources.default;
     };
     
-    // Set educational resources and show them if there are search results
     const newResources = generateEducationalResources(searchTerm);
     setEducationalResources(newResources);
     setShowResources(results.length > 0);
-  });
+  }, [searchTerm, results.length]);
 
   return (
     <div className="container py-6 md:py-8 pb-16">
@@ -338,7 +329,6 @@ export function ResultsSection({
         </div>
       </div>
 
-      {/* Educational Resources Section */}
       {showResources && educationalResources.length > 0 && !isLoading && (
         <motion.div 
           className="mb-6 md:mb-8"
@@ -404,7 +394,6 @@ export function ResultsSection({
         </motion.div>
       )}
 
-      {/* Results grid with animation */}
       <AnimatePresence>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 md:py-20">
@@ -436,7 +425,6 @@ export function ResultsSection({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {results.map((result, index) => {
-              // Check if this is the last item to attach the ref for infinite scrolling
               if (results.length === index + 1) {
                 return (
                   <div ref={lastResultRef} key={result.id}>
@@ -476,7 +464,6 @@ export function ResultsSection({
         )}
       </AnimatePresence>
       
-      {/* Loading more results indicator */}
       {!isLoading && results.length > 0 && hasMore && (
         <div className="flex justify-center mt-6 md:mt-8">
           <div className="flex items-center gap-2 text-muted-foreground">
@@ -495,7 +482,6 @@ export function ResultsSection({
         </div>
       )}
       
-      {/* Diagram preview modal */}
       <DiagramPreviewModal
         open={previewOpen}
         onClose={closeDiagramPreview}
@@ -507,7 +493,6 @@ export function ResultsSection({
   );
 }
 
-// Import cn function
 function cn(...inputs: any[]) {
   return inputs.filter(Boolean).join(" ");
 }

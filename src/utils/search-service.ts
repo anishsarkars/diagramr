@@ -1,4 +1,3 @@
-
 import { DiagramResult } from "@/hooks/use-infinite-search";
 import { searchGoogleImages } from "@/utils/googleSearch";
 import { toast } from "sonner";
@@ -43,7 +42,7 @@ setInterval(cleanCache, 5 * 60 * 1000);
 export async function searchDiagrams(
   query: string,
   page: number = 1,
-  apiKey: string = "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4",
+  apiKey: string = "AIzaSyA1zArEu4m9HzEh-CO2Y7oFw0z_E_cFPsg",
   searchId: string = "260090575ae504419"
 ): Promise<DiagramResult[]> {
   if (!query.trim()) {
@@ -53,26 +52,18 @@ export async function searchDiagrams(
   console.log(`[SearchService] Searching for "${query}" (page ${page})`);
   
   // Enhance query for better educational diagram results
-  const enhancedQuery = enhanceSearchQuery(query);
+  const enhancedQuery = `${query} educational diagram for students learning`;
   
-  // Check cache for first page results
-  const cacheKey = `search:${query.toLowerCase()}:${page}`;
-  if (searchCache.has(cacheKey)) {
-    console.log(`[SearchService] Cache hit for "${query}" page ${page}`);
-    return searchCache.get(cacheKey)!.results;
-  }
-
-  // Try to fetch results with fallback mechanisms
+  // Always perform fresh search for accurate results
+  console.log(`[SearchService] Fetching fresh results for "${query}" page ${page}`);
   try {
-    console.log(`[SearchService] Fetching results for "${query}" page ${page}`);
-    
-    // First attempt: Get search results with enhanced educational query
+    // Get search results with enhanced educational query
     let results = await searchGoogleImages(enhancedQuery, apiKey, searchId, page);
     
     // If no results, try with more specific educational diagram terms
-    if (results.length === 0 && !enhancedQuery.includes('diagram')) {
+    if (results.length === 0) {
       console.log('[SearchService] No results with enhanced query, trying with explicit educational diagram terms');
-      const diagramQuery = `${query} diagram educational visualization high quality`;
+      const diagramQuery = `${query} diagram educational visualization for students high quality`;
       results = await searchGoogleImages(diagramQuery, apiKey, searchId, page);
     }
     
@@ -94,13 +85,14 @@ export async function searchDiagrams(
     const enhancedResults = enhanceSearchResults(filteredResults, query);
     
     // Cache the results
-    searchCache.set(cacheKey, {
+    searchCache.set(`search:${query.toLowerCase()}:${page}`, {
       timestamp: Date.now(),
       results: enhancedResults
     });
     
     console.log(`[SearchService] Found ${enhancedResults.length} results for "${query}"`);
     return enhancedResults;
+    
   } catch (error) {
     console.error(`[SearchService] Error searching for "${query}":`, error);
     toast.error("Search failed. Please try again.");
@@ -357,3 +349,4 @@ function getExampleSearches(): string[] {
     "chemical reaction pathway"
   ];
 }
+

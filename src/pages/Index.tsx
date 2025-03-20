@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
@@ -66,8 +65,15 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     // Track usage for logged-in users
     incrementCount();
     
+    // Clear session storage to ensure fresh results
+    Object.keys(sessionStorage).forEach(key => {
+      if (key.startsWith('diagramr-search-')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+    
     setShowSearchField(false);
-    await searchFor(prompt, "search");
+    await searchFor(prompt, mode);
   };
 
   const handleNewSearch = () => {

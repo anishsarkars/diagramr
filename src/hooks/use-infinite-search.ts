@@ -37,7 +37,7 @@ interface UseInfiniteSearchResult {
 export function useInfiniteSearch({
   initialQuery = '',
   pageSize = 20,
-  searchKey = "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4",
+  searchKey = "AIzaSyA1zArEu4m9HzEh-CO2Y7oFw0z_E_cFPsg",
   searchId = "260090575ae504419"
 }: {
   initialQuery?: string;
@@ -98,22 +98,10 @@ export function useInfiniteSearch({
     try {
       if (mode === 'search') {
         console.log("Searching for diagrams with query:", query);
-        const cacheKey = `diagramr-search-${query}-page-1`;
-        const cachedData = sessionStorage.getItem(cacheKey);
-        let searchResults: DiagramResult[] = [];
         
-        if (cachedData) {
-          console.log("Using cached search results");
-          searchResults = JSON.parse(cachedData);
-        } else {
-          console.log("Fetching fresh search results");
-          searchResults = await searchGoogleImages(query, searchKey, searchId);
-          
-          if (searchResults.length > 0) {
-            console.log(`Caching ${searchResults.length} search results`);
-            sessionStorage.setItem(cacheKey, JSON.stringify(searchResults));
-          }
-        }
+        // Always fetch fresh results for better accuracy instead of using cache
+        console.log("Fetching fresh search results");
+        const searchResults = await searchGoogleImages(query, searchKey, searchId);
         
         console.log(`Got ${searchResults.length} search results`);
         
@@ -130,7 +118,7 @@ export function useInfiniteSearch({
         setHasMore(searchResults.length > pageSize || currentSearchPage < 5);
         
         if (searchResults.length > 0) {
-          toast.success(`Found ${searchResults.length} diagram results for "${query}"`);
+          toast.success(`Found ${searchResults.length} educational diagrams for "${query}"`);
         } else {
           toast.info("No results found. Try a different search term or try generating a diagram.");
         }
@@ -241,13 +229,38 @@ export function useInfiniteSearch({
     let score = 0;
     
     const title = result.title.toLowerCase();
+    
+    // Heavily prioritize educational diagram content
+    if (title.includes('educational') || title.includes('learning') || 
+        title.includes('student') || title.includes('study')) {
+      score += 5;
+    }
+    
+    if (title.includes('diagram') || title.includes('visualization') || 
+        title.includes('chart') || title.includes('infographic')) {
+      score += 4;
+    }
+    
+    // Check if title contains query terms
     queryTerms.forEach(term => {
       if (title.includes(term)) score += 3;
     });
     
+    // Check if tags contain query terms
     if (result.tags) {
       queryTerms.forEach(term => {
         if (result.tags?.some(tag => tag.includes(term))) score += 2;
+      });
+    }
+    
+    // Check specific educational contexts
+    const isDataStructureQuery = queryTerms.some(term => 
+      ['data structure', 'algorithm', 'dsa', 'tree', 'graph', 'array'].includes(term));
+    
+    if (isDataStructureQuery) {
+      const dataStructureKeywords = ['data structure', 'algorithm', 'complexity', 'diagram', 'visualization'];
+      dataStructureKeywords.forEach(keyword => {
+        if (title.includes(keyword)) score += 3;
       });
     }
     
@@ -260,21 +273,6 @@ export function useInfiniteSearch({
         if (title.includes(keyword)) score += 2;
       });
     }
-    
-    const professionalTerms = ['business', 'professional', 'company', 'corporate', 'enterprise', 'organization'];
-    const isProfessionalQuery = queryTerms.some(term => professionalTerms.includes(term));
-    
-    if (isProfessionalQuery) {
-      const professionalKeywords = ['business', 'workflow', 'process', 'strategy', 'management', 'organization'];
-      professionalKeywords.forEach(keyword => {
-        if (title.includes(keyword)) score += 2;
-      });
-    }
-    
-    const diagramKeywords = ['diagram', 'flowchart', 'chart', 'visual', 'graphic', 'illustration', 'visualization'];
-    diagramKeywords.forEach(keyword => {
-      if (title.includes(keyword)) score += 1;
-    });
     
     return score;
   };
@@ -362,4 +360,3 @@ export function useInfiniteSearch({
     resetSearch
   };
 }
-
