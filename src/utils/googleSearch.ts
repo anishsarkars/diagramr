@@ -4,7 +4,7 @@ import { DiagramResult } from "@/hooks/use-infinite-search";
 // Cache for search results
 const searchCache = new Map<string, DiagramResult[]>();
 
-// Fallback diagrams repository
+// Fallback diagrams repository - especially for data structures
 const diagramRepositories = {
   "uml": [
     {
@@ -31,32 +31,6 @@ const diagramRepositories = {
       isGenerated: false
     },
     // ... more database diagrams
-  ],
-  "network": [
-    {
-      id: "network-1",
-      title: "Network Topology Diagram - Enterprise Infrastructure",
-      imageSrc: "/lovable-uploads/00280548-0e69-4df9-9d87-4dfdca65bb09.png",
-      author: "Network Professionals",
-      authorUsername: "network_pro",
-      tags: ["network", "topology", "infrastructure", "cisco"],
-      sourceUrl: "https://www.cisco.com/c/en/us/products/cloud-systems-management/network-topology-services/index.html",
-      isGenerated: false
-    },
-    // ... more network diagrams
-  ],
-  "architecture": [
-    {
-      id: "arch-1",
-      title: "Microservices Architecture Diagram",
-      imageSrc: "/lovable-uploads/ade8aaaa-293a-4a73-bf2d-2490956a1578.png",
-      author: "Software Architects",
-      authorUsername: "sw_architects",
-      tags: ["architecture", "microservices", "system design", "cloud"],
-      sourceUrl: "https://microservices.io/patterns/index.html",
-      isGenerated: false
-    },
-    // ... more architecture diagrams
   ],
   "data_structures": [
     {
@@ -98,7 +72,53 @@ const diagramRepositories = {
       tags: ["hash table", "hashing", "data structures", "collision resolution"],
       sourceUrl: "https://www.hackerearth.com/practice/data-structures/hash-tables/basics-of-hash-tables/tutorial/",
       isGenerated: false
+    },
+    {
+      id: "ds-5",
+      title: "Sorting Algorithms Visualization",
+      imageSrc: "/lovable-uploads/7950c6cb-34b4-4e5f-b4da-a9a7d68d9d1d.png",
+      author: "Algorithm Academy",
+      authorUsername: "algo_academy",
+      tags: ["sorting", "algorithms", "comparison", "data structures", "educational"],
+      sourceUrl: "https://www.geeksforgeeks.org/sorting-algorithms/",
+      isGenerated: false
+    },
+    {
+      id: "ds-6",
+      title: "Graph Data Structure Representation",
+      imageSrc: "/lovable-uploads/ade8aaaa-293a-4a73-bf2d-2490956a1578.png",
+      author: "CS Visualizer",
+      authorUsername: "cs_visualizer",
+      tags: ["graph", "data structures", "adjacency list", "adjacency matrix", "educational"],
+      sourceUrl: "https://www.programiz.com/dsa/graph",
+      isGenerated: false
     }
+  ],
+  "network": [
+    {
+      id: "network-1",
+      title: "Network Topology Diagram - Enterprise Infrastructure",
+      imageSrc: "/lovable-uploads/00280548-0e69-4df9-9d87-4dfdca65bb09.png",
+      author: "Network Professionals",
+      authorUsername: "network_pro",
+      tags: ["network", "topology", "infrastructure", "cisco"],
+      sourceUrl: "https://www.cisco.com/c/en/us/products/cloud-systems-management/network-topology-services/index.html",
+      isGenerated: false
+    },
+    // ... more network diagrams
+  ],
+  "architecture": [
+    {
+      id: "arch-1",
+      title: "Microservices Architecture Diagram",
+      imageSrc: "/lovable-uploads/ade8aaaa-293a-4a73-bf2d-2490956a1578.png",
+      author: "Software Architects",
+      authorUsername: "sw_architects",
+      tags: ["architecture", "microservices", "system design", "cloud"],
+      sourceUrl: "https://microservices.io/patterns/index.html",
+      isGenerated: false
+    },
+    // ... more architecture diagrams
   ],
   "default": [
     {
@@ -119,7 +139,19 @@ const diagramRepositories = {
 function getDiagramCategory(query: string): string {
   const lowerQuery = query.toLowerCase();
   
-  if (lowerQuery.includes("uml") || 
+  if (lowerQuery.includes("data structure") || 
+      lowerQuery.includes("algorithm") || 
+      lowerQuery.includes("dsa") ||
+      lowerQuery.includes("tree") ||
+      lowerQuery.includes("graph") ||
+      lowerQuery.includes("array") ||
+      lowerQuery.includes("linked list") ||
+      lowerQuery.includes("stack") ||
+      lowerQuery.includes("queue") ||
+      lowerQuery.includes("hash") ||
+      lowerQuery.includes("sorting")) {
+    return "data_structures";
+  } else if (lowerQuery.includes("uml") || 
       lowerQuery.includes("class diagram") || 
       lowerQuery.includes("sequence diagram")) {
     return "uml";
@@ -135,16 +167,6 @@ function getDiagramCategory(query: string): string {
              lowerQuery.includes("system design") || 
              lowerQuery.includes("microservices")) {
     return "architecture";
-  } else if (lowerQuery.includes("data structure") || 
-             lowerQuery.includes("algorithm") || 
-             lowerQuery.includes("dsa") ||
-             lowerQuery.includes("tree") ||
-             lowerQuery.includes("graph") ||
-             lowerQuery.includes("array") ||
-             lowerQuery.includes("linked list") ||
-             lowerQuery.includes("stack") ||
-             lowerQuery.includes("queue")) {
-    return "data_structures";
   } else {
     return "default";
   }
@@ -157,18 +179,19 @@ export async function searchGoogleImages(
   searchId: string = "260090575ae504419",
   page: number = 1
 ): Promise<DiagramResult[]> {
-  // Check cache first
-  const cacheKey = `${query}:page-${page}`;
-  if (searchCache.has(cacheKey)) {
-    console.log('Using cached search results for:', query, 'page', page);
-    return searchCache.get(cacheKey) || [];
-  }
-
   try {
     console.log('[GoogleSearch] Searching for', `"${query}"`, `(Page ${page})`);
     
-    // Enhance query for better educational diagram results
-    const enhancedQuery = `${query} educational diagram visualization infographic for students learning`;
+    // Special enhancements for data structure queries
+    let enhancedQuery = query;
+    if (query.toLowerCase().includes('data structure') || 
+        query.toLowerCase().includes('algorithm') || 
+        query.toLowerCase().includes('dsa')) {
+      enhancedQuery = `${query} computer science educational diagram visualization for students learning`;
+    } else {
+      // For regular queries, enhance for educational diagrams
+      enhancedQuery = `${query} educational diagram visualization infographic for students learning`;
+    }
     
     // Calculate start index (1-based for Google API)
     const startIndex = (page - 1) * 10 + 1;
@@ -183,9 +206,10 @@ export async function searchGoogleImages(
       start: startIndex.toString(),
       safe: 'active',
       imgSize: 'large',
-      imgType: 'clipart', // Updated for better diagram results
+      imgType: 'clipart', // Better for diagram results
       rights: 'cc_publicdomain,cc_attribute,cc_sharealike',
-      fileType: 'jpg,png,svg'
+      fileType: 'jpg,png,svg',
+      filter: '0' // Turn off duplicate content filter to get more results
     });
     
     const url = `https://www.googleapis.com/customsearch/v1?${params.toString()}`;
@@ -251,6 +275,18 @@ export async function searchGoogleImages(
         allTags.push('educational');
       }
       
+      // For data structure queries, add related tags
+      if (query.toLowerCase().includes('data structure') || 
+          query.toLowerCase().includes('algorithm') || 
+          query.toLowerCase().includes('dsa')) {
+        if (!allTags.includes('data structure')) {
+          allTags.push('data structure');
+        }
+        if (!allTags.includes('computer science')) {
+          allTags.push('computer science');
+        }
+      }
+      
       return {
         id: `google-${page}-${index}-${Date.now()}`,
         title: item.title || `Educational ${query.charAt(0).toUpperCase() + query.slice(1)} Diagram`,
@@ -283,9 +319,6 @@ export async function searchGoogleImages(
       // It should be a diagram
       return true;
     });
-    
-    // Cache the results
-    searchCache.set(cacheKey, filteredResults);
     
     console.log(`[GoogleSearch] Found ${filteredResults.length} results for "${query}"`);
     
@@ -346,10 +379,6 @@ function fallbackToDiagramRepository(query: string, page: number): DiagramResult
       tags: [...diagram.tags, ...queryTerms, ...missingEduTags].slice(0, 8)
     };
   });
-  
-  // Cache these results too
-  const cacheKey = `${query}:page-${page}`;
-  searchCache.set(cacheKey, diagrams);
   
   console.log('[DiagramRepository] Returning', diagrams.length, 'diagrams for page', page);
   return diagrams;

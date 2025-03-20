@@ -1,4 +1,6 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { searchDiagrams } from '@/utils/search-service';
 import { searchGoogleImages } from '@/utils/googleSearch';
 import { generateDiagramWithAI } from '@/utils/ai-image-generator';
 import { toast } from 'sonner';
@@ -13,25 +15,6 @@ export interface DiagramResult {
   tags?: string[];
   sourceUrl?: string;
   isGenerated?: boolean;
-}
-
-interface UseInfiniteSearchOptions {
-  initialQuery?: string;
-  pageSize?: number;
-  searchKey?: string;
-  searchId?: string;
-}
-
-interface UseInfiniteSearchResult {
-  results: DiagramResult[];
-  isLoading: boolean;
-  error: Error | null;
-  hasMore: boolean;
-  loadMore: () => void;
-  searchTerm: string;
-  searchFor: (query: string, mode: 'search' | 'generate') => Promise<void>;
-  lastAction: 'search' | 'generate';
-  resetSearch: () => void;
 }
 
 export function useInfiniteSearch({
@@ -66,7 +49,6 @@ export function useInfiniteSearch({
   
   const { incrementGenerationCount } = useSearchLimit();
   
-  const cachedResults = useRef<Map<string, DiagramResult[]>>(new Map());
   const allResults = useRef<DiagramResult[]>([]);
   const currentSearchKey = useRef<string>('');
   const isLoadingMore = useRef<boolean>(false);
@@ -99,9 +81,28 @@ export function useInfiniteSearch({
       if (mode === 'search') {
         console.log("Searching for diagrams with query:", query);
         
-        // Always fetch fresh results for better accuracy instead of using cache
-        console.log("Fetching fresh search results");
-        const searchResults = await searchGoogleImages(query, searchKey, searchId);
+        // Use the updated search service (which now always fetches fresh results)
+        console.log("Fetching fresh search results using searchDiagrams");
+        let searchResults: DiagramResult[] = [];
+        
+        // Check if this is a data structure query
+        const isDataStructureQuery = 
+          query.toLowerCase().includes('data structure') || 
+          query.toLowerCase().includes('algorithm') || 
+          query.toLowerCase().includes('dsa');
+          
+        if (isDataStructureQuery) {
+          console.log("Data structure query detected, using specialized search");
+          // For data structure queries, directly use the Google API with a specialized query
+          searchResults = await searchGoogleImages(
+            `${query} educational computer science visualization diagram`, 
+            searchKey, 
+            searchId
+          );
+        } else {
+          // For general queries, use the standard search service
+          searchResults = await searchDiagrams(query, 1, searchKey, searchId);
+        }
         
         console.log(`Got ${searchResults.length} search results`);
         
@@ -122,8 +123,6 @@ export function useInfiniteSearch({
         } else {
           toast.info("No results found. Try a different search term or try generating a diagram.");
         }
-        
-        cachedResults.current.set(currentSearchKey.current, searchResults);
         
         fetchAdditionalPages(query, 2);
       } else {
@@ -182,43 +181,43 @@ export function useInfiniteSearch({
     if (startPage > maxInitialPages) return;
     
     try {
-      const cacheKey = `diagramr-search-${query}-page-${startPage}`;
-      const cachedData = sessionStorage.getItem(cacheKey);
+      // Always fetch fresh results for additional pages
+      console.log(`Fetching additional results for page ${startPage}`);
+      let additionalResults: DiagramResult[] = [];
       
-      if (cachedData) {
-        console.log(`Using cached results for page ${startPage}`);
-        const pageResults = JSON.parse(cachedData);
+      const isDataStructureQuery = 
+        query.toLowerCase().includes('data structure') || 
+        query.toLowerCase().includes('algorithm') || 
+        query.toLowerCase().includes('dsa');
+        
+      if (isDataStructureQuery) {
+        // For data structure queries, use the specialized search
+        additionalResults = await searchGoogleImages(
+          `${query} educational computer science visualization diagram`, 
+          searchKey, 
+          searchId, 
+          startPage
+        );
+      } else {
+        // For general queries, use the standard search service
+        additionalResults = await searchDiagrams(query, startPage, searchKey, searchId);
+      }
+      
+      if (additionalResults.length > 0) {
+        console.log(`Got ${additionalResults.length} results for page ${startPage}`);
+        
         const existingUrls = new Set(allResults.current.map(r => r.imageSrc));
-        const newResults = pageResults.filter((r: DiagramResult) => !existingUrls.has(r.imageSrc));
+        const newResults = additionalResults.filter(r => !existingUrls.has(r.imageSrc));
         
         if (newResults.length > 0) {
-          console.log(`Adding ${newResults.length} new results from cached page ${startPage}`);
+          console.log(`Adding ${newResults.length} new unique results from page ${startPage}`);
           allResults.current = [...allResults.current, ...newResults];
           setHasMore(true);
         }
         
         fetchAdditionalPages(query, startPage + 1);
       } else {
-        console.log(`Fetching additional results for page ${startPage}`);
-        const additionalResults = await searchGoogleImages(query, searchKey, searchId, startPage);
-        
-        if (additionalResults.length > 0) {
-          console.log(`Got ${additionalResults.length} results for page ${startPage}`);
-          sessionStorage.setItem(cacheKey, JSON.stringify(additionalResults));
-          
-          const existingUrls = new Set(allResults.current.map(r => r.imageSrc));
-          const newResults = additionalResults.filter(r => !existingUrls.has(r.imageSrc));
-          
-          if (newResults.length > 0) {
-            console.log(`Adding ${newResults.length} new unique results from page ${startPage}`);
-            allResults.current = [...allResults.current, ...newResults];
-            setHasMore(true);
-          }
-          
-          fetchAdditionalPages(query, startPage + 1);
-        } else {
-          console.log(`No more results found for page ${startPage}`);
-        }
+        console.log(`No more results found for page ${startPage}`);
       }
     } catch (err) {
       console.error(`Error fetching page ${startPage}:`, err);
@@ -230,48 +229,54 @@ export function useInfiniteSearch({
     
     const title = result.title.toLowerCase();
     
+    // Check if this is a data structure query
+    const isDataStructureQuery = queryTerms.some(term => 
+      ['data structure', 'algorithm', 'dsa', 'tree', 'graph', 'array'].includes(term));
+      
+    if (isDataStructureQuery) {
+      // Boost data structure diagrams
+      const dsKeywords = ['data structure', 'algorithm', 'tree', 'graph', 'array', 'linked list'];
+      dsKeywords.forEach(keyword => {
+        if (title.includes(keyword)) score += 30;
+      });
+    }
+    
     // Heavily prioritize educational diagram content
     if (title.includes('educational') || title.includes('learning') || 
         title.includes('student') || title.includes('study')) {
-      score += 5;
+      score += 15;
     }
     
     if (title.includes('diagram') || title.includes('visualization') || 
         title.includes('chart') || title.includes('infographic')) {
-      score += 4;
+      score += 12;
     }
     
     // Check if title contains query terms
     queryTerms.forEach(term => {
-      if (title.includes(term)) score += 3;
+      if (title.includes(term)) score += 10;
     });
     
     // Check if tags contain query terms
     if (result.tags) {
       queryTerms.forEach(term => {
-        if (result.tags?.some(tag => tag.includes(term))) score += 2;
+        if (result.tags?.some(tag => tag.includes(term))) score += 5;
       });
     }
     
-    // Check specific educational contexts
-    const isDataStructureQuery = queryTerms.some(term => 
-      ['data structure', 'algorithm', 'dsa', 'tree', 'graph', 'array'].includes(term));
+    // Boost educational sources
+    const educationalSources = ['geeksforgeeks', 'javatpoint', 'tutorialspoint', 'educative', 
+                             'programiz', 'w3schools', 'khanacademy', 'coursera', 'edx', 
+                             'udemy', 'brilliant.org', 'study.com', 'visualgo.net'];
     
-    if (isDataStructureQuery) {
-      const dataStructureKeywords = ['data structure', 'algorithm', 'complexity', 'diagram', 'visualization'];
-      dataStructureKeywords.forEach(keyword => {
-        if (title.includes(keyword)) score += 3;
-      });
-    }
-    
-    const educationalTerms = ['education', 'learn', 'study', 'school', 'university', 'college', 'academic'];
-    const isEducationalQuery = queryTerms.some(term => educationalTerms.includes(term));
-    
-    if (isEducationalQuery) {
-      const educationalKeywords = ['education', 'concept', 'diagram', 'study', 'learn', 'research', 'course'];
-      educationalKeywords.forEach(keyword => {
-        if (title.includes(keyword)) score += 2;
-      });
+    if (result.sourceUrl) {
+      const lowerSourceUrl = result.sourceUrl.toLowerCase();
+      for (const source of educationalSources) {
+        if (lowerSourceUrl.includes(source)) {
+          score += 20;
+          break;
+        }
+      }
     }
     
     return score;
@@ -295,24 +300,28 @@ export function useInfiniteSearch({
         setHasMore(allResults.current.length > endIndex);
       } else if (lastAction === 'search') {
         const nextSearchPage = currentSearchPage + 1;
-        console.log(`Need to fetch more results, checking page ${nextSearchPage}`);
+        console.log(`Need to fetch more results for page ${nextSearchPage}`);
         
-        const cacheKey = `diagramr-search-${searchTerm}-page-${nextSearchPage}`;
-        const cachedData = sessionStorage.getItem(cacheKey);
+        // Always fetch fresh results
+        console.log(`Fetching new page ${nextSearchPage} for ${searchTerm}`);
         
         let newPageResults: DiagramResult[] = [];
-        
-        if (cachedData) {
-          console.log(`Loading cached page ${nextSearchPage}`);
-          newPageResults = JSON.parse(cachedData);
-        } else {
-          console.log(`Fetching new page ${nextSearchPage} for ${searchTerm}`);
-          newPageResults = await searchGoogleImages(searchTerm, searchKey, searchId, nextSearchPage);
+        const isDataStructureQuery = 
+          searchTerm.toLowerCase().includes('data structure') || 
+          searchTerm.toLowerCase().includes('algorithm') || 
+          searchTerm.toLowerCase().includes('dsa');
           
-          if (newPageResults.length > 0) {
-            console.log(`Caching ${newPageResults.length} results from page ${nextSearchPage}`);
-            sessionStorage.setItem(cacheKey, JSON.stringify(newPageResults));
-          }
+        if (isDataStructureQuery) {
+          // For data structure queries, use the specialized search
+          newPageResults = await searchGoogleImages(
+            `${searchTerm} educational computer science visualization diagram`, 
+            searchKey, 
+            searchId, 
+            nextSearchPage
+          );
+        } else {
+          // For general queries, use the standard search service
+          newPageResults = await searchDiagrams(searchTerm, nextSearchPage, searchKey, searchId);
         }
         
         const existingUrls = new Set(results.map(r => r.imageSrc));

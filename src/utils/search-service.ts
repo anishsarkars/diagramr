@@ -1,3 +1,4 @@
+
 import { DiagramResult } from "@/hooks/use-infinite-search";
 import { searchGoogleImages } from "@/utils/googleSearch";
 import { toast } from "sonner";
@@ -51,19 +52,32 @@ export async function searchDiagrams(
   
   console.log(`[SearchService] Searching for "${query}" (page ${page})`);
   
-  // Enhance query for better educational diagram results
-  const enhancedQuery = `${query} educational diagram for students learning`;
-  
-  // Always perform fresh search for accurate results
+  // Always perform fresh search for accurate results - no caching
   console.log(`[SearchService] Fetching fresh results for "${query}" page ${page}`);
+  
   try {
+    // Create a more specific query for educational diagrams
+    let enhancedQuery = '';
+    
+    // Special handling for data structure queries
+    if (query.toLowerCase().includes('data structure') || 
+        query.toLowerCase().includes('algorithm') || 
+        query.toLowerCase().includes('dsa')) {
+      enhancedQuery = `${query} educational visualization diagram computer science tutorial`;
+    } else {
+      // General educational diagram enhancement
+      enhancedQuery = `${query} educational diagram visualization for students learning high quality`;
+    }
+    
+    console.log(`[SearchService] Enhanced query: "${enhancedQuery}"`);
+    
     // Get search results with enhanced educational query
     let results = await searchGoogleImages(enhancedQuery, apiKey, searchId, page);
     
     // If no results, try with more specific educational diagram terms
     if (results.length === 0) {
       console.log('[SearchService] No results with enhanced query, trying with explicit educational diagram terms');
-      const diagramQuery = `${query} diagram educational visualization for students high quality`;
+      const diagramQuery = `${query} diagram educational visualization for students high quality infographic`;
       results = await searchGoogleImages(diagramQuery, apiKey, searchId, page);
     }
     
@@ -84,12 +98,6 @@ export async function searchDiagrams(
     const filteredResults = filterEducationalDiagramsOnly(results, query);
     const enhancedResults = enhanceSearchResults(filteredResults, query);
     
-    // Cache the results
-    searchCache.set(`search:${query.toLowerCase()}:${page}`, {
-      timestamp: Date.now(),
-      results: enhancedResults
-    });
-    
     console.log(`[SearchService] Found ${enhancedResults.length} results for "${query}"`);
     return enhancedResults;
     
@@ -109,7 +117,9 @@ function filterEducationalDiagramsOnly(results: DiagramResult[], query: string):
     'hierarchy', 'network', 'topology', 'framework', 'mapping', 'flow',
     'sequence', 'class', 'entity', 'relationship', 'state', 'database',
     'educational', 'learning', 'explanation', 'concept', 'study', 'visual',
-    'educational diagram', 'teaching', 'academic', 'classroom', 'lecture'
+    'educational diagram', 'teaching', 'academic', 'classroom', 'lecture',
+    'data structure', 'algorithm', 'tree', 'graph', 'array', 'linked list',
+    'stack', 'queue', 'hash table'
   ];
   
   // Check if image appears to be an educational diagram based on its aspects
@@ -151,7 +161,7 @@ function isQualityEducationalDiagramSource(url: string): boolean {
     'geeksforgeeks', 'javatpoint', 'tutorialspoint', 'educative', 
     'programiz', 'w3schools', 'stackoverflow', 'github', 'leetcode',
     'medium', 'towardsdatascience', 'researchgate', 'ieee',
-    'uml-diagrams.org',
+    'uml-diagrams.org', 'prepbytes.com', 'scaler.com',
     
     // Universities
     'edu', 'ac.uk', 'ac.jp', '.edu.', 'cs.stanford.edu', 'mit.edu', 
@@ -168,26 +178,15 @@ function isQualityEducationalDiagramSource(url: string): boolean {
   return qualityEducationalSources.some(source => url.toLowerCase().includes(source));
 }
 
-// Function to enhance the search query to find better educational diagrams
-function enhanceSearchQuery(query: string): string {
-  // Educational terms to enhance diagram search
-  const eduTerms = ['educational', 'diagram', 'explanation', 'concept', 'study', 'learning'];
-  
-  // Already has educational term?
-  const hasAnyEduTerm = eduTerms.some(term => query.toLowerCase().includes(term));
-  
-  // If query doesn't already specify educational content, add it
-  if (!hasAnyEduTerm) {
-    return `${query} educational diagram high quality`;
-  }
-  
-  return `${query} high quality`;
-}
-
 // Function to enhance search results with better relevance sorting and tags
 function enhanceSearchResults(results: DiagramResult[], query: string): DiagramResult[] {
   // Extract terms from the query for relevance scoring
   const queryTerms = query.toLowerCase().split(/\s+/).filter(term => term.length > 2);
+  
+  // Special handling for data structure queries
+  const isDataStructureQuery = query.toLowerCase().includes('data structure') || 
+                             query.toLowerCase().includes('algorithm') ||
+                             query.toLowerCase().includes('dsa');
   
   // Score function for educational relevance
   const scoreResult = (result: DiagramResult): number => {
@@ -222,6 +221,15 @@ function enhanceSearchResults(results: DiagramResult[], query: string): DiagramR
     
     for (const keyword of diagramKeywords) {
       if (title.includes(keyword)) score += 12;
+    }
+    
+    // If this is a data structure query, boost data structure content
+    if (isDataStructureQuery) {
+      const dsKeywords = ['data structure', 'algorithm', 'tree', 'graph', 'array', 
+                        'linked list', 'stack', 'queue', 'hash table'];
+      for (const keyword of dsKeywords) {
+        if (title.includes(keyword)) score += 40;  // High priority for data structure content
+      }
     }
     
     // Boost professional-looking diagrams from reputable educational sources
@@ -280,6 +288,16 @@ function enhanceSearchResults(results: DiagramResult[], query: string): DiagramR
           enhancedTags.push(tag);
         }
       }
+      
+      // For data structure queries, add related tags
+      if (isDataStructureQuery) {
+        const dsTags = ['data structure', 'computer science', 'algorithm'];
+        for (const tag of dsTags) {
+          if (!enhancedTags.includes(tag)) {
+            enhancedTags.push(tag);
+          }
+        }
+      }
     }
     
     return { 
@@ -299,6 +317,14 @@ export function getSearchSuggestions(query: string): string[] {
   
   // Common educational diagram types for students and researchers
   const educationalDiagramTypes = [
+    "data structure visualization",
+    "algorithm flowchart",
+    "binary tree diagram",
+    "graph data structure visualization",
+    "linked list implementation",
+    "stack and queue visualization",
+    "hash table diagram",
+    "sorting algorithm visualization",
     "biology cell diagram",
     "chemistry periodic table",
     "physics force diagram",
@@ -339,6 +365,9 @@ export function getSearchSuggestions(query: string): string[] {
 // Example searches to show when no query is entered - education focused
 function getExampleSearches(): string[] {
   return [
+    "data structure visualization",
+    "algorithm flowchart",
+    "binary search tree diagram",
     "cell structure diagram",
     "quantum mechanics visualization",
     "DNA double helix structure",
@@ -349,4 +378,3 @@ function getExampleSearches(): string[] {
     "chemical reaction pathway"
   ];
 }
-

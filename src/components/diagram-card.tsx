@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { HeartIcon, ExternalLink, FileType2 } from "lucide-react";
+import { HeartIcon, ExternalLink, FileType2, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface DiagramCardProps {
@@ -36,18 +36,39 @@ export function DiagramCard({
   onLike,
   onClick,
 }: DiagramCardProps) {
-  // Add state to track image loading errors and loading state
   const [imageError, setImageError] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [retryCount, setRetryCount] = React.useState(0);
+  const maxRetries = 2;
   
-  const fallbackImage = "/lovable-uploads/7950c6cb-34b4-4e5f-b4da-a9a7d68d9d1d.png";
+  const fallbackImages = [
+    "/lovable-uploads/7950c6cb-34b4-4e5f-b4da-a9a7d68d9d1d.png",
+    "/lovable-uploads/6fded565-6442-486f-9eea-5259f0fe2811.png",
+    "/lovable-uploads/a837a9a5-a83f-42b8-835c-261565ed609f.png",
+    "/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png"
+  ];
   
-  // Filter tags to only keep diagram-relevant ones
+  const fallbackImage = getFallbackImage();
+  
+  const retryWithProxy = () => {
+    if (retryCount < maxRetries) {
+      setRetryCount(prev => prev + 1);
+      setImageError(false);
+      setIsLoading(true);
+      console.log(`Retrying image load (${retryCount + 1}/${maxRetries}): ${imageSrc}`);
+    } else {
+      console.log(`Using fallback image after ${maxRetries} retries`);
+      setImageError(true);
+      setIsLoading(false);
+    }
+  };
+  
   const filterRelevantTags = (tags: string[]) => {
     const diagramKeywords = [
       'diagram', 'chart', 'flow', 'architecture', 'model', 'uml', 'class',
       'entity', 'relationship', 'network', 'topology', 'database', 'schema',
-      'sequence', 'structure', 'algorithm', 'visualization', 'system', 'design'
+      'sequence', 'structure', 'algorithm', 'visualization', 'system', 'design',
+      'data structure', 'computer science', 'educational', 'learning'
     ];
     
     return tags
@@ -59,6 +80,24 @@ export function DiagramCard({
   };
   
   const filteredTags = filterRelevantTags(tags);
+  
+  const getImageSrc = () => {
+    if (imageError || retryCount >= maxRetries) {
+      return fallbackImage;
+    }
+    
+    if (retryCount > 0) {
+      const encodedUrl = encodeURIComponent(imageSrc);
+      return `https://images.weserv.nl/?url=${encodedUrl}&default=${encodeURIComponent(fallbackImage)}`;
+    }
+    
+    return imageSrc;
+  };
+  
+  const getFallbackImage = () => {
+    const titleHash = title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return fallbackImages[titleHash % fallbackImages.length];
+  };
   
   return (
     <motion.div
@@ -82,8 +121,17 @@ export function DiagramCard({
             </div>
           )}
           
+          {imageError && retryCount >= maxRetries && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/10 p-4">
+              <AlertTriangle className="h-8 w-8 text-muted-foreground mb-2" />
+              <p className="text-xs text-center text-muted-foreground">
+                Unable to load image. Using alternative visualization.
+              </p>
+            </div>
+          )}
+          
           <motion.img
-            src={imageError ? fallbackImage : imageSrc}
+            src={getImageSrc()}
             alt={title}
             className="w-full h-full object-contain transition-opacity duration-300"
             style={{ opacity: isLoading ? 0 : 1 }}
@@ -91,9 +139,14 @@ export function DiagramCard({
             transition={{ duration: 0.3 }}
             onError={(e) => {
               console.log(`Image error for: ${imageSrc}`);
-              setImageError(true);
-              setIsLoading(false);
               (e.target as HTMLImageElement).onerror = null;
+              
+              if (retryCount < maxRetries) {
+                retryWithProxy();
+              } else {
+                setImageError(true);
+                setIsLoading(false);
+              }
             }}
             onLoad={() => setIsLoading(false)}
             loading="lazy"
@@ -105,7 +158,6 @@ export function DiagramCard({
             </Badge>
           )}
           
-          {/* Diagram indicator */}
           <Badge className="absolute bottom-2 left-2 bg-background/80 text-foreground backdrop-blur-sm flex items-center gap-1 border-border/50">
             <FileType2 className="h-3 w-3" />
             Diagram

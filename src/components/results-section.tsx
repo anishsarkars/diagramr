@@ -1,3 +1,4 @@
+
 import { DiagramResult } from "@/hooks/use-infinite-search";
 import { Button } from "@/components/ui/button";
 import { DiagramCard } from "@/components/diagram-card";
@@ -12,7 +13,7 @@ import {
   LinkIcon
 } from "lucide-react";
 import { SimpleSearchBar } from "@/components/simple-search-bar";
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedContainer } from "@/components/animated-container";
 import { useInView } from "react-intersection-observer";
@@ -97,6 +98,62 @@ export function ResultsSection({
       const lowerQuery = query.toLowerCase();
       
       const resources: { [key: string]: EducationalResource[] } = {
+        "data structures": [
+          {
+            id: "ds-video-1",
+            title: "Data Structures Easy to Advanced Course",
+            type: "video",
+            url: "https://www.youtube.com/watch?v=RBSGKlAvoiM",
+            platform: "YouTube - freeCodeCamp",
+            thumbnail: "https://img.youtube.com/vi/RBSGKlAvoiM/mqdefault.jpg",
+            description: "Complete data structures tutorial with visualizations"
+          },
+          {
+            id: "ds-video-2",
+            title: "Data Structure Visualization",
+            type: "video",
+            url: "https://www.youtube.com/watch?v=Qmt0QwzEmh0",
+            platform: "YouTube",
+            thumbnail: "https://img.youtube.com/vi/Qmt0QwzEmh0/mqdefault.jpg",
+            description: "Visual explanation of common data structures"
+          },
+          {
+            id: "ds-article-1",
+            title: "Data Structures Tutorial with Visualizations",
+            type: "article",
+            url: "https://visualgo.net/en",
+            platform: "VisuAlgo",
+            description: "Interactive visualizations of data structures and algorithms"
+          },
+          {
+            id: "ds-course-1",
+            title: "Data Structures Fundamentals",
+            type: "course",
+            url: "https://www.coursera.org/learn/data-structures",
+            platform: "Coursera",
+            description: "University of California San Diego - Free to audit"
+          }
+        ],
+        "algorithms": [
+          {
+            id: "algo-video-1",
+            title: "Algorithms Course - Graph Theory Tutorial",
+            type: "video",
+            url: "https://www.youtube.com/watch?v=09_LlHjoEiY",
+            platform: "YouTube - freeCodeCamp",
+            thumbnail: "https://img.youtube.com/vi/09_LlHjoEiY/mqdefault.jpg",
+            description: "Comprehensive algorithms tutorial with visualizations"
+          },
+          {
+            id: "algo-article-1",
+            title: "Algorithm Visualizations",
+            type: "article",
+            url: "https://visualgo.net/en/sorting",
+            platform: "VisuAlgo",
+            description: "Interactive algorithm visualizations for learning"
+          }
+        ],
+        
         "biology": [
           {
             id: "biology-video-1",
@@ -244,10 +301,24 @@ export function ResultsSection({
       
       let category = "default";
       
-      if (lowerQuery.includes("biology") || 
-          lowerQuery.includes("cell") || 
-          lowerQuery.includes("organism") ||
-          lowerQuery.includes("anatomy")) {
+      // Check for data structure/algorithm queries first (most specific)
+      if (lowerQuery.includes("data structure") || 
+          lowerQuery.includes("array") || 
+          lowerQuery.includes("linked list") ||
+          lowerQuery.includes("stack") ||
+          lowerQuery.includes("queue") ||
+          lowerQuery.includes("tree") ||
+          lowerQuery.includes("graph") ||
+          lowerQuery.includes("hash table")) {
+        category = "data structures";
+      } else if (lowerQuery.includes("algorithm") ||
+                lowerQuery.includes("sorting") ||
+                lowerQuery.includes("searching")) {
+        category = "algorithms";
+      } else if (lowerQuery.includes("biology") || 
+                lowerQuery.includes("cell") || 
+                lowerQuery.includes("organism") ||
+                lowerQuery.includes("anatomy")) {
         category = "biology";
       } else if (lowerQuery.includes("chemistry") || 
                 lowerQuery.includes("periodic") || 
@@ -262,10 +333,7 @@ export function ResultsSection({
       } else if (lowerQuery.includes("computer") || 
                 lowerQuery.includes("uml") ||
                 lowerQuery.includes("programming") ||
-                lowerQuery.includes("database") ||
-                lowerQuery.includes("algorithm") ||
-                lowerQuery.includes("data structure") ||
-                lowerQuery.includes("dsa")) {
+                lowerQuery.includes("database")) {
         category = "computer science";
       } else if (lowerQuery.includes("math") ||
                 lowerQuery.includes("graph") ||
@@ -491,8 +559,4 @@ export function ResultsSection({
       />
     </div>
   );
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
 }
