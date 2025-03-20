@@ -1,9 +1,9 @@
-
 import { motion } from "framer-motion";
 import { DiagramrLogo } from "@/components/diagramr-logo";
 import { SearchLimitIndicator } from "./search-limit-indicator";
 import { useState, useEffect } from "react";
-import { Search, LayoutTemplate, Lightbulb, BookOpen, BrainCircuit, GitBranch, FlowChart, BarChart4 } from "lucide-react";
+import { Search, LayoutTemplate, Lightbulb, BookOpen, BrainCircuit, GitBranch, 
+  GitFork, BarChart4 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
@@ -181,7 +181,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           <div key={categoryIndex} className="flex flex-col items-center">
             <div className="flex items-center gap-1 mb-2 text-sm font-medium">
               {category === "Software Engineering" && <GitBranch className="h-3.5 w-3.5" />}
-              {category === "Computer Science" && <FlowChart className="h-3.5 w-3.5" />}
+              {category === "Computer Science" && <GitFork className="h-3.5 w-3.5" />}
               {category === "System Design" && <BarChart4 className="h-3.5 w-3.5" />}
               {category}
             </div>

@@ -11,7 +11,7 @@ import {
   CodeIcon, 
   DatabaseIcon, 
   NetworkIcon, 
-  FlowChartIcon, 
+  ActivityIcon,
   BarChartIcon,
   GitBranchIcon,
   ServerIcon,
