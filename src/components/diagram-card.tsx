@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -48,6 +49,12 @@ export function DiagramCard({
     "/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png"
   ];
   
+  // Move function declaration before its usage
+  const getFallbackImage = () => {
+    const titleHash = title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return fallbackImages[titleHash % fallbackImages.length];
+  };
+  
   const fallbackImage = getFallbackImage();
   
   const retryWithProxy = () => {
@@ -92,11 +99,6 @@ export function DiagramCard({
     }
     
     return imageSrc;
-  };
-  
-  const getFallbackImage = () => {
-    const titleHash = title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return fallbackImages[titleHash % fallbackImages.length];
   };
   
   return (
