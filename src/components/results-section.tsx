@@ -1,4 +1,3 @@
-
 import { DiagramResult } from "@/hooks/use-infinite-search";
 import { Button } from "@/components/ui/button";
 import { DiagramCard } from "@/components/diagram-card";
@@ -290,7 +289,7 @@ export function ResultsSection({
     const newResources = generateEducationalResources(searchTerm);
     setEducationalResources(newResources);
     setShowResources(results.length > 0);
-  }, [searchTerm, results.length]);
+  });
 
   return (
     <div className="container py-6 md:py-8 pb-16">
