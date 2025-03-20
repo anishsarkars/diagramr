@@ -21,14 +21,14 @@ export function DiagramrLogo({
   showBeta = true,
   isLoading = false
 }: DiagramrLogoProps) {
-  const { isDarkMode } = useTheme();
+  const { theme } = useTheme();
   
   // Use the uploaded logo images based on theme
   const darkModeLogo = "/lovable-uploads/53cdad0f-c208-4480-bfad-8c61a8f9b2a7.png";
   const lightModeLogo = "/lovable-uploads/34af63ea-8ed2-4d69-8fd5-394c815ecaa5.png";
   
   // Use appropriate logo based on theme
-  const logoSrc = isDarkMode ? darkModeLogo : lightModeLogo;
+  const logoSrc = theme === 'dark' ? darkModeLogo : lightModeLogo;
   
   const sizeClasses = {
     sm: "h-5 w-auto",

@@ -6,9 +6,17 @@ import { motion } from "framer-motion";
 interface BuiltByBadgeProps {
   className?: string;
   position?: "bottom-right" | "bottom-left" | "fixed-left" | "fixed-right";
+  visible?: boolean;
 }
 
-export function BuiltByBadge({ className, position = "bottom-left" }: BuiltByBadgeProps) {
+export function BuiltByBadge({ 
+  className, 
+  position = "bottom-left",
+  visible = false // Set default to false to hide the badge
+}: BuiltByBadgeProps) {
+  // If the badge is not visible, don't render anything
+  if (!visible) return null;
+  
   const positionClasses = {
     "bottom-right": "absolute bottom-3 right-3",
     "bottom-left": "absolute bottom-3 left-3", 

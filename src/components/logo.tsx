@@ -24,18 +24,18 @@ export function Logo({
   isLoading = false,
   showBeta = true
 }: LogoProps) {
-  const { isDarkMode } = useTheme();
+  const { theme } = useTheme();
   
   const sizeClasses = {
-    sm: "h-8 w-auto",
-    md: "h-12 w-auto",
-    lg: "h-20 w-auto",
-    xl: "h-24 w-auto",
-    "2xl": "h-32 w-auto"
+    sm: "h-6 w-auto",
+    md: "h-9 w-auto",
+    lg: "h-16 w-auto",
+    xl: "h-20 w-auto",
+    "2xl": "h-28 w-auto"
   };
   
   // Use different logo based on theme
-  const logoSrc = isDarkMode 
+  const logoSrc = theme === 'dark'
     ? "/lovable-uploads/f3f7be99-d517-49d2-af13-14b26120e656.png" 
     : "/lovable-uploads/ade8aaaa-293a-4a73-bf2d-2490956a1578.png";
   

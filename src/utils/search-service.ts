@@ -100,6 +100,15 @@ function enhanceSearchQuery(query: string): string {
   const diagramTerms = ['diagram', 'chart', 'flowchart', 'visualization', 'graph', 'schema'];
   const hasAnyDiagramTerm = diagramTerms.some(term => query.toLowerCase().includes(term));
   
+  // For very specific technical topics, add diagram explicitly
+  const technicalTopics = ['data structure', 'algorithm', 'network', 'architecture', 'process', 'workflow'];
+  const isTechnicalTopic = technicalTopics.some(topic => query.toLowerCase().includes(topic));
+  
+  // If query doesn't already specify diagram and is a technical topic, add "diagram" explicitly
+  if (!hasAnyDiagramTerm && isTechnicalTopic) {
+    return `${query} diagram visualization`;
+  }
+  
   // If query doesn't already specify diagram, add it
   if (!hasAnyDiagramTerm) {
     return `${query} diagram`;
@@ -116,22 +125,47 @@ function enhanceSearchResults(results: DiagramResult[], query: string): DiagramR
   // Score function for relevance
   const scoreResult = (result: DiagramResult): number => {
     let score = 0;
-    const title = result.title.toLowerCase();
+    const title = result.title?.toLowerCase() || '';
     
-    // Title contains exact query
-    if (title.includes(query.toLowerCase())) score += 10;
+    // Title contains exact query (highest relevance)
+    if (title.includes(query.toLowerCase())) score += 20;
     
-    // Title contains query terms
+    // Title contains multiple query terms (high relevance)
+    let termMatches = 0;
     for (const term of queryTerms) {
-      if (title.includes(term)) score += 5;
+      if (title.includes(term)) {
+        score += 5;
+        termMatches++;
+      }
+    }
+    
+    // Bonus for matching multiple terms
+    if (termMatches > 1) score += termMatches * 3;
+    
+    // Title starts with query terms (high relevance)
+    for (const term of queryTerms) {
+      if (title.startsWith(term)) score += 8;
     }
     
     // Tags contain query terms
-    if (result.tags) {
+    if (result.tags && result.tags.length > 0) {
       for (const term of queryTerms) {
         for (const tag of result.tags) {
-          if (tag.includes(term)) score += 3;
+          if (tag.toLowerCase().includes(term)) score += 4;
         }
+      }
+    }
+    
+    // Boost for exact term match in URL (likely more relevant source)
+    if (result.sourceUrl && result.sourceUrl.toLowerCase().includes(query.toLowerCase())) {
+      score += 10;
+    }
+    
+    // Boost for data structure specific search
+    if (query.toLowerCase().includes('data structure')) {
+      const dataStructureTerms = ['tree', 'graph', 'hash', 'linked list', 'stack', 'queue', 'array', 'heap', 'sorting'];
+      for (const term of dataStructureTerms) {
+        if (title.includes(term)) score += 15;
       }
     }
     
@@ -140,21 +174,35 @@ function enhanceSearchResults(results: DiagramResult[], query: string): DiagramR
     const educationalKeywords = ['educational', 'learning', 'academic', 'textbook', 'study', 'research', 'concept'];
     
     for (const keyword of diagramKeywords) {
-      if (title.includes(keyword)) score += 8;
+      if (title.includes(keyword)) score += 12;
     }
     
     for (const keyword of educationalKeywords) {
-      if (title.includes(keyword)) score += 4;
+      if (title.includes(keyword)) score += 6;
     }
     
     // Boost professional-looking diagrams from reputable sources
-    if (result.imageSrc.includes('lucidchart') || 
+    if (result.imageSrc && (
+        result.imageSrc.includes('lucidchart') || 
         result.imageSrc.includes('draw.io') || 
         result.imageSrc.includes('diagrams.net') ||
         result.imageSrc.includes('geeksforgeeks') ||
         result.imageSrc.includes('javatpoint') ||
-        result.imageSrc.includes('tutorialspoint')) {
-      score += 10;
+        result.imageSrc.includes('tutorialspoint') ||
+        result.imageSrc.includes('educative') ||
+        result.imageSrc.includes('programiz')
+      )) {
+      score += 15;
+    }
+    
+    // Image quality signals
+    if (result.imageSrc && (
+      result.imageSrc.includes('high-quality') ||
+      result.imageSrc.includes('hq') ||
+      result.imageSrc.includes('large') ||
+      result.imageSrc.includes('detailed')
+    )) {
+      score += 5;
     }
     
     return score;
@@ -170,6 +218,12 @@ function enhanceSearchResults(results: DiagramResult[], query: string): DiagramR
     
     // Remove results that explicitly mention they are not diagrams
     if (result.title.toLowerCase().includes('not a diagram')) return false;
+    
+    // For data structure searches, focus on actual data structure content
+    if (query.toLowerCase().includes('data structure')) {
+      const dataStructureTerms = ['data structure', 'algorithm', 'tree', 'graph', 'hash', 'linked list', 'stack', 'queue', 'array'];
+      return dataStructureTerms.some(term => result.title.toLowerCase().includes(term));
+    }
     
     return true;
   });
@@ -317,7 +371,7 @@ export function getSearchSuggestions(query: string): string[] {
       // Alphabetical
       return a.localeCompare(b);
     })
-    .slice(0, 5);
+    .slice(0, 6);
 }
 
 // Example searches to show when no query is entered
@@ -331,6 +385,9 @@ function getExampleSearches(): string[] {
     "UML class diagram",
     "system design",
     "entity relationship model",
-    "microservices architecture"
+    "microservices architecture",
+    "binary tree visualization",
+    "sorting algorithms comparison",
+    "distributed systems architecture"
   ];
 }
