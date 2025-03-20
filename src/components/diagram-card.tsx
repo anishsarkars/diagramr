@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -9,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { HeartIcon, ExternalLink } from "lucide-react";
+import { HeartIcon, ExternalLink, FileType2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface DiagramCardProps {
@@ -43,6 +42,24 @@ export function DiagramCard({
   
   const fallbackImage = "/lovable-uploads/7950c6cb-34b4-4e5f-b4da-a9a7d68d9d1d.png";
   
+  // Filter tags to only keep diagram-relevant ones
+  const filterRelevantTags = (tags: string[]) => {
+    const diagramKeywords = [
+      'diagram', 'chart', 'flow', 'architecture', 'model', 'uml', 'class',
+      'entity', 'relationship', 'network', 'topology', 'database', 'schema',
+      'sequence', 'structure', 'algorithm', 'visualization', 'system', 'design'
+    ];
+    
+    return tags
+      .filter(tag => 
+        diagramKeywords.some(keyword => tag.toLowerCase().includes(keyword)) ||
+        tag.length > 3
+      )
+      .slice(0, 4);
+  };
+  
+  const filteredTags = filterRelevantTags(tags);
+  
   return (
     <motion.div
       whileHover={{ y: -5, transition: { duration: 0.2 } }}
@@ -51,7 +68,7 @@ export function DiagramCard({
       transition={{ duration: 0.4 }}
       className="h-full"
     >
-      <Card className="diagram-card overflow-hidden h-full flex flex-col shadow-sm hover:shadow-md transition-all duration-300">
+      <Card className="diagram-card overflow-hidden h-full flex flex-col shadow-sm hover:shadow-md transition-all duration-300 border-border/50">
         <div 
           className="diagram-card-image cursor-pointer aspect-[4/3] relative bg-muted/50"
           onClick={onClick}
@@ -68,7 +85,7 @@ export function DiagramCard({
           <motion.img
             src={imageError ? fallbackImage : imageSrc}
             alt={title}
-            className="w-full h-full object-cover transition-opacity duration-300"
+            className="w-full h-full object-contain transition-opacity duration-300"
             style={{ opacity: isLoading ? 0 : 1 }}
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.3 }}
@@ -87,6 +104,12 @@ export function DiagramCard({
               AI Generated
             </Badge>
           )}
+          
+          {/* Diagram indicator */}
+          <Badge className="absolute bottom-2 left-2 bg-background/80 text-foreground backdrop-blur-sm flex items-center gap-1 border-border/50">
+            <FileType2 className="h-3 w-3" />
+            Diagram
+          </Badge>
         </div>
         
         <CardHeader className="p-3 pb-0">
@@ -100,7 +123,7 @@ export function DiagramCard({
         
         <CardContent className="p-3 pt-2 flex-grow">
           <div className="flex flex-wrap gap-1 mt-1">
-            {tags.slice(0, 3).map((tag) => (
+            {filteredTags.map((tag) => (
               <Badge
                 key={tag}
                 variant="secondary"
@@ -109,12 +132,12 @@ export function DiagramCard({
                 {tag}
               </Badge>
             ))}
-            {tags.length > 3 && (
+            {tags.length > filteredTags.length && (
               <Badge
                 variant="outline"
                 className="text-xs px-1.5 py-0 h-5 opacity-70"
               >
-                +{tags.length - 3}
+                +{tags.length - filteredTags.length}
               </Badge>
             )}
           </div>

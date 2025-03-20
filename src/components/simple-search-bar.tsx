@@ -166,8 +166,9 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
               onKeyDown={handleKeyDown}
               onFocus={() => setShowSuggestions(query.length > 0)}
               className={cn(
-                "pl-10 py-6 text-base w-full shadow-sm rounded-xl",
+                "pl-10 py-6 text-base w-full shadow-sm",
                 "focus-visible:ring-1 focus-visible:ring-primary/30",
+                "rounded-full border-2", // More rounded search bar
                 isDarkMode 
                   ? "bg-background/70 border-border/30" 
                   : "bg-background border-border/50",
@@ -175,7 +176,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
               )}
               disabled={isLoading}
             />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             
             {query && (
               <Button
@@ -194,7 +195,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
             <Button 
               type="button" 
               onClick={retrySearch}
-              className="h-12 px-6 bg-red-500 hover:bg-red-600 rounded-xl"
+              className="h-12 px-6 bg-red-500 hover:bg-red-600 rounded-full" // Rounded buttons to match search bar
             >
               <RefreshCcw className="h-4 w-4 mr-2" />
               Retry
@@ -203,7 +204,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
             <Button 
               type="submit" 
               disabled={!query.trim() || isLoading}
-              className="h-12 px-6 rounded-xl"
+              className="h-12 px-6 rounded-full" // Rounded buttons to match search bar
             >
               {isLoading ? (
                 <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -243,6 +244,9 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
       <div className="mt-2 flex justify-end items-center">
         <div className="text-xs text-muted-foreground">
           <span>{remainingSearches} searches left{!isPremium && " today"}</span>
+          {apiQuotaExhausted && (
+            <span className="ml-2 text-[10px] text-amber-500/70">API quota depleted today</span>
+          )}
         </div>
       </div>
       

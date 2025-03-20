@@ -36,8 +36,8 @@ export function Logo({
   
   // Use different logo based on theme
   const logoSrc = theme === 'dark'
-    ? "/lovable-uploads/f3f7be99-d517-49d2-af13-14b26120e656.png" 
-    : "/lovable-uploads/ade8aaaa-293a-4a73-bf2d-2490956a1578.png";
+    ? "/lovable-uploads/53cdad0f-c208-4480-bfad-8c61a8f9b2a7.png" 
+    : "/lovable-uploads/34af63ea-8ed2-4d69-8fd5-394c815ecaa5.png";
   
   return (
     <div className={cn("flex items-center gap-2", className)}>

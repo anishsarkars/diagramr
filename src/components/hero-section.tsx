@@ -3,11 +3,12 @@ import { motion } from "framer-motion";
 import { DiagramrLogo } from "@/components/diagramr-logo";
 import { SearchLimitIndicator } from "./search-limit-indicator";
 import { useState, useEffect } from "react";
-import { Search, LayoutTemplate, Lightbulb, BookOpen, BrainCircuit } from "lucide-react";
+import { Search, LayoutTemplate, Lightbulb, BookOpen, BrainCircuit, GitBranch, FlowChart, BarChart4 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
 import { SimpleSearchBar } from "./simple-search-bar";
+import { Badge } from "./ui/badge";
 
 interface HeroSectionProps {
   onSearch: (query: string, mode: "search" | "generate") => void;
@@ -18,15 +19,36 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   
-  // Example searches
+  // Enhanced example searches with diagram-specific keywords
   const exampleSearches = [
-    "data structure diagram",
     "UML class diagram",
     "network topology diagram",
-    "system architecture",
-    "ER diagram",
-    "flowchart"
+    "entity relationship diagram",
+    "system architecture diagram",
+    "data structure visualization",
+    "flowchart diagram",
+    "sequence diagram",
+    "database schema"
   ];
+  
+  // Category-based example searches
+  const categorySearches = {
+    "Software Engineering": [
+      "microservices architecture",
+      "API design diagram",
+      "class diagram"
+    ],
+    "Computer Science": [
+      "binary tree visualization",
+      "algorithm flowchart",
+      "data structure diagram"
+    ],
+    "System Design": [
+      "infrastructure diagram",
+      "cloud architecture",
+      "system design"
+    ]
+  };
   
   // Features for animation
   const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
@@ -65,7 +87,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         transition={{ duration: 0.5, delay: 0.2 }}
         className="mb-6"
       >
-        <DiagramrLogo size="xl" showBeta iconOnly={true} showText={false} className="mb-2" />
+        <DiagramrLogo size="lg" showBeta iconOnly={true} showText={false} className="mb-2" />
       </motion.div>
       
       <motion.h1 
@@ -126,24 +148,56 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         />
       </motion.div>
       
-      {/* Example searches */}
+      {/* Enhanced example searches */}
       <motion.div
-        className="flex flex-wrap justify-center gap-2 mb-8 max-w-2xl mx-auto"
+        className="flex flex-wrap justify-center gap-2 mb-6 max-w-2xl mx-auto"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.65 }}
       >
+        <div className="w-full text-sm text-muted-foreground mb-2">Popular diagram searches:</div>
         {exampleSearches.map((example, index) => (
           <Button
             key={index}
             variant="outline"
             size="sm"
-            className="rounded-full"
+            className="rounded-full border-primary/20 hover:bg-primary/5"
             onClick={() => onSearch(example, "search")}
           >
             <Search className="h-3 w-3 mr-1.5" />
             {example}
           </Button>
+        ))}
+      </motion.div>
+      
+      {/* Category-based example searches */}
+      <motion.div
+        className="flex flex-wrap justify-center gap-6 mb-8 max-w-4xl mx-auto"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.7 }}
+      >
+        {Object.entries(categorySearches).map(([category, searches], categoryIndex) => (
+          <div key={categoryIndex} className="flex flex-col items-center">
+            <div className="flex items-center gap-1 mb-2 text-sm font-medium">
+              {category === "Software Engineering" && <GitBranch className="h-3.5 w-3.5" />}
+              {category === "Computer Science" && <FlowChart className="h-3.5 w-3.5" />}
+              {category === "System Design" && <BarChart4 className="h-3.5 w-3.5" />}
+              {category}
+            </div>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {searches.map((search, searchIndex) => (
+                <Badge
+                  key={`${categoryIndex}-${searchIndex}`}
+                  variant="secondary"
+                  className="cursor-pointer hover:bg-secondary/80"
+                  onClick={() => onSearch(search, "search")}
+                >
+                  {search}
+                </Badge>
+              ))}
+            </div>
+          </div>
         ))}
       </motion.div>
       

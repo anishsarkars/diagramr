@@ -34,8 +34,8 @@ export function DiagramrLogo({
     sm: "h-5 w-auto",
     md: "h-6 w-auto",
     lg: "h-8 w-auto",
-    xl: "h-12 w-auto",
-    "2xl": "h-14 w-auto",
+    xl: "h-10 w-auto", // Reduced from h-12
+    "2xl": "h-12 w-auto", // Reduced from h-14
   };
   
   return (
