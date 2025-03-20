@@ -4,9 +4,15 @@ import { useAuth } from "@/components/auth-context";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Info } from "lucide-react";
 import { PremiumPlanDialog } from "@/components/premium-plan-dialog";
 import { useNavigate } from "react-router-dom";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SearchLimitIndicatorProps {
   className?: string;
@@ -19,22 +25,18 @@ export function SearchLimitIndicator({ className, compact = false }: SearchLimit
     hasReachedLimit, 
     requiresLogin,
     remainingGenerations,
-    hasReachedGenerationLimit
+    hasReachedGenerationLimit,
+    dailySearchLimit,
+    isPremium
   } = useSearchLimit();
   
   const { user, profile } = useAuth();
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const navigate = useNavigate();
   
-  const isPremium = profile?.is_premium || false;
-  
   // If the user has a profile and it's a premium user, don't show this indicator
   // unless they've reached a limit
-  if (user && isPremium) return null;
-  
-  // If the user has a profile, they've signed up - don't show this indicator
-  // unless they've reached a limit
-  if (user && !hasReachedLimit && !hasReachedGenerationLimit) return null;
+  if (user && isPremium && !hasReachedLimit && !hasReachedGenerationLimit) return null;
   
   const hasReachedAnyLimit = hasReachedLimit || hasReachedGenerationLimit;
   
@@ -73,8 +75,33 @@ export function SearchLimitIndicator({ className, compact = false }: SearchLimit
         ) : (
           <div className="flex items-center gap-2">
             <p className="text-xs text-muted-foreground">
-              <span className="font-medium">{Math.max(0, remainingSearches)}</span> {user ? "daily" : "guest"} searches left
+              <span className="font-medium">{Math.max(0, remainingSearches)}</span>/{dailySearchLimit} {user ? (isPremium ? "premium" : "free") : "guest"} searches left
             </p>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-4 w-4 p-0"
+                  >
+                    <Info className="h-3 w-3 text-muted-foreground" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">
+                    {isPremium 
+                      ? `Premium users get ${dailySearchLimit} searches per day` 
+                      : user 
+                        ? `Free users get ${dailySearchLimit} searches per day. Upgrade for more!`
+                        : `Guests get ${dailySearchLimit} searches per day. Sign in for more!`
+                    }
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
             {!compact && !user && (
               <Button 
                 size="sm" 

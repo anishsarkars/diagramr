@@ -8,12 +8,12 @@ const GUEST_DAILY_SEARCH_LIMIT = 3;
 const GUEST_DAILY_GENERATION_LIMIT = 1;
 
 // For logged-in free users
-const FREE_DAILY_SEARCH_LIMIT = 30;
-const FREE_DAILY_GENERATION_LIMIT = 5;
+const FREE_DAILY_SEARCH_LIMIT = 20;
+const FREE_DAILY_GENERATION_LIMIT = 3;
 
 // For premium users
-const PREMIUM_DAILY_SEARCH_LIMIT = Infinity;
-const PREMIUM_DAILY_GENERATION_LIMIT = 15;
+const PREMIUM_DAILY_SEARCH_LIMIT = 50;
+const PREMIUM_DAILY_GENERATION_LIMIT = 10;
 
 export const useSearchLimit = () => {
   const { user, profile } = useAuth();
@@ -197,6 +197,9 @@ export const useSearchLimit = () => {
     loading,
     incrementCount,
     incrementGenerationCount,
-    loadCounts
+    loadCounts,
+    dailySearchLimit,
+    dailyGenerationLimit,
+    isPremium
   };
 };

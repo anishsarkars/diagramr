@@ -1,3 +1,4 @@
+
 import { DiagramResult } from "@/hooks/use-infinite-search";
 import { searchGoogleImages } from "@/utils/googleSearch";
 import { toast } from "sonner";
@@ -115,8 +116,8 @@ function enhanceSearchResults(results: DiagramResult[], query: string): DiagramR
     }
     
     // Boost diagrams and educational content
-    const diagramKeywords = ['diagram', 'chart', 'flowchart', 'infographic', 'visualization'];
-    const educationalKeywords = ['educational', 'learning', 'academic', 'textbook'];
+    const diagramKeywords = ['diagram', 'chart', 'flowchart', 'infographic', 'visualization', 'schema', 'architecture'];
+    const educationalKeywords = ['educational', 'learning', 'academic', 'textbook', 'study', 'research', 'concept'];
     
     for (const keyword of diagramKeywords) {
       if (title.includes(keyword)) score += 5;
@@ -126,16 +127,62 @@ function enhanceSearchResults(results: DiagramResult[], query: string): DiagramR
       if (title.includes(keyword)) score += 3;
     }
     
+    // Boost professional-looking and clear diagrams
+    if (result.imageSrc.includes('lucidchart') || 
+        result.imageSrc.includes('draw.io') || 
+        result.imageSrc.includes('diagrams.net')) {
+      score += 4;
+    }
+    
     return score;
   };
   
   // Clone results to avoid mutating the original array
   const enhancedResults = [...results];
   
-  // Sort results by relevance score
-  enhancedResults.sort((a, b) => scoreResult(b) - scoreResult(a));
+  // Filter out low-quality or irrelevant results
+  const filteredResults = enhancedResults.filter(result => {
+    // Filter out results that don't have proper titles or are clearly not diagrams
+    if (!result.title || result.title.length < 5) return false;
+    
+    // Remove results that explicitly mention they are not diagrams
+    if (result.title.toLowerCase().includes('not a diagram')) return false;
+    
+    return true;
+  });
   
-  return enhancedResults;
+  // Sort results by relevance score
+  filteredResults.sort((a, b) => scoreResult(b) - scoreResult(a));
+  
+  // Add relevant tags if missing
+  return filteredResults.map(result => {
+    if (!result.tags || result.tags.length === 0) {
+      // Generate tags from the title
+      const titleWords = result.title.toLowerCase()
+        .split(/\s+/)
+        .filter(word => word.length > 3)
+        .filter(word => !['and', 'the', 'for', 'with'].includes(word))
+        .slice(0, 5);
+        
+      // Add common diagram types if detected in title
+      const diagramTypes = ['flowchart', 'sequence', 'entity', 'class', 'use case', 'state', 'activity'];
+      for (const type of diagramTypes) {
+        if (result.title.toLowerCase().includes(type) && !titleWords.includes(type)) {
+          titleWords.push(type);
+        }
+      }
+      
+      // Add query terms as tags if not already included
+      for (const term of queryTerms) {
+        if (!titleWords.includes(term)) {
+          titleWords.push(term);
+        }
+      }
+      
+      return { ...result, tags: titleWords };
+    }
+    return result;
+  });
 }
 
 // Function to get search suggestions
@@ -164,7 +211,12 @@ export function getSearchSuggestions(query: string): string[] {
     "data flow diagram",
     "network diagram",
     "system architecture",
-    "database schema"
+    "database schema",
+    "business process diagram",
+    "organization chart",
+    "venn diagram",
+    "gantt chart",
+    "timeline diagram"
   ];
   
   // Academic fields
@@ -183,7 +235,12 @@ export function getSearchSuggestions(query: string): string[] {
     "history",
     "geography",
     "linguistics",
-    "education"
+    "education",
+    "neuroscience",
+    "biochemistry",
+    "microbiology",
+    "astronomy",
+    "geology"
   ];
   
   // Suggestions based on diagram types
@@ -196,8 +253,19 @@ export function getSearchSuggestions(query: string): string[] {
     .filter(field => field.includes(lowercaseQuery))
     .map(field => `${field} diagram`);
   
+  // Specific educational diagram searches
+  const educationalSuggestions = [
+    "learning process diagram",
+    "educational workflow",
+    "study method diagram",
+    "research methodology",
+    "scientific method diagram",
+    "knowledge graph",
+    "concept relationship diagram"
+  ].filter(term => term.includes(lowercaseQuery));
+  
   // Combine and select the best suggestions
-  const allSuggestions = [...diagramSuggestions, ...fieldSuggestions];
+  const allSuggestions = [...diagramSuggestions, ...fieldSuggestions, ...educationalSuggestions];
   
   // Sort by relevance (exact matches first, then starts with, then includes)
   return allSuggestions

@@ -51,7 +51,7 @@ export function DiagramCard({
       transition={{ duration: 0.4 }}
       className="h-full"
     >
-      <Card className="diagram-card overflow-hidden h-full flex flex-col">
+      <Card className="diagram-card overflow-hidden h-full flex flex-col shadow-sm hover:shadow-md transition-all duration-300">
         <div 
           className="diagram-card-image cursor-pointer aspect-[4/3] relative bg-muted/50"
           onClick={onClick}

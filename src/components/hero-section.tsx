@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { DiagramrLogo } from "@/components/diagramr-logo";
 import { SearchLimitIndicator } from "./search-limit-indicator";
 import { useState, useEffect } from "react";
-import { Search, LayoutTemplate, Lightbulb, BookOpen } from "lucide-react";
+import { Search, LayoutTemplate, Lightbulb, BookOpen, BrainCircuit } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
@@ -22,9 +22,10 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
   const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
   const features = [
     { label: "Find professional diagrams & visualizations", icon: <LayoutTemplate className="h-4 w-4 mr-2" /> },
-    { label: "Visual aids for presentations", icon: <BookOpen className="h-4 w-4 mr-2" /> },
+    { label: "Visual aids for presentations & reports", icon: <BookOpen className="h-4 w-4 mr-2" /> },
     { label: "Technical diagrams for documentation", icon: <LayoutTemplate className="h-4 w-4 mr-2" /> },
-    { label: "Understand difficult topics faster", icon: <Lightbulb className="h-4 w-4 mr-2" /> },
+    { label: "Understand complex concepts faster", icon: <BrainCircuit className="h-4 w-4 mr-2" /> },
+    { label: "Learning materials for education", icon: <Lightbulb className="h-4 w-4 mr-2" /> },
   ];
   
   useEffect(() => {
@@ -52,9 +53,9 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="mb-8"
+        className="mb-6"
       >
-        <DiagramrLogo size="2xl" showBeta className="mb-2" />
+        <DiagramrLogo size="2xl" showBeta iconOnly={false} showText className="mb-2" />
       </motion.div>
       
       <motion.h1 
@@ -63,17 +64,17 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.3 }}
       >
-        Find Perfect Diagrams
+        Discover Perfect Diagrams
       </motion.h1>
       
       <motion.div
-        className="mb-8 text-muted-foreground text-xl max-w-xl"
+        className="mb-8 text-muted-foreground text-xl max-w-2xl"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.4 }}
       >
         <p>
-          The ultimate search engine for diagrams, visualizations, and educational images
+          The intelligent search engine for diagrams, visualizations, and educational imagery
         </p>
       </motion.div>
       
@@ -151,7 +152,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         transition={{ delay: 0.9, duration: 0.6 }}
       >
         <h2 className="text-2xl font-bold mb-8">Perfect for</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <motion.div 
             className="p-6 rounded-xl bg-card border border-border/50 shadow-sm hover:shadow-md transition-all duration-300"
             whileHover={{ y: -5, transition: { duration: 0.2 } }}
@@ -166,7 +167,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
             whileHover={{ y: -5, transition: { duration: 0.2 } }}
           >
             <LayoutTemplate className="h-10 w-10 text-primary mb-4" />
-            <h3 className="text-lg font-medium mb-2">Business Workflows</h3>
+            <h3 className="text-lg font-medium mb-2">Business & Strategy</h3>
             <p className="text-muted-foreground">Discover professional diagrams for reports, processes and presentations</p>
           </motion.div>
           

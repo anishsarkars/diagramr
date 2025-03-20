@@ -17,7 +17,7 @@ export function useInfiniteScroll<T>({
   loadMore,
   isLoading,
   threshold = 300,
-  pageSize = 10,
+  pageSize = 20,
   initialItems = 20
 }: UseInfiniteScrollOptions<T>) {
   const [visibleItems, setVisibleItems] = useState<T[]>([]);
@@ -64,7 +64,7 @@ export function useInfiniteScroll<T>({
     
     observer.current = new IntersectionObserver(entries => {
       // If the last item is visible
-      if (entries[0].isIntersecting) {
+      if (entries[0]?.isIntersecting) {
         // If we have more items locally to show
         if (visibleItems.length < items.length) {
           showMoreItems();
@@ -76,6 +76,7 @@ export function useInfiniteScroll<T>({
       }
     }, {
       rootMargin: `0px 0px ${threshold}px 0px`,
+      threshold: 0.1
     });
     
     if (node) {
