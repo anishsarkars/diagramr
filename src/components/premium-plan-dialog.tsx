@@ -2,7 +2,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Sparkles, Star, Infinity, ArrowRight, Zap, CheckCircle2 } from "lucide-react";
+import { Sparkles, Star, Infinity, ArrowRight, Zap, CheckCircle2, GraduationCap, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface PremiumPlanDialogProps {
@@ -34,21 +34,21 @@ export function PremiumPlanDialog({
           {showLogin ? (
             <>
               <DialogTitle className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
-                Sign in to continue
+                <GraduationCap className="h-5 w-5 text-primary" />
+                Sign in to continue learning
               </DialogTitle>
               <DialogDescription>
-                Create a free account to get more daily searches and AI-generated diagrams.
+                Create a free account to access more educational diagrams and study resources.
               </DialogDescription>
             </>
           ) : (
             <>
               <DialogTitle className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-amber-500" />
-                Upgrade to Premium
+                Upgrade to Premium for Students & Researchers
               </DialogTitle>
               <DialogDescription>
-                Get unlimited searches and more AI-generated diagrams.
+                Get unlimited access to educational diagrams and advanced study resources.
               </DialogDescription>
             </>
           )}
@@ -57,25 +57,28 @@ export function PremiumPlanDialog({
         {showLogin ? (
           <div className="space-y-4 py-2">
             <div className="rounded-lg border p-3">
-              <h3 className="font-medium text-sm mb-2">Free account benefits:</h3>
+              <h3 className="font-medium text-sm mb-2 flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-primary" />
+                Free account benefits for students:
+              </h3>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
-                  <span>30 searches per day</span>
+                  <span>20 educational diagram searches per day</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
-                  <span>5 AI diagram generations per day</span>
+                  <span>Access to free educational resources</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
-                  <span>Save favorites to your account</span>
+                  <span>Save favorites to your study collection</span>
                 </li>
               </ul>
             </div>
             
             <div className="text-xs text-muted-foreground italic text-center">
-              During beta, all account features are free including bookmarks and advanced filters!
+              Diagramr is committed to supporting education with high-quality visual learning resources.
             </div>
           </div>
         ) : (
@@ -84,10 +87,13 @@ export function PremiumPlanDialog({
               <div className="absolute -top-4 -right-4 w-20 h-20 bg-primary/10 rounded-full blur-xl pointer-events-none" />
               
               <div className="flex justify-between items-start mb-3">
-                <h3 className="font-semibold text-base">Premium Plan</h3>
+                <h3 className="font-semibold text-base flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4 text-primary" />
+                  <span>Student Premium</span>
+                </h3>
                 <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-500 hover:to-orange-600">
                   <Star className="h-3 w-3 mr-1 fill-white" />
-                  Beta Price
+                  Special Pricing
                 </Badge>
               </div>
               
@@ -100,20 +106,24 @@ export function PremiumPlanDialog({
               <ul className="space-y-2 text-sm">
                 <li className="flex items-center gap-2">
                   <Infinity className="h-4 w-4 text-primary" />
-                  <span>Unlimited searches</span>
+                  <span>Unlimited educational diagram searches</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-primary" />
+                  <span>Premium study resources & guides</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Zap className="h-4 w-4 text-primary" />
-                  <span>15 AI diagram generations daily</span>
+                  <span>High-resolution diagram downloads</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary" />
-                  <span>Advanced features & priority access</span>
+                  <span>Ad-free learning experience</span>
                 </li>
               </ul>
               
               <div className="text-xs text-muted-foreground italic mt-3">
-                Special pricing during beta - lock in this discount forever!
+                Special student pricing during beta - lock in this discount forever!
               </div>
             </div>
           </div>
@@ -150,8 +160,8 @@ export function PremiumPlanDialog({
                 onClick={handleUpgradeClick} 
                 className="sm:w-1/2 gap-1"
               >
-                <Sparkles className="h-4 w-4" />
-                Upgrade Now
+                <GraduationCap className="h-4 w-4 mr-1" />
+                Upgrade for Students
               </Button>
             </>
           )}

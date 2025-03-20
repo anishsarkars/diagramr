@@ -10,14 +10,16 @@ import { useNavigate } from "react-router-dom";
 import { useInfiniteSearch } from "@/hooks/use-infinite-search";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { PremiumPlanDialog } from "@/components/premium-plan-dialog";
 
 const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   const [showSearchField, setShowSearchField] = useState(true);
   const [likedDiagrams, setLikedDiagrams] = useState<Set<string>>(new Set());
+  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { incrementCount } = useSearchLimit();
+  const { incrementCount, hasReachedLimit, requiresLogin } = useSearchLimit();
   
   const { 
     results,
@@ -45,10 +47,24 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   }, [isLoading, hasMore, loadMore]);
 
   const handleSearch = async (prompt: string, mode: "search" | "generate") => {
-    // Track usage for logged-in users
-    if (user) {
-      incrementCount();
+    // Check if user has reached limit
+    if (hasReachedLimit) {
+      if (requiresLogin) {
+        // User needs to login first
+        if (onLoginClick) {
+          onLoginClick();
+        } else {
+          navigate("/auth");
+        }
+      } else {
+        // User needs to upgrade
+        setShowPremiumDialog(true);
+      }
+      return;
     }
+    
+    // Track usage for logged-in users
+    incrementCount();
     
     setShowSearchField(false);
     await searchFor(prompt, "search");
@@ -160,7 +176,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
       
-      <main className="flex-1 pt-16">
+      <main className="flex-1 pt-16 md:pt-20">
         {showSearchField ? (
           <HeroSection onSearch={handleSearch} isLoading={isLoading} />
         ) : (
@@ -179,6 +195,13 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
       </main>
       
       <Footer />
+      
+      <PremiumPlanDialog 
+        open={showPremiumDialog} 
+        onClose={() => setShowPremiumDialog(false)} 
+        showLogin={requiresLogin}
+        onLoginClick={onLoginClick || (() => navigate("/auth"))}
+      />
     </div>
   );
 };

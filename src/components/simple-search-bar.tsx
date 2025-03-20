@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X, Loader2 } from "lucide-react";
+import { Search, X, Loader2, BookOpen } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSearchLimit } from "@/hooks/use-search-limit";
 import { PremiumPlanDialog } from "@/components/premium-plan-dialog";
@@ -140,11 +140,11 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
       transition={{ duration: 0.3 }}
     >
       <form onSubmit={handleSubmit} className="relative w-full">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           <div className="relative flex-1">
             <Input
               type="text"
-              placeholder="Search for diagrams and visualizations..."
+              placeholder="Search for educational diagrams..."
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -154,7 +154,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
               onKeyDown={handleKeyDown}
               onFocus={() => setShowSuggestions(query.length > 0)}
               className={cn(
-                "pl-10 py-6 text-base w-full shadow-sm",
+                "pl-9 md:pl-10 py-5 md:py-6 text-sm md:text-base w-full shadow-sm",
                 "focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60",
                 "rounded-full border-2", 
                 isDarkMode 
@@ -165,17 +165,17 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
               )}
               disabled={isLoading}
             />
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Search className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
             
             {query && (
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 md:h-8 md:w-8 text-muted-foreground hover:text-foreground"
                 onClick={handleClearSearch}
               >
-                <X className="h-4 w-4" />
+                <X className="h-3 w-3 md:h-4 md:w-4" />
               </Button>
             )}
           </div>
@@ -183,21 +183,22 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
           <Button 
             type="submit" 
             disabled={!query.trim() || isLoading}
-            className="h-12 px-6 rounded-full shadow-sm hover:shadow transition-all duration-200"
+            className="h-10 md:h-12 px-4 md:px-6 rounded-full shadow-sm hover:shadow transition-all duration-200"
+            size="sm"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                <Search className="h-4 w-4 mr-2" />
-                Search
+                <BookOpen className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                <span className="text-xs md:text-sm">Find Diagrams</span>
               </>
             )}
           </Button>
         </div>
         
         {searchError && (
-          <div className="mt-2 text-sm text-red-500">
+          <div className="mt-2 text-xs md:text-sm text-red-500">
             {searchError}
           </div>
         )}
@@ -211,9 +212,9 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
         />
       </form>
       
-      <div className="mt-2 flex justify-end items-center">
+      <div className="mt-1 md:mt-2 flex justify-end items-center">
         <div className="text-xs text-muted-foreground">
-          <span>{remainingSearches} searches left{!isPremium && " today"}</span>
+          <span>{remainingSearches} educational searches left{!isPremium && " today"}</span>
         </div>
       </div>
       
