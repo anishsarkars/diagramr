@@ -3,8 +3,8 @@ import { motion } from "framer-motion";
 import { DiagramrLogo } from "@/components/diagramr-logo";
 import { SearchLimitIndicator } from "./search-limit-indicator";
 import { useState, useEffect } from "react";
-import { Search, LayoutTemplate, Lightbulb, BookOpen, ServerIcon, 
-  NetworkIcon, DatabaseIcon, Workflow, Flower, Activity,
+import { Search, LayoutTemplate, Lightbulb, BookOpen, Server, 
+  Network, Database, Workflow, Flower, Activity,
   GitBranch } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
@@ -31,8 +31,8 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
   const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
   const features = [
     { label: "Find professional diagrams & visualizations", icon: <LayoutTemplate className="h-4 w-4 mr-2" /> },
-    { label: "Technical diagrams for documentation", icon: <GitBranchIcon className="h-4 w-4 mr-2" /> },
-    { label: "Visualize complex concepts instantly", icon: <ActivityIcon className="h-4 w-4 mr-2" /> },
+    { label: "Technical diagrams for documentation", icon: <GitBranch className="h-4 w-4 mr-2" /> },
+    { label: "Visualize complex concepts instantly", icon: <Activity className="h-4 w-4 mr-2" /> },
   ];
   
   useEffect(() => {
@@ -177,7 +177,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           whileHover={{ y: -5, transition: { duration: 0.2 } }}
         >
           <div className="text-primary mb-2">
-            <ActivityIcon className="h-6 w-6" />
+            <Activity className="h-6 w-6" />
           </div>
           <h3 className="font-medium mb-1">For Students</h3>
           <p className="text-sm text-muted-foreground">Find educational diagrams to understand complex concepts</p>
@@ -188,7 +188,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           whileHover={{ y: -5, transition: { duration: 0.2 } }}
         >
           <div className="text-primary mb-2">
-            <GitBranchIcon className="h-6 w-6" />
+            <GitBranch className="h-6 w-6" />
           </div>
           <h3 className="font-medium mb-1">For Engineers</h3>
           <p className="text-sm text-muted-foreground">Technical diagrams for documentation and planning</p>
