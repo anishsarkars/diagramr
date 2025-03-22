@@ -19,7 +19,7 @@ export interface DiagramResult {
 export function useInfiniteSearch({
   initialQuery = '',
   pageSize = 20,
-  searchKey = "AIzaSyA1zArEu4m9HzEh-CO2Y7oFw0z_E_cFPsg",
+  searchKey = "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4",
   searchId = "260090575ae504419"
 }: {
   initialQuery?: string;
@@ -33,8 +33,7 @@ export function useInfiniteSearch({
   hasMore: boolean;
   loadMore: () => void;
   searchTerm: string;
-  searchFor: (query: string, mode: 'search') => Promise<void>;
-  lastAction: 'search';
+  searchFor: (query: string) => Promise<void>;
   resetSearch: () => void;
 } {
   const [results, setResults] = useState<DiagramResult[]>([]);
@@ -44,7 +43,6 @@ export function useInfiniteSearch({
   const [page, setPage] = useState(1);
   const [currentSearchPage, setCurrentSearchPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState(initialQuery);
-  const [lastAction, setLastAction] = useState<'search'>('search');
   
   const { incrementCount } = useSearchLimit();
   
@@ -58,23 +56,23 @@ export function useInfiniteSearch({
     setCurrentSearchPage(1);
     setHasMore(true);
     setSearchTerm('');
+    setError(null);
     allResults.current = [];
     currentSearchKey.current = '';
   }, []);
   
-  const searchFor = useCallback(async (query: string, mode: 'search') => {
+  const searchFor = useCallback(async (query: string) => {
     if (!query.trim()) return;
     
-    console.log(`Starting ${mode} for query: "${query}"`);
+    console.log(`Starting search for query: "${query}"`);
     setIsLoading(true);
     setError(null);
     setSearchTerm(query);
-    setLastAction('search');
     setResults([]);
     setPage(1);
     setCurrentSearchPage(1);
     allResults.current = [];
-    currentSearchKey.current = `${mode}:${query}`;
+    currentSearchKey.current = `search:${query}`;
     
     try {
       console.log("Searching for diagrams with query:", query);
@@ -132,6 +130,7 @@ export function useInfiniteSearch({
       toast.error('Search failed. Please try again.');
       setResults([]);
       setHasMore(false);
+      throw err; // Rethrow to handle API quota errors specifically
     } finally {
       setIsLoading(false);
     }
@@ -304,6 +303,11 @@ export function useInfiniteSearch({
     } catch (error) {
       console.error("Error loading more results:", error);
       setHasMore(false);
+      
+      if (error.message === 'API quota exceeded') {
+        setError(new Error('API quota exceeded'));
+        toast.error("Sorry for the inconvenience! Our API quota has been reached. We're working on increasing our limits.");
+      }
     } finally {
       isLoadingMore.current = false;
     }
@@ -311,7 +315,7 @@ export function useInfiniteSearch({
   
   useEffect(() => {
     if (initialQuery) {
-      searchFor(initialQuery, 'search');
+      searchFor(initialQuery);
     }
   }, [initialQuery, searchFor]);
   
@@ -323,7 +327,6 @@ export function useInfiniteSearch({
     loadMore,
     searchTerm,
     searchFor,
-    lastAction,
     resetSearch
   };
 }

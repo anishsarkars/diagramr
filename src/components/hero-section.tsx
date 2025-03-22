@@ -13,7 +13,7 @@ import { SimpleSearchBar } from "./simple-search-bar";
 import { Badge } from "./ui/badge";
 
 interface HeroSectionProps {
-  onSearch: (query: string, mode: "search" | "generate") => void;
+  onSearch: (query: string) => void;
   isLoading?: boolean;
 }
 
@@ -94,7 +94,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.3 }}
       >
-        Discover Educational Diagrams
+        Find the Perfect Diagrams
       </motion.h1>
       
       <motion.div
@@ -104,7 +104,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         transition={{ duration: 0.5, delay: 0.4 }}
       >
         <p>
-          Find the perfect diagrams, charts, and visualizations for your research, studies, and presentations
+          Search for educational diagrams, charts, and visualizations to boost your studies and research
         </p>
       </motion.div>
       
@@ -140,9 +140,10 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         transition={{ duration: 0.5, delay: 0.6 }}
       >
         <SimpleSearchBar 
-          onSearch={(query) => onSearch(query, "search")} 
+          onSearch={(query) => onSearch(query)} 
           isLoading={isLoading}
           className="shadow-lg"
+          placeholder="Search for educational diagrams and visualizations..."
         />
       </motion.div>
       
@@ -159,13 +160,15 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
             variant="outline"
             size="sm"
             className="rounded-full border-primary/20 hover:bg-primary/5"
-            onClick={() => onSearch(example, "search")}
+            onClick={() => onSearch(example)}
           >
             <Search className="h-3 w-3 mr-1.5" />
             {example}
           </Button>
         ))}
       </motion.div>
+      
+      <SearchLimitIndicator />
       
       <motion.div 
         className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto mt-6"

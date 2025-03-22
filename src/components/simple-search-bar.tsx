@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface SimpleSearchBarProps {
-  onSearch: (query: string, mode?: "search") => void;
+  onSearch: (query: string) => void;
   isLoading?: boolean;
   defaultQuery?: string;
   className?: string;
@@ -30,7 +30,7 @@ export function SimpleSearchBar({
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (query.trim() && onSearch) {
-      onSearch(query, "search");
+      onSearch(query);
       setShowSuggestions(false);
     }
   };
@@ -141,6 +141,15 @@ export function SimpleSearchBar({
         query={query}
         onSuggestionClick={handleSuggestionClick}
       />
+      
+      {isLoading && (
+        <motion.div 
+          className="absolute bottom-0 left-0 h-1 bg-primary"
+          initial={{ width: "0%" }}
+          animate={{ width: "100%" }}
+          transition={{ duration: 2.5, ease: "easeInOut" }}
+        />
+      )}
     </div>
   );
 }

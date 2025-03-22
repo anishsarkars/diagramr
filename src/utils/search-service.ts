@@ -43,7 +43,7 @@ setInterval(cleanCache, 5 * 60 * 1000);
 export async function searchDiagrams(
   query: string,
   page: number = 1,
-  apiKey: string = "AIzaSyA1zArEu4m9HzEh-CO2Y7oFw0z_E_cFPsg",
+  apiKey: string = "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4",
   searchId: string = "260090575ae504419"
 ): Promise<DiagramResult[]> {
   if (!query.trim()) {
@@ -174,6 +174,11 @@ export async function searchDiagrams(
     
   } catch (error) {
     console.error(`[SearchService] Error searching for "${query}":`, error);
+    
+    if (error.message === 'API quota exceeded') {
+      throw error; // Rethrow quota errors to handle specifically
+    }
+    
     toast.error("Search failed. Please try again.");
     return [];
   }

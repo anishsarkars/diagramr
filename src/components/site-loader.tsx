@@ -2,7 +2,7 @@
 import { DiagramrLogo } from "./diagramr-logo";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Book, Sparkles, GraduationCap, BookOpen, Search } from "lucide-react";
+import { Book, Sparkles, GraduationCap, BookOpen, Search, Lightbulb, BookOpenCheck } from "lucide-react";
 
 export function SiteLoader({ className }: { className?: string }) {
   return (
@@ -47,6 +47,15 @@ export function SiteLoader({ className }: { className?: string }) {
           />
         </motion.div>
         
+        <motion.h2
+          className="text-xl font-medium text-foreground mt-2"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+        >
+          Your Visual Learning Resource
+        </motion.h2>
+        
         <motion.div
           className="flex flex-col items-center gap-3"
           initial={{ opacity: 0 }}
@@ -59,8 +68,8 @@ export function SiteLoader({ className }: { className?: string }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9 }}
           >
-            <Book className="h-4 w-4" />
-            <span>Academic Diagrams & Visualizations</span>
+            <BookOpenCheck className="h-4 w-4 text-green-500" />
+            <span>Find the perfect diagrams for your studies</span>
           </motion.p>
           
           <motion.p
@@ -69,8 +78,8 @@ export function SiteLoader({ className }: { className?: string }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.0 }}
           >
-            <GraduationCap className="h-4 w-4" />
-            <span>Educational Resources</span>
+            <GraduationCap className="h-4 w-4 text-blue-500" />
+            <span>Educational Resources for Students & Researchers</span>
           </motion.p>
           
           <motion.p
@@ -79,8 +88,8 @@ export function SiteLoader({ className }: { className?: string }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.1 }}
           >
-            <Search className="h-4 w-4" />
-            <span>Research Visual Knowledge</span>
+            <Lightbulb className="h-4 w-4 text-amber-500" />
+            <span>Visualize Complex Concepts Easily</span>
           </motion.p>
         </motion.div>
         

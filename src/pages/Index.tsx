@@ -26,7 +26,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     loadMore,
     searchTerm,
     searchFor,
-    lastAction,
+    error,
     resetSearch
   } = useInfiniteSearch();
 
@@ -44,11 +44,12 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     if (node) observer.current.observe(node);
   }, [isLoading, hasMore, loadMore]);
 
-  const handleSearch = async (prompt: string, mode: "search" | "generate") => {
+  const handleSearch = async (prompt: string) => {
     // Check if user has reached limit
     if (hasReachedLimit) {
       if (requiresLogin) {
         // User needs to login first
+        toast.info("Sign in to get more searches (20 free searches daily)");
         if (onLoginClick) {
           onLoginClick();
         } else {
@@ -56,6 +57,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
         }
       } else {
         // User needs to upgrade
+        toast.info("You've reached your daily search limit. Upgrade for more searches!");
         navigate("/pricing");
       }
       return;
@@ -72,7 +74,13 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     });
     
     setShowSearchField(false);
-    await searchFor(prompt, "search"); // Always use search mode
+    try {
+      await searchFor(prompt);
+    } catch (error) {
+      if (error.message === 'API quota exceeded') {
+        toast.error("Sorry for the inconvenience! Our API quota has been reached. We're working on increasing our limits to serve you better.");
+      }
+    }
   };
 
   const handleNewSearch = () => {
@@ -174,6 +182,13 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     fetchLikedDiagrams();
   }, [fetchLikedDiagrams]);
 
+  // Handle API quota errors
+  useEffect(() => {
+    if (error && error.message === 'API quota exceeded') {
+      toast.error("Sorry for the inconvenience! Our API quota has been reached. We're working on increasing our limits to serve you better.");
+    }
+  }, [error]);
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
@@ -187,7 +202,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
             searchTerm={searchTerm} 
             onNewSearch={handleNewSearch} 
             isLoading={isLoading}
-            lastAction={lastAction}
+            lastAction="search"
             onLike={handleLikeDiagram}
             likedDiagrams={likedDiagrams}
             lastResultRef={lastResultRef}

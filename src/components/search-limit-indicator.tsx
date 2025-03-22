@@ -24,8 +24,6 @@ export function SearchLimitIndicator({ className, compact = false }: SearchLimit
     remainingSearches, 
     hasReachedLimit, 
     requiresLogin,
-    remainingGenerations,
-    hasReachedGenerationLimit,
     dailySearchLimit,
     isPremium
   } = useSearchLimit();
@@ -36,9 +34,7 @@ export function SearchLimitIndicator({ className, compact = false }: SearchLimit
   
   // If the user has a profile and it's a premium user, don't show this indicator
   // unless they've reached a limit
-  if (user && isPremium && !hasReachedLimit && !hasReachedGenerationLimit) return null;
-  
-  const hasReachedAnyLimit = hasReachedLimit || hasReachedGenerationLimit;
+  if (user && isPremium && !hasReachedLimit) return null;
   
   return (
     <>
@@ -48,14 +44,10 @@ export function SearchLimitIndicator({ className, compact = false }: SearchLimit
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {hasReachedAnyLimit ? (
+        {hasReachedLimit ? (
           <div className="flex items-center gap-2">
             <p className="text-xs text-muted-foreground">
-              {user ? (
-                hasReachedLimit ? "Daily search limit reached" : "Daily generation limit reached"
-              ) : (
-                "Free trial ended"
-              )}
+              {user ? "Daily search limit reached" : "Free trial ended"}
             </p>
             <Button 
               size="sm" 
@@ -117,7 +109,7 @@ export function SearchLimitIndicator({ className, compact = false }: SearchLimit
       </motion.div>
       
       <div className="text-[10px] text-muted-foreground/60 mt-1 text-center italic max-w-xs mx-auto">
-        Diagramr is in beta and improving every day. Results may vary in quality and relevance.
+        Diagramr is in early stages and improving gradually. Some results may vary in quality.
       </div>
       
       <PremiumPlanDialog 

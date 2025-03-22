@@ -17,25 +17,25 @@ const Pricing = () => {
       price: "$0",
       period: "forever",
       features: [
-        "Up to 10 searches per day",
-        "Basic educational diagrams",
-        "Academic resources access",
-        "View search details",
+        "20 searches per day",
+        "Basic filters",
+        "Access to educational diagrams",
+        "Save diagrams to favorites",
       ],
       isPopular: false,
       buttonText: user ? "Current Plan" : "Get Started",
       buttonAction: () => navigate("/"),
     },
     {
-      name: "Premium",
-      price: "$9",
+      name: "Pro",
+      price: "$3",
       period: "per month",
       features: [
-        "Unlimited searches",
-        "Advanced diagram search",
+        "50+ searches per day",
+        "Ad-free experience",
+        "Priority search results",
         "Save unlimited diagrams",
-        "Priority support",
-        "No daily limits"
+        "Premium support"
       ],
       isPopular: true,
       buttonText: "Upgrade",
@@ -44,27 +44,10 @@ const Pricing = () => {
           navigate("/auth", { state: { returnTo: "/pricing" } });
         } else {
           // Handle subscription logic
-          alert("Premium subscription coming soon! Please check back later.");
+          alert("Pro subscription coming soon! Please check back later.");
         }
       },
-    },
-    {
-      name: "Teams",
-      price: "$49",
-      period: "per month",
-      features: [
-        "Everything in Premium",
-        "Shared collections",
-        "Team collaboration",
-        "Usage analytics",
-        "Dedicated support",
-      ],
-      isPopular: false,
-      buttonText: "Contact Us",
-      buttonAction: () => {
-        window.location.href = "mailto:teams@diagramr.com";
-      },
-    },
+    }
   ];
 
   return (
@@ -81,12 +64,12 @@ const Pricing = () => {
           >
             <h1 className="text-4xl font-bold mb-4">Choose Your Plan</h1>
             <p className="text-muted-foreground text-lg">
-              Find the perfect educational diagrams to boost your academic and research projects
+              Find the perfect educational diagrams to boost your studies and research
             </p>
           </motion.div>
           
           <motion.div 
-            className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto"
+            className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -107,15 +90,14 @@ const Pricing = () => {
                 {plan.isPopular && (
                   <div className="absolute top-0 right-0">
                     <div className="bg-primary text-primary-foreground text-xs font-medium py-1 px-3 rounded-bl-lg">
-                      Most Popular
+                      Recommended
                     </div>
                   </div>
                 )}
                 <div className="p-6">
                   <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
                     {plan.name === "Free" && <SearchIcon className="h-5 w-5 text-muted-foreground" />}
-                    {plan.name === "Premium" && <ZapIcon className="h-5 w-5 text-primary" />}
-                    {plan.name === "Teams" && <FileTextIcon className="h-5 w-5 text-indigo-500" />}
+                    {plan.name === "Pro" && <ZapIcon className="h-5 w-5 text-primary" />}
                     {plan.name}
                   </h3>
                   <div className="flex items-end gap-1 mb-6">
@@ -152,9 +134,9 @@ const Pricing = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.5 }}
           >
-            <h2 className="text-2xl font-semibold mb-2">Why Choose Diagramr Premium?</h2>
+            <h2 className="text-2xl font-semibold mb-2">Why Choose Diagramr Pro?</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
-              Upgrade to access unlimited diagram searches and resources to enhance your academic journey
+              Upgrade to access more educational diagrams and resources to enhance your academic journey
             </p>
             
             <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
@@ -162,9 +144,9 @@ const Pricing = () => {
                 <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
                   <SearchIcon className="h-6 w-6" />
                 </div>
-                <h3 className="font-medium mb-2">Unlimited Searches</h3>
+                <h3 className="font-medium mb-2">More Daily Searches</h3>
                 <p className="text-sm text-muted-foreground">
-                  No daily limits. Search for any educational diagram whenever you need it.
+                  Get 50+ searches per day to find all the educational diagrams you need.
                 </p>
               </div>
               
@@ -174,7 +156,7 @@ const Pricing = () => {
                 </div>
                 <h3 className="font-medium mb-2">Save Favorites</h3>
                 <p className="text-sm text-muted-foreground">
-                  Create collections of diagrams for your different research and study projects.
+                  Build unlimited collections of diagrams for your different study projects.
                 </p>
               </div>
               
@@ -182,11 +164,20 @@ const Pricing = () => {
                 <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
                   <Sparkles className="h-6 w-6" />
                 </div>
-                <h3 className="font-medium mb-2">Premium Support</h3>
+                <h3 className="font-medium mb-2">Priority Support</h3>
                 <p className="text-sm text-muted-foreground">
-                  Get priority assistance for any questions about educational resources.
+                  Get faster assistance for any questions about educational resources.
                 </p>
               </div>
+            </div>
+            
+            <div className="mt-12 text-center text-muted-foreground text-sm max-w-2xl mx-auto bg-muted/30 p-4 rounded-lg">
+              <p className="italic">
+                <b>Note:</b> During our beta phase, most features are available for free. Enjoy free access to educational diagrams and resources while we continue to improve Diagramr.
+              </p>
+              <p className="mt-2">
+                Diagramr is in the early stages and can sometimes make mistakes, but we're constantly working to improve the quality and accuracy of our results.
+              </p>
             </div>
           </motion.div>
         </div>

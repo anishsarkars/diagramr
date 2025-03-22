@@ -45,7 +45,7 @@ export function PremiumPlanDialog({
             <>
               <DialogTitle className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-amber-500" />
-                Upgrade to Premium for Students & Researchers
+                Upgrade to Pro for Students & Researchers
               </DialogTitle>
               <DialogDescription>
                 Get unlimited access to educational diagrams and advanced study resources.
@@ -89,7 +89,7 @@ export function PremiumPlanDialog({
               <div className="flex justify-between items-start mb-3">
                 <h3 className="font-semibold text-base flex items-center gap-2">
                   <GraduationCap className="h-4 w-4 text-primary" />
-                  <span>Student Premium</span>
+                  <span>Pro Plan</span>
                 </h3>
                 <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-500 hover:to-orange-600">
                   <Star className="h-3 w-3 mr-1 fill-white" />
@@ -98,27 +98,27 @@ export function PremiumPlanDialog({
               </div>
               
               <div className="flex items-baseline gap-2 mb-3">
-                <span className="text-2xl font-bold">₹89</span>
-                <span className="text-muted-foreground font-medium line-through">₹599</span>
+                <span className="text-2xl font-bold">$3</span>
+                <span className="text-muted-foreground font-medium line-through">$9</span>
                 <span className="text-xs text-muted-foreground">/month</span>
               </div>
               
               <ul className="space-y-2 text-sm">
                 <li className="flex items-center gap-2">
-                  <Infinity className="h-4 w-4 text-primary" />
-                  <span>Unlimited educational diagram searches</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-primary" />
-                  <span>Premium study resources & guides</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-primary" />
-                  <span>High-resolution diagram downloads</span>
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <span>50+ educational diagram searches daily</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary" />
                   <span>Ad-free learning experience</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <span>Priority search results</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <span>Save unlimited diagrams to collections</span>
                 </li>
               </ul>
               
@@ -160,8 +160,8 @@ export function PremiumPlanDialog({
                 onClick={handleUpgradeClick} 
                 className="sm:w-1/2 gap-1"
               >
-                <GraduationCap className="h-4 w-4 mr-1" />
-                Upgrade for Students
+                <Sparkles className="h-4 w-4 mr-1" />
+                Upgrade to Pro
               </Button>
             </>
           )}
