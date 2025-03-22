@@ -28,7 +28,10 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     searchFor,
     error,
     resetSearch
-  } = useInfiniteSearch();
+  } = useInfiniteSearch({
+    searchKey: "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4",
+    searchId: "260090575ae504419"
+  });
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastResultRef = useCallback((node: HTMLDivElement | null) => {

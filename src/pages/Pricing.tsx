@@ -44,7 +44,7 @@ const Pricing = () => {
           navigate("/auth", { state: { returnTo: "/pricing" } });
         } else {
           // Handle subscription logic
-          alert("Pro subscription coming soon! Please check back later.");
+          window.open("https://diagramr.lemonsqueezy.com/buy/5c0b7ecd-65a5-4e74-95c3-fa001496e2e2", "_blank");
         }
       },
     }

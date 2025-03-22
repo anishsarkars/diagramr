@@ -170,5 +170,3 @@ export function PremiumPlanDialog({
     </Dialog>
   );
 }
-
-export default PremiumPlanDialog;
