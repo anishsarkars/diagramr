@@ -77,28 +77,9 @@ export function useInfiniteSearch({
     try {
       console.log("Searching for diagrams with query:", query);
       
-      // Use the updated search service (which now always fetches fresh results)
-      console.log("Fetching fresh search results using searchDiagrams");
-      let searchResults: DiagramResult[] = [];
-      
-      // Check if this is a data structure query
-      const isDataStructureQuery = 
-        query.toLowerCase().includes('data structure') || 
-        query.toLowerCase().includes('algorithm') || 
-        query.toLowerCase().includes('dsa');
-        
-      if (isDataStructureQuery) {
-        console.log("Data structure query detected, using specialized search");
-        // For data structure queries, directly use the Google API with a specialized query
-        searchResults = await searchGoogleImages(
-          `${query} educational computer science visualization diagram`, 
-          searchKey, 
-          searchId
-        );
-      } else {
-        // For general queries, use the standard search service
-        searchResults = await searchDiagrams(query, 1, searchKey, searchId);
-      }
+      // Direct Google search for educational diagrams
+      console.log("Fetching search results using Google Custom Search API");
+      const searchResults = await searchGoogleImages(query, searchKey, searchId);
       
       console.log(`Got ${searchResults.length} search results`);
       
@@ -122,8 +103,6 @@ export function useInfiniteSearch({
       
       fetchAdditionalPages(query, 2);
       
-      // Track search count
-      incrementCount();
     } catch (err) {
       console.error('Search error:', err);
       setError(err instanceof Error ? err : new Error('An error occurred during search'));
@@ -134,7 +113,7 @@ export function useInfiniteSearch({
     } finally {
       setIsLoading(false);
     }
-  }, [pageSize, searchKey, searchId, incrementCount]);
+  }, [pageSize, searchKey, searchId]);
   
   const fetchAdditionalPages = async (query: string, startPage: number) => {
     const maxInitialPages = 5;
@@ -143,25 +122,7 @@ export function useInfiniteSearch({
     try {
       // Always fetch fresh results for additional pages
       console.log(`Fetching additional results for page ${startPage}`);
-      let additionalResults: DiagramResult[] = [];
-      
-      const isDataStructureQuery = 
-        query.toLowerCase().includes('data structure') || 
-        query.toLowerCase().includes('algorithm') || 
-        query.toLowerCase().includes('dsa');
-        
-      if (isDataStructureQuery) {
-        // For data structure queries, use the specialized search
-        additionalResults = await searchGoogleImages(
-          `${query} educational computer science visualization diagram`, 
-          searchKey, 
-          searchId, 
-          startPage
-        );
-      } else {
-        // For general queries, use the standard search service
-        additionalResults = await searchDiagrams(query, startPage, searchKey, searchId);
-      }
+      const additionalResults = await searchGoogleImages(query, searchKey, searchId, startPage);
       
       if (additionalResults.length > 0) {
         console.log(`Got ${additionalResults.length} results for page ${startPage}`);
@@ -189,18 +150,6 @@ export function useInfiniteSearch({
     
     const title = result.title.toLowerCase();
     
-    // Check if this is a data structure query
-    const isDataStructureQuery = queryTerms.some(term => 
-      ['data structure', 'algorithm', 'dsa', 'tree', 'graph', 'array'].includes(term));
-      
-    if (isDataStructureQuery) {
-      // Boost data structure diagrams
-      const dsKeywords = ['data structure', 'algorithm', 'tree', 'graph', 'array', 'linked list'];
-      dsKeywords.forEach(keyword => {
-        if (title.includes(keyword)) score += 30;
-      });
-    }
-    
     // Heavily prioritize educational diagram content
     if (title.includes('educational') || title.includes('learning') || 
         title.includes('student') || title.includes('study')) {
@@ -222,21 +171,6 @@ export function useInfiniteSearch({
       queryTerms.forEach(term => {
         if (result.tags?.some(tag => tag.includes(term))) score += 5;
       });
-    }
-    
-    // Boost educational sources
-    const educationalSources = ['geeksforgeeks', 'javatpoint', 'tutorialspoint', 'educative', 
-                             'programiz', 'w3schools', 'khanacademy', 'coursera', 'edx', 
-                             'udemy', 'brilliant.org', 'study.com', 'visualgo.net'];
-    
-    if (result.sourceUrl) {
-      const lowerSourceUrl = result.sourceUrl.toLowerCase();
-      for (const source of educationalSources) {
-        if (lowerSourceUrl.includes(source)) {
-          score += 20;
-          break;
-        }
-      }
     }
     
     return score;
@@ -264,25 +198,7 @@ export function useInfiniteSearch({
         
         // Always fetch fresh results
         console.log(`Fetching new page ${nextSearchPage} for ${searchTerm}`);
-        
-        let newPageResults: DiagramResult[] = [];
-        const isDataStructureQuery = 
-          searchTerm.toLowerCase().includes('data structure') || 
-          searchTerm.toLowerCase().includes('algorithm') || 
-          searchTerm.toLowerCase().includes('dsa');
-          
-        if (isDataStructureQuery) {
-          // For data structure queries, use the specialized search
-          newPageResults = await searchGoogleImages(
-            `${searchTerm} educational computer science visualization diagram`, 
-            searchKey, 
-            searchId, 
-            nextSearchPage
-          );
-        } else {
-          // For general queries, use the standard search service
-          newPageResults = await searchDiagrams(searchTerm, nextSearchPage, searchKey, searchId);
-        }
+        const newPageResults = await searchGoogleImages(searchTerm, searchKey, searchId, nextSearchPage);
         
         const existingUrls = new Set(results.map(r => r.imageSrc));
         const uniqueNewResults = newPageResults.filter(r => !existingUrls.has(r.imageSrc));

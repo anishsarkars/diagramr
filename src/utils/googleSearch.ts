@@ -1,74 +1,124 @@
 
 import { DiagramResult } from "@/hooks/use-infinite-search";
 
+interface GoogleSearchResult {
+  kind: string;
+  title: string;
+  htmlTitle: string;
+  link: string;
+  displayLink: string;
+  snippet: string;
+  htmlSnippet: string;
+  mime: string;
+  fileFormat: string;
+  image: {
+    contextLink: string;
+    height: number;
+    width: number;
+    byteSize: number;
+    thumbnailLink: string;
+    thumbnailHeight: number;
+    thumbnailWidth: number;
+  };
+}
+
+interface GoogleSearchResponse {
+  kind: string;
+  url: {
+    type: string;
+    template: string;
+  };
+  queries: {
+    request: any[];
+    nextPage: any[];
+  };
+  context: {
+    title: string;
+  };
+  searchInformation: {
+    searchTime: number;
+    formattedSearchTime: string;
+    totalResults: string;
+    formattedTotalResults: string;
+  };
+  items: GoogleSearchResult[];
+}
+
+// Function to extract domain name from URL
+const extractDomain = (url: string): string => {
+  try {
+    const domain = new URL(url).hostname;
+    return domain.replace('www.', '');
+  } catch (error) {
+    return '';
+  }
+};
+
 export async function searchGoogleImages(
   query: string,
   apiKey: string = "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4",
-  searchEngineId: string = "260090575ae504419",
+  searchId: string = "260090575ae504419",
   page: number = 1
 ): Promise<DiagramResult[]> {
-  const startIndex = (page - 1) * 10 + 1;
+  if (!query.trim()) {
+    return [];
+  }
+  
+  const start = (page - 1) * 10 + 1;
   
   try {
-    console.log(`[GoogleSearch] Searching for "${query}" (page ${page}, start ${startIndex})`);
+    console.log(`Searching for: "${query}" (page ${page}, start ${start})`);
     
-    const searchParams = new URLSearchParams({
-      key: apiKey,
-      cx: searchEngineId,
-      q: query,
-      searchType: 'image',
-      start: startIndex.toString(),
-      num: '10',
-      imgSize: 'large',
-      safe: 'active',
-      rights: 'cc_publicdomain,cc_attribute,cc_sharealike',
-    });
+    // Enhanced query to focus on diagrams and educational content
+    const enhancedQuery = `${query} diagram educational visualization`;
     
-    const apiUrl = `https://www.googleapis.com/customsearch/v1?${searchParams.toString()}`;
+    // Construct API URL with parameters
+    const url = new URL('https://www.googleapis.com/customsearch/v1');
+    url.searchParams.append('key', apiKey);
+    url.searchParams.append('cx', searchId);
+    url.searchParams.append('q', enhancedQuery);
+    url.searchParams.append('searchType', 'image');
+    url.searchParams.append('start', start.toString());
+    url.searchParams.append('num', '10');
+    url.searchParams.append('imgType', 'clipart');
+    url.searchParams.append('imgSize', 'large');
+    url.searchParams.append('safe', 'active');
     
-    const response = await fetch(apiUrl);
+    const response = await fetch(url.toString());
     
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('[GoogleSearch] API Error:', errorData);
-      
-      // Check if quota exceeded
-      if (errorData.error?.code === 403 || 
-          errorData.error?.message?.includes('quota') || 
-          errorData.error?.status === 'RESOURCE_EXHAUSTED') {
+      // Check for quota exceeded
+      if (response.status === 429 || response.status === 403) {
+        console.error('API quota exceeded or access denied');
         throw new Error('API quota exceeded');
       }
-      
-      throw new Error(`API error: ${response.status}`);
+      throw new Error(`Google search failed with status: ${response.status}`);
     }
     
-    const data = await response.json();
+    const data: GoogleSearchResponse = await response.json();
     
     if (!data.items || data.items.length === 0) {
-      console.log('[GoogleSearch] No results found');
+      console.log('No search results found');
       return [];
     }
     
-    console.log(`[GoogleSearch] Found ${data.items.length} results`);
-    
-    const results: DiagramResult[] = data.items.map((item: any, index: number) => ({
-      id: `google-${page}-${index}-${Date.now()}`,
-      title: item.title || 'Untitled Diagram',
-      imageSrc: item.link,
-      sourceUrl: item.image?.contextLink || item.link,
-      author: item.displayLink || '',
-      authorUsername: '',
-      tags: [query.split(' ')[0], 'diagram', 'educational'],
-      isGenerated: false
-    }));
-    
-    return results;
+    // Map Google search results to DiagramResult format
+    return data.items.map((item, index) => {
+      const domain = extractDomain(item.image.contextLink);
+      
+      return {
+        id: `${Date.now()}-${page}-${index}`,
+        title: item.title,
+        imageSrc: item.link,
+        sourceUrl: item.image.contextLink,
+        author: domain,
+        authorUsername: domain,
+        tags: query.split(' ').filter(word => word.length > 3),
+        isGenerated: false
+      };
+    });
   } catch (error) {
-    console.error('[GoogleSearch] Error:', error);
-    if (error.message === 'API quota exceeded') {
-      // Re-throw quota error to handle specifically
-      throw error;
-    }
-    return [];
+    console.error('Error in Google search:', error);
+    throw error;
   }
 }
