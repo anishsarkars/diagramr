@@ -49,7 +49,7 @@ export function DiagramCard({
     "/lovable-uploads/e0a024c4-b883-4cfa-a811-67a922e06849.png"
   ];
   
-  // Move function declaration before its usage
+  // Define getFallbackImage function before using it
   const getFallbackImage = () => {
     const titleHash = title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return fallbackImages[titleHash % fallbackImages.length];
@@ -75,7 +75,7 @@ export function DiagramCard({
       'diagram', 'chart', 'flow', 'architecture', 'model', 'uml', 'class',
       'entity', 'relationship', 'network', 'topology', 'database', 'schema',
       'sequence', 'structure', 'algorithm', 'visualization', 'system', 'design',
-      'data structure', 'computer science', 'educational', 'learning'
+      'data structure', 'computer science', 'professional', 'technical'
     ];
     
     return tags

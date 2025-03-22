@@ -56,35 +56,67 @@ export async function searchDiagrams(
   console.log(`[SearchService] Fetching fresh results for "${query}" page ${page}`);
   
   try {
-    // Create a more specific query for educational diagrams
+    // Improved query enhancement for better results
     let enhancedQuery = '';
     
+    // First check if this is an architecture or system query
+    if (query.toLowerCase().includes('architecture') || 
+        query.toLowerCase().includes('system') ||
+        query.toLowerCase().includes('design') ||
+        query.toLowerCase().includes('structure')) {
+      enhancedQuery = `${query} technical diagram professional illustration`;
+    }
     // Special handling for data structure queries
-    if (query.toLowerCase().includes('data structure') || 
+    else if (query.toLowerCase().includes('data structure') || 
         query.toLowerCase().includes('algorithm') || 
         query.toLowerCase().includes('dsa')) {
       enhancedQuery = `${query} educational visualization diagram computer science tutorial`;
-    } else {
-      // General educational diagram enhancement
-      enhancedQuery = `${query} educational diagram visualization for students learning high quality`;
+    } 
+    // Flow diagrams
+    else if (query.toLowerCase().includes('flow') ||
+        query.toLowerCase().includes('process') ||
+        query.toLowerCase().includes('workflow')) {
+      enhancedQuery = `${query} flowchart process diagram professional`;
+    }
+    // UML and technical diagrams
+    else if (query.toLowerCase().includes('uml') ||
+        query.toLowerCase().includes('class diagram') ||
+        query.toLowerCase().includes('sequence diagram')) {
+      enhancedQuery = `${query} software engineering diagram professional`;
+    }
+    // Network diagrams
+    else if (query.toLowerCase().includes('network') ||
+        query.toLowerCase().includes('topology')) {
+      enhancedQuery = `${query} network topology diagram professional`;
+    }
+    // Database diagrams
+    else if (query.toLowerCase().includes('database') ||
+        query.toLowerCase().includes('schema') ||
+        query.toLowerCase().includes('er diagram') ||
+        query.toLowerCase().includes('entity')) {
+      enhancedQuery = `${query} database schema diagram erd professional`;
+    }
+    // General educational diagram enhancement
+    else {
+      enhancedQuery = `${query} professional diagram visualization high quality`;
     }
     
     console.log(`[SearchService] Enhanced query: "${enhancedQuery}"`);
     
-    // Get search results with enhanced educational query
+    // Get search results with enhanced query
     let results = await searchGoogleImages(enhancedQuery, apiKey, searchId, page);
     
-    // If no results, try with more specific educational diagram terms
+    // If no results, try with more specific diagram terms
     if (results.length === 0) {
-      console.log('[SearchService] No results with enhanced query, trying with explicit educational diagram terms');
-      const diagramQuery = `${query} diagram educational visualization for students high quality infographic`;
+      console.log('[SearchService] No results with enhanced query, trying with explicit diagram terms');
+      const diagramQuery = `${query} diagram professional visualization high quality infographic`;
       results = await searchGoogleImages(diagramQuery, apiKey, searchId, page);
     }
     
-    // Still no results, try with broader educational terms
+    // Still no results, try with broader terms
     if (results.length === 0) {
-      console.log('[SearchService] Still no results, trying with broader educational terms');
-      const broadQuery = `${query} educational diagram explanation study material`;
+      console.log('[SearchService] Still no results, trying with broader terms');
+      const broadQuery = `${query} diagram chart visualization`;
       results = await searchGoogleImages(broadQuery, apiKey, searchId, page);
     }
     
@@ -94,8 +126,8 @@ export async function searchDiagrams(
       return [];
     }
     
-    // Filter for educational diagram-type images only and enhance results
-    const filteredResults = filterEducationalDiagramsOnly(results, query);
+    // Filter for diagram-type images only and enhance results
+    const filteredResults = filterDiagramsOnly(results, query);
     const enhancedResults = enhanceSearchResults(filteredResults, query);
     
     console.log(`[SearchService] Found ${enhancedResults.length} results for "${query}"`);
@@ -108,30 +140,29 @@ export async function searchDiagrams(
   }
 }
 
-// Filter results to only include educational diagrams, charts, infographics
-function filterEducationalDiagramsOnly(results: DiagramResult[], query: string): DiagramResult[] {
-  // Keywords that indicate educational diagram-type content
+// Filter results to only include professional diagrams, charts, infographics
+function filterDiagramsOnly(results: DiagramResult[], query: string): DiagramResult[] {
+  // Keywords that indicate diagram-type content
   const diagramKeywords = [
     'diagram', 'flowchart', 'chart', 'infographic', 'schema', 'architecture',
     'uml', 'workflow', 'process', 'system', 'model', 'plan', 'structure',
     'hierarchy', 'network', 'topology', 'framework', 'mapping', 'flow',
     'sequence', 'class', 'entity', 'relationship', 'state', 'database',
-    'educational', 'learning', 'explanation', 'concept', 'study', 'visual',
-    'educational diagram', 'teaching', 'academic', 'classroom', 'lecture',
+    'visualization', 'concept', 'visual', 'technical', 'professional',
     'data structure', 'algorithm', 'tree', 'graph', 'array', 'linked list',
     'stack', 'queue', 'hash table'
   ];
   
-  // Check if image appears to be an educational diagram based on its aspects
-  const isEducationalDiagramImage = (result: DiagramResult) => {
+  // Check if image appears to be a diagram based on its aspects
+  const isDiagramImage = (result: DiagramResult) => {
     const title = result.title.toLowerCase();
     const sourceUrl = (result.sourceUrl || '').toLowerCase();
     
     // Check title for diagram keywords
     const hasDiagramKeyword = diagramKeywords.some(keyword => title.includes(keyword));
     
-    // Check if source is a reputable educational diagram site
-    const isQualitySource = sourceUrl ? isQualityEducationalDiagramSource(sourceUrl) : false;
+    // Check if source is a reputable diagram site
+    const isQualitySource = sourceUrl ? isQualityDiagramSource(sourceUrl) : false;
     
     // Exclude non-diagram images
     const excludeTerms = ['photo', 'picture', 'image of', 'photograph', 'stock image'];
@@ -141,41 +172,37 @@ function filterEducationalDiagramsOnly(results: DiagramResult[], query: string):
   };
   
   // Apply filtering criteria
-  return results.filter(isEducationalDiagramImage);
+  return results.filter(isDiagramImage);
 }
 
-// Check if the source URL is from a reputable educational diagram source
-function isQualityEducationalDiagramSource(url: string): boolean {
-  const qualityEducationalSources = [
-    // Educational platforms
-    'khanacademy', 'coursera', 'edx', 'udemy', 'brilliant.org', 'study.com',
-    'educational-resources', 'teacherspayteachers', 'quizlet', 'brainly',
-    'chegg', 'mcgraw-hill', 'pearson', 'wiley', 'cengage', 'slideshare',
-    
-    // Diagram tools & resources
+// Check if the source URL is from a reputable diagram source
+function isQualityDiagramSource(url: string): boolean {
+  const qualitySources = [
+    // Professional diagram tools
     'lucidchart', 'draw.io', 'diagrams.net', 'creately', 'gliffy',
     'visual-paradigm', 'miro', 'figma', 'whimsical', 'cacoo',
-    'edrawsoft', 'smartdraw',
+    'edrawsoft', 'smartdraw', 'lucid.app', 'plantuml', 'dbdiagram.io',
     
-    // Tech education
+    // Technical sites
     'geeksforgeeks', 'javatpoint', 'tutorialspoint', 'educative', 
     'programiz', 'w3schools', 'stackoverflow', 'github', 'leetcode',
     'medium', 'towardsdatascience', 'researchgate', 'ieee',
     'uml-diagrams.org', 'prepbytes.com', 'scaler.com',
     
+    // Technical documentation sites
+    'docs.microsoft', 'aws.amazon', 'cloud.google', 'azure', 'ibm',
+    'cisco', 'oracle', 'mongodb', 'mysql', 'postgresql',
+    
+    // Educational platforms
+    'khanacademy', 'coursera', 'edx', 'udemy', 'brilliant.org', 'study.com',
+    'mcgraw-hill', 'pearson', 'wiley', 'cengage', 'slideshare',
+    
     // Universities
     'edu', 'ac.uk', 'ac.jp', '.edu.', 'cs.stanford.edu', 'mit.edu', 
     'harvard.edu', 'berkeley.edu', 'ox.ac.uk', 'cam.ac.uk',
-    
-    // Technical blogs
-    'baeldung', 'dev.to', 'freecodecamp', 'digitalocean',
-    
-    // Tech companies with educational content
-    'microsoft', 'google', 'aws', 'azure', 'ibm',
-    'cisco', 'oracle', 'mongodb', 'mysql', 'postgresql'
   ];
   
-  return qualityEducationalSources.some(source => url.toLowerCase().includes(source));
+  return qualitySources.some(source => url.toLowerCase().includes(source));
 }
 
 // Function to enhance search results with better relevance sorting and tags
@@ -183,12 +210,7 @@ function enhanceSearchResults(results: DiagramResult[], query: string): DiagramR
   // Extract terms from the query for relevance scoring
   const queryTerms = query.toLowerCase().split(/\s+/).filter(term => term.length > 2);
   
-  // Special handling for data structure queries
-  const isDataStructureQuery = query.toLowerCase().includes('data structure') || 
-                             query.toLowerCase().includes('algorithm') ||
-                             query.toLowerCase().includes('dsa');
-  
-  // Score function for educational relevance
+  // Score function for diagram relevance
   const scoreResult = (result: DiagramResult): number => {
     let score = 0;
     const title = result.title?.toLowerCase() || '';
@@ -203,37 +225,62 @@ function enhanceSearchResults(results: DiagramResult[], query: string): DiagramR
       }
     }
     
-    // Boost educational diagram keywords
-    const educationalKeywords = [
-      'educational', 'learning', 'concept', 'classroom', 'lecture', 'study',
-      'academic', 'visual learning', 'textbook', 'curriculum', 'course', 
-      'educational diagram', 'teaching', 'explanation'
-    ];
-    
-    const diagramKeywords = [
-      'diagram', 'chart', 'flowchart', 'infographic', 'visualization', 
-      'schema', 'architecture', 'model', 'blueprint'
-    ];
-    
-    for (const keyword of educationalKeywords) {
-      if (title.includes(keyword)) score += 15;
-    }
-    
-    for (const keyword of diagramKeywords) {
-      if (title.includes(keyword)) score += 12;
-    }
-    
-    // If this is a data structure query, boost data structure content
-    if (isDataStructureQuery) {
-      const dsKeywords = ['data structure', 'algorithm', 'tree', 'graph', 'array', 
-                        'linked list', 'stack', 'queue', 'hash table'];
-      for (const keyword of dsKeywords) {
-        if (title.includes(keyword)) score += 40;  // High priority for data structure content
+    // Boost diagram keywords based on query type
+    if (query.toLowerCase().includes('architecture') || query.toLowerCase().includes('system')) {
+      const archKeywords = ['architecture', 'system', 'design', 'structure', 'diagram', 'enterprise'];
+      for (const keyword of archKeywords) {
+        if (title.includes(keyword)) score += 30;
       }
     }
     
-    // Boost professional-looking diagrams from reputable educational sources
-    if (result.sourceUrl && isQualityEducationalDiagramSource(result.sourceUrl)) {
+    // Boost UML diagram keywords
+    if (query.toLowerCase().includes('uml') || 
+        query.toLowerCase().includes('class') || 
+        query.toLowerCase().includes('sequence')) {
+      const umlKeywords = ['uml', 'class diagram', 'sequence diagram', 'object diagram'];
+      for (const keyword of umlKeywords) {
+        if (title.includes(keyword)) score += 30;
+      }
+    }
+    
+    // Boost network diagram keywords
+    if (query.toLowerCase().includes('network') || query.toLowerCase().includes('topology')) {
+      const networkKeywords = ['network', 'topology', 'infrastructure'];
+      for (const keyword of networkKeywords) {
+        if (title.includes(keyword)) score += 30;
+      }
+    }
+    
+    // Boost database diagram keywords
+    if (query.toLowerCase().includes('database') || 
+        query.toLowerCase().includes('er') || 
+        query.toLowerCase().includes('entity')) {
+      const dbKeywords = ['database', 'schema', 'er diagram', 'entity relationship'];
+      for (const keyword of dbKeywords) {
+        if (title.includes(keyword)) score += 30;
+      }
+    }
+    
+    // Boost data structure keywords
+    if (query.toLowerCase().includes('data structure') || 
+        query.toLowerCase().includes('algorithm')) {
+      const dsKeywords = ['data structure', 'algorithm', 'tree', 'graph', 'array', 'linked list'];
+      for (const keyword of dsKeywords) {
+        if (title.includes(keyword)) score += 30;
+      }
+    }
+    
+    // Boost diagram quality keywords
+    const qualityKeywords = [
+      'professional', 'high-quality', 'detailed', 'technical', 'official'
+    ];
+    
+    for (const keyword of qualityKeywords) {
+      if (title.includes(keyword)) score += 10;
+    }
+    
+    // Boost diagrams from reputable sources
+    if (result.sourceUrl && isQualityDiagramSource(result.sourceUrl)) {
       score += 20;
     }
     
@@ -260,7 +307,7 @@ function enhanceSearchResults(results: DiagramResult[], query: string): DiagramR
     return true;
   });
   
-  // Sort results by educational relevance score
+  // Sort results by relevance score
   filteredResults.sort((a, b) => scoreResult(b) - scoreResult(a));
   
   // Generate or enhance tags if missing
@@ -281,21 +328,11 @@ function enhanceSearchResults(results: DiagramResult[], query: string): DiagramR
         }
       }
       
-      // Add educational tags
-      const eduTags = ['educational', 'learning', 'study'];
-      for (const tag of eduTags) {
+      // Add professional tags
+      const proTags = ['professional', 'technical', 'diagram'];
+      for (const tag of proTags) {
         if (!enhancedTags.includes(tag)) {
           enhancedTags.push(tag);
-        }
-      }
-      
-      // For data structure queries, add related tags
-      if (isDataStructureQuery) {
-        const dsTags = ['data structure', 'computer science', 'algorithm'];
-        for (const tag of dsTags) {
-          if (!enhancedTags.includes(tag)) {
-            enhancedTags.push(tag);
-          }
         }
       }
     }
@@ -315,35 +352,36 @@ export function getSearchSuggestions(query: string): string[] {
   
   const lowercaseQuery = query.toLowerCase();
   
-  // Common educational diagram types for students and researchers
-  const educationalDiagramTypes = [
-    "data structure visualization",
-    "algorithm flowchart",
-    "binary tree diagram",
-    "graph data structure visualization",
-    "linked list implementation",
-    "stack and queue visualization",
-    "hash table diagram",
-    "sorting algorithm visualization",
-    "biology cell diagram",
-    "chemistry periodic table",
-    "physics force diagram",
-    "mathematics graph visualization",
-    "molecular structure diagram",
-    "neural network diagram",
-    "UML class diagram",
+  // Common professional diagram types
+  const professionalDiagramTypes = [
+    "system architecture diagram",
+    "network topology diagram",
+    "uml class diagram",
     "entity relationship diagram",
+    "data flow diagram",
     "sequence diagram",
-    "flowchart diagram",
-    "system architecture",
+    "process flow diagram",
+    "component diagram",
+    "infrastructure diagram",
+    "use case diagram",
+    "database schema",
+    "state machine diagram",
+    "activity diagram",
+    "deployment diagram",
+    "business process model",
+    "organizational chart",
+    "cloud architecture diagram",
+    "api architecture diagram",
+    "microservices architecture",
     "circuit diagram",
-    "human anatomy diagram",
-    "geographical map visualization",
-    "data flow diagram"
+    "wireframe diagram",
+    "flowchart diagram",
+    "server architecture",
+    "security architecture"
   ];
   
   // Find matching suggestions
-  const matchingSuggestions = educationalDiagramTypes
+  const matchingSuggestions = professionalDiagramTypes
     .filter(term => term.includes(lowercaseQuery));
   
   // Sort by relevance (exact matches first, then starts with, then includes)
@@ -362,19 +400,19 @@ export function getSearchSuggestions(query: string): string[] {
     .slice(0, 8); // Show more suggestions
 }
 
-// Example searches to show when no query is entered - education focused
+// Example searches to show when no query is entered - professional focused
 function getExampleSearches(): string[] {
   return [
-    "data structure visualization",
-    "algorithm flowchart",
-    "binary search tree diagram",
-    "cell structure diagram",
-    "quantum mechanics visualization",
-    "DNA double helix structure",
-    "human nervous system diagram",
-    "solar system model",
-    "machine learning algorithm diagram",
-    "database schema for educational system",
-    "chemical reaction pathway"
+    "system architecture diagram",
+    "network topology diagram",
+    "uml class diagram",
+    "entity relationship diagram",
+    "data flow diagram",
+    "sequence diagram",
+    "process flow diagram",
+    "business process model",
+    "cloud architecture diagram",
+    "api architecture diagram",
+    "microservices architecture"
   ];
 }

@@ -3,8 +3,9 @@ import { motion } from "framer-motion";
 import { DiagramrLogo } from "@/components/diagramr-logo";
 import { SearchLimitIndicator } from "./search-limit-indicator";
 import { useState, useEffect } from "react";
-import { Search, LayoutTemplate, Lightbulb, BookOpen, BrainCircuit, 
-  GitBranch, GitFork, BarChart4, ActivityIcon } from "lucide-react";
+import { Search, LayoutTemplate, Lightbulb, BookOpen, ServerIcon, 
+  NetworkIcon, DatabaseIcon, FlowChartIcon, CircuitIcon, ActivityIcon,
+  GitBranchIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
@@ -21,17 +22,17 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
   const navigate = useNavigate();
   
   const exampleSearches = [
-    "UML class diagram",
+    "system architecture diagram",
     "network topology diagram",
     "entity relationship diagram",
-    "system architecture diagram"
+    "uml class diagram"
   ];
   
   const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
   const features = [
     { label: "Find professional diagrams & visualizations", icon: <LayoutTemplate className="h-4 w-4 mr-2" /> },
-    { label: "Technical diagrams for documentation", icon: <LayoutTemplate className="h-4 w-4 mr-2" /> },
-    { label: "Understand complex concepts faster", icon: <BrainCircuit className="h-4 w-4 mr-2" /> },
+    { label: "Technical diagrams for documentation", icon: <GitBranchIcon className="h-4 w-4 mr-2" /> },
+    { label: "Visualize complex concepts instantly", icon: <ActivityIcon className="h-4 w-4 mr-2" /> },
   ];
   
   useEffect(() => {
@@ -50,8 +51,31 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
       transition={{ duration: 0.7 }}
     >
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2"></div>
-        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
+        <motion.div 
+          className="absolute top-20 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2"
+          animate={{ 
+            scale: [1, 1.2, 1],
+            opacity: [0.5, 0.7, 0.5]
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            repeatType: "reverse"
+          }}
+        />
+        <motion.div 
+          className="absolute bottom-20 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"
+          animate={{ 
+            scale: [1, 1.2, 1],
+            opacity: [0.7, 0.5, 0.7]
+          }}
+          transition={{
+            duration: 7,
+            delay: 1,
+            repeat: Infinity,
+            repeatType: "reverse"
+          }}
+        />
       </div>
       
       <motion.div 
@@ -64,27 +88,27 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
       </motion.div>
       
       <motion.h1 
-        className="font-bold text-4xl md:text-6xl lg:text-7xl mb-6 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent"
+        className="font-bold text-4xl md:text-6xl lg:text-7xl mb-4 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.3 }}
       >
-        Discover Perfect Diagrams
+        Professional Diagrams
       </motion.h1>
       
       <motion.div
-        className="mb-8 text-muted-foreground text-xl max-w-2xl"
+        className="mb-6 text-muted-foreground text-xl max-w-2xl"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.4 }}
       >
         <p>
-          The intelligent search engine for diagrams and visualizations
+          Search engine for technical diagrams and visualizations
         </p>
       </motion.div>
       
       <motion.div
-        className="mb-6 h-8 overflow-hidden relative"
+        className="mb-8 h-8 overflow-hidden relative"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.5 }}
@@ -109,7 +133,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
       </motion.div>
       
       <motion.div 
-        className="w-full max-w-2xl mx-auto mb-6"
+        className="w-full max-w-2xl mx-auto mb-8"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.6 }}
@@ -142,11 +166,51 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         ))}
       </motion.div>
       
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto mt-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.8 }}
+      >
+        <motion.div 
+          className="bg-background/50 backdrop-blur-sm p-4 rounded-xl border border-border/30"
+          whileHover={{ y: -5, transition: { duration: 0.2 } }}
+        >
+          <div className="text-primary mb-2">
+            <ActivityIcon className="h-6 w-6" />
+          </div>
+          <h3 className="font-medium mb-1">For Students</h3>
+          <p className="text-sm text-muted-foreground">Find educational diagrams to understand complex concepts</p>
+        </motion.div>
+        
+        <motion.div 
+          className="bg-background/50 backdrop-blur-sm p-4 rounded-xl border border-border/30"
+          whileHover={{ y: -5, transition: { duration: 0.2 } }}
+        >
+          <div className="text-primary mb-2">
+            <GitBranchIcon className="h-6 w-6" />
+          </div>
+          <h3 className="font-medium mb-1">For Engineers</h3>
+          <p className="text-sm text-muted-foreground">Technical diagrams for documentation and planning</p>
+        </motion.div>
+        
+        <motion.div 
+          className="bg-background/50 backdrop-blur-sm p-4 rounded-xl border border-border/30"
+          whileHover={{ y: -5, transition: { duration: 0.2 } }}
+        >
+          <div className="text-primary mb-2">
+            <LayoutTemplate className="h-6 w-6" />
+          </div>
+          <h3 className="font-medium mb-1">For Professionals</h3>
+          <p className="text-sm text-muted-foreground">Presentation-ready charts and visualizations</p>
+        </motion.div>
+      </motion.div>
+      
       <motion.div
-        className="flex justify-center"
+        className="flex justify-center mt-8"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.7 }}
+        transition={{ duration: 0.5, delay: 0.9 }}
       >
         <SearchLimitIndicator />
       </motion.div>
