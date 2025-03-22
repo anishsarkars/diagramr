@@ -6,16 +6,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider, useAuth } from "@/components/auth-context";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense, lazy } from "react";
 import Index from "./pages/Index";
 import Auth from "./pages/auth";
 import Liked from "./pages/Liked";
 import Account from "./pages/Account";
 import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
-import { BuiltByBadge } from "./components/built-by-badge";
 import { SiteLoader } from "./components/site-loader";
-import { lazy, Suspense } from "react";
 
 // Create a query client with better retry settings for failed API requests
 const queryClient = new QueryClient({
@@ -28,6 +26,11 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Lazy load components for better performance
+const PremiumPlanDialog = lazy(() => import("./components/premium-plan-dialog").then(module => ({ 
+  default: module.PremiumPlanDialog 
+})));
 
 // App content separated to use router hooks
 function AppContent() {
@@ -47,7 +50,7 @@ function AppContent() {
       if (!hasVisited) {
         localStorage.setItem("hasVisited", "true");
       }
-    }, hasVisited ? 500 : 1200);
+    }, hasVisited ? 500 : 1800); // Longer initial load for better impression
     
     return () => clearTimeout(timer);
   }, []);
@@ -66,11 +69,6 @@ function AppContent() {
     });
   };
   
-  // Lazy load components for better performance
-  const PremiumPlanDialog = lazy(() => import("./components/premium-plan-dialog").then(module => ({ 
-    default: module.PremiumPlanDialog 
-  })));
-  
   return (
     <>
       {isLoading ? (
@@ -85,10 +83,8 @@ function AppContent() {
             <Route path="/liked" element={<Liked />} />
             <Route path="/account" element={<Account />} />
             <Route path="/pricing" element={<Pricing />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-          {/* Removed the BuiltByBadge component */}
           <Suspense fallback={null}>
             <PremiumPlanDialog open={false} onClose={() => {}} onLoginClick={handleLoginClick} />
           </Suspense>

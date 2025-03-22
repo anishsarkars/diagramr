@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X, Loader2, BookOpen } from "lucide-react";
+import { Search, X, Loader2, BookOpen, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSearchLimit } from "@/hooks/use-search-limit";
 import { PremiumPlanDialog } from "@/components/premium-plan-dialog";
@@ -23,6 +23,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchMode, setSearchMode] = useState<"search" | "generate">("search");
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { isDarkMode } = useTheme();
   
@@ -33,7 +34,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
     remainingSearches,
   } = useSearchLimit();
   
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const isPremium = profile?.is_premium || false;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,7 +71,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
       const newHistory = [query, ...history.filter(item => item !== query)].slice(0, 10);
       localStorage.setItem('diagramr-search-history', JSON.stringify(newHistory));
       
-      onSearch(query, "search");
+      onSearch(query, searchMode);
       setShowSuggestions(false);
     } catch (error) {
       console.error("Search error:", error);
@@ -144,7 +145,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
           <div className="relative flex-1">
             <Input
               type="text"
-              placeholder="Search for educational diagrams & visualizations..."
+              placeholder="Search for educational diagrams, scientific visualizations..."
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -180,21 +181,50 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
             )}
           </div>
           
-          <Button 
-            type="submit" 
-            disabled={!query.trim() || isLoading}
-            className="h-10 md:h-12 px-4 md:px-6 rounded-full shadow-sm hover:shadow transition-all duration-200"
-            size="sm"
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <BookOpen className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
-                <span className="text-xs md:text-sm">Find Diagrams</span>
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              type="button"
+              variant={searchMode === "search" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSearchMode("search")}
+              className="hidden md:flex items-center gap-1"
+            >
+              <Search className="h-4 w-4" />
+              <span>Search</span>
+            </Button>
+            
+            <Button 
+              type="button"
+              variant={searchMode === "generate" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSearchMode("generate")}
+              className="hidden md:flex items-center gap-1"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>Generate</span>
+            </Button>
+            
+            <Button 
+              type="submit" 
+              disabled={!query.trim() || isLoading}
+              className="h-10 md:h-12 px-4 md:px-6 rounded-full shadow-sm hover:shadow transition-all duration-200"
+              size="sm"
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : searchMode === "search" ? (
+                <>
+                  <Search className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                  <span className="text-xs md:text-sm">Find</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                  <span className="text-xs md:text-sm">Generate</span>
+                </>
+              )}
+            </Button>
+          </div>
         </div>
         
         {searchError && (
@@ -212,7 +242,14 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
         />
       </form>
       
-      <div className="mt-1 md:mt-2 flex justify-end items-center">
+      <div className="mt-1 md:mt-2 flex justify-between items-center">
+        <div className="text-xs text-muted-foreground">
+          {searchMode === "generate" ? (
+            <span>AI-generated diagrams for educational use only</span>
+          ) : (
+            <span>&nbsp;</span>
+          )}
+        </div>
         <div className="text-xs text-muted-foreground">
           <span>{remainingSearches} academic searches left{!isPremium && " today"}</span>
         </div>

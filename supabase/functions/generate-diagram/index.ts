@@ -41,33 +41,34 @@ serve(async (req) => {
       );
     }
 
-    // Enhanced prompt engineering for better diagram generation
+    // Enhanced prompt engineering specifically for academic and educational diagrams
     const enhancedPrompt = detailedPrompt 
-      ? `Create a high-quality, professional diagram illustrating: "${prompt}". 
-         The diagram must be suitable for professional and educational use in presentations, 
-         technical documentation, research papers, or educational materials.
+      ? `Create a high-quality, educational diagram illustrating: "${prompt}". 
+         The diagram must be suitable for academic use in textbooks, educational materials,
+         research papers, or lecture presentations.
          
          Create this as:
-         1. Clear and precise - focusing exactly on what's being asked
-         2. Highly detailed with accurate technical elements
+         1. Clear and precise - focusing on academic accuracy and educational value
+         2. Highly detailed with properly labeled components
          3. Professionally designed with clean layout and organization
-         4. Well-labeled with clear annotations and legends
-         5. Using appropriate visual hierarchy and structure
-         6. High resolution (at least 1920x1080) with sharp lines and text
-         7. Using a professional color scheme appropriate for the subject matter
+         4. Well-labeled with clear annotations, legends, and academic terminology
+         5. Using appropriate visual hierarchy to emphasize key educational concepts
+         6. High resolution with sharp lines, clean text, and proper educational formatting
+         7. Using color schemes appropriate for educational and academic contexts
          
-         The diagram should follow best practices for information visualization and be immediately 
-         understandable to viewers in educational, research, or professional contexts.
+         The diagram should follow established educational standards and be immediately 
+         understandable to students, educators, and researchers. Include proper academic
+         notation and formatting expected in educational contexts.
          
          Make the diagram extremely relevant to "${prompt}" with detailed visual elements that 
-         accurately represent the concept or system being illustrated.`
+         accurately represent the academic concept being illustrated.`
       : prompt;
     
-    console.log("Generating diagram with prompt:", enhancedPrompt);
+    console.log("Generating academic diagram with prompt:", enhancedPrompt);
     
     // Try with Stability AI first (highest quality, most reliable)
     try {
-      console.log("Trying Stability API...");
+      console.log("Trying Stability API for academic diagram...");
       const stabilityResponse = await fetch("https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image", {
         method: "POST",
         headers: {
@@ -78,11 +79,11 @@ serve(async (req) => {
         body: JSON.stringify({
           text_prompts: [
             {
-              text: enhancedPrompt + ", professional diagram, high quality, detailed, educational, vectorized, sharp, clean lines, infographic style, technical illustration, minimalist, schematic",
+              text: enhancedPrompt + ", educational diagram, academic illustration, high quality, detailed, educational, vectorized, sharp, clean lines, infographic style, technical illustration, minimalist, schematic, textbook quality",
               weight: 1
             },
             {
-              text: "blurry, distorted, low quality, ugly, unrealistic, photographic, photograph, photo, person, face, hands",
+              text: "blurry, distorted, low quality, ugly, unrealistic, photographic, photograph, photo, person, face, hands, watermark, signature, low resolution",
               weight: -1
             }
           ],
@@ -111,7 +112,8 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             imageUrl: `data:image/png;base64,${base64Image}`,
-            success: true
+            success: true,
+            source: "ai-generated"
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
@@ -124,7 +126,7 @@ serve(async (req) => {
       
       // Try with Cloudflare as backup (also very reliable)
       try {
-        console.log("Trying Cloudflare Workers AI...");
+        console.log("Trying Cloudflare Workers AI for academic diagram...");
         const response = await fetch("https://api.cloudflare.com/client/v4/accounts/e5fad8b4d6ca29e53d57831b4e45ebd7/ai/run/@cf/stabilityai/stable-diffusion-xl-base-1.0", {
           method: "POST",
           headers: {
@@ -132,8 +134,8 @@ serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            prompt: enhancedPrompt + ", professional diagram, high quality, detailed, vector art, educational, vectorized, sharp clean lines, infographic style, technical diagram, minimalist, high resolution",
-            negative_prompt: "blurry, distorted, ugly, low resolution, poor quality, photograph, photo-realistic, text, word, handwritten",
+            prompt: enhancedPrompt + ", professional educational diagram, academic illustration, high quality, detailed, vector art, educational, vectorized, sharp clean lines, infographic style, technical diagram, minimalist, high resolution, textbook quality",
+            negative_prompt: "blurry, distorted, ugly, low resolution, poor quality, photograph, photo-realistic, text, word, handwritten, watermark, signature, logo",
             num_steps: 50,
             height: 1024,
             width: 1024,
@@ -158,14 +160,15 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             imageUrl: `data:image/png;base64,${base64Image}`,
-            success: true
+            success: true,
+            source: "ai-generated"
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       } catch (cloudflareError) {
         console.error("Cloudflare API error:", cloudflareError);
         
-        // All methods failed, return a fallback image
+        // All methods failed, return a fallback educational image
         const fallbackImages = [
           "/lovable-uploads/5aa6a42f-771c-4e89-a3ba-e58ff53c701e.png",
           "/lovable-uploads/a837a9a5-a83f-42b8-835c-261565ed609f.png",
@@ -178,15 +181,16 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             imageUrl: fallbackImage,
-            error: "All generation methods failed, returning fallback image",
-            success: true
+            error: "AI generation failed, returning educational fallback image",
+            success: true,
+            source: "fallback"
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     }
   } catch (error) {
-    console.error("Error generating diagram:", error.message);
+    console.error("Error generating educational diagram:", error.message);
     return new Response(
       JSON.stringify({ 
         error: error.message,

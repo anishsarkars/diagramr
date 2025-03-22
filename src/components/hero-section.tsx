@@ -22,18 +22,18 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
   const navigate = useNavigate();
   
   const exampleSearches = [
-    "system architecture diagram",
-    "network topology diagram",
-    "entity relationship diagram",
-    "uml class diagram",
-    "data structure visualization"
+    "human anatomy diagrams",
+    "molecular structure visualization",
+    "physics force diagrams",
+    "data structures and algorithms",
+    "circuit design diagrams"
   ];
   
   const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
   const features = [
-    { label: "Find professional diagrams & visualizations", icon: <LayoutTemplate className="h-4 w-4 mr-2" /> },
-    { label: "Technical diagrams for documentation", icon: <GitBranch className="h-4 w-4 mr-2" /> },
-    { label: "Visualize complex concepts instantly", icon: <Activity className="h-4 w-4 mr-2" /> },
+    { label: "Find educational diagrams for your studies", icon: <BookOpen className="h-4 w-4 mr-2" /> },
+    { label: "Visualize complex academic concepts", icon: <GitBranch className="h-4 w-4 mr-2" /> },
+    { label: "Discover scientific illustrations & charts", icon: <Activity className="h-4 w-4 mr-2" /> },
   ];
   
   useEffect(() => {
@@ -94,7 +94,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.3 }}
       >
-        Academic & Research Diagrams
+        Visualize Knowledge
       </motion.h1>
       
       <motion.div
@@ -104,7 +104,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         transition={{ duration: 0.5, delay: 0.4 }}
       >
         <p>
-          Search platform for educational visualizations and technical diagrams
+          Find and generate academic diagrams for research, study, and presentations
         </p>
       </motion.div>
       
@@ -152,7 +152,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.65 }}
       >
-        <div className="w-full text-sm text-muted-foreground mb-2">Try searching for:</div>
+        <div className="w-full text-sm text-muted-foreground mb-2">Popular academic searches:</div>
         {exampleSearches.map((example, index) => (
           <Button
             key={index}
@@ -178,10 +178,10 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           whileHover={{ y: -5, transition: { duration: 0.2 } }}
         >
           <div className="text-primary mb-2">
-            <Activity className="h-6 w-6" />
+            <BookOpen className="h-6 w-6" />
           </div>
           <h3 className="font-medium mb-1">For Students</h3>
-          <p className="text-sm text-muted-foreground">Find educational diagrams to understand complex concepts</p>
+          <p className="text-sm text-muted-foreground">Find educational diagrams to understand complex academic concepts</p>
         </motion.div>
         
         <motion.div 
@@ -192,7 +192,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
             <GitBranch className="h-6 w-6" />
           </div>
           <h3 className="font-medium mb-1">For Researchers</h3>
-          <p className="text-sm text-muted-foreground">Technical diagrams for papers and documentation</p>
+          <p className="text-sm text-muted-foreground">Discover scientific visualizations for papers and presentations</p>
         </motion.div>
         
         <motion.div 
@@ -203,7 +203,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
             <LayoutTemplate className="h-6 w-6" />
           </div>
           <h3 className="font-medium mb-1">For Educators</h3>
-          <p className="text-sm text-muted-foreground">Visual resources for lectures and presentations</p>
+          <p className="text-sm text-muted-foreground">Access visual resources for lectures and coursework</p>
         </motion.div>
       </motion.div>
       
@@ -230,7 +230,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
             className="gap-2 shadow-sm"
           >
             <Search className="h-3.5 w-3.5" />
-            <span>Sign up for more searches</span>
+            <span>Sign up for more academic searches</span>
           </Button>
         </motion.div>
       )}
