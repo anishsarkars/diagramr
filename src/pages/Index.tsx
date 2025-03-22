@@ -17,7 +17,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { incrementCount, hasReachedLimit, requiresLogin } = useSearchLimit();
+  const { incrementCount, hasReachedLimit, requiresLogin, remainingSearches } = useSearchLimit();
   
   const { 
     results,
@@ -49,22 +49,36 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     if (hasReachedLimit) {
       if (requiresLogin) {
         // User needs to login first
-        toast.info("Sign in to get more searches (20 free searches daily)");
-        if (onLoginClick) {
-          onLoginClick();
-        } else {
-          navigate("/auth");
-        }
+        toast.info("Sign in to get more searches (20 free searches daily)", {
+          description: "Create a free account to continue searching",
+          action: {
+            label: "Sign In",
+            onClick: () => {
+              if (onLoginClick) {
+                onLoginClick();
+              } else {
+                navigate("/auth");
+              }
+            }
+          }
+        });
+        return;
       } else {
         // User needs to upgrade
-        toast.info("You've reached your daily search limit. Upgrade for more searches!");
-        navigate("/pricing");
+        toast.info("You've reached your daily search limit!", {
+          description: "Upgrade to Pro for 50+ searches per day",
+          action: {
+            label: "Upgrade",
+            onClick: () => navigate("/pricing")
+          }
+        });
+        return;
       }
-      return;
     }
     
-    // Track usage for logged-in users
-    incrementCount();
+    // Increment count and track usage
+    const success = await incrementCount();
+    if (!success) return;
     
     // Clear session storage to ensure fresh results
     Object.keys(sessionStorage).forEach(key => {
@@ -76,9 +90,31 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     setShowSearchField(false);
     try {
       await searchFor(prompt);
+      
+      // Show remaining searches toast
+      if (remainingSearches <= 5 && remainingSearches > 0) {
+        toast.info(`${remainingSearches} searches remaining today`, {
+          description: user ? "Upgrade to Pro for more searches" : "Sign in for 20 searches/day",
+          action: {
+            label: user ? "Upgrade" : "Sign In",
+            onClick: () => {
+              if (user) {
+                navigate("/pricing");
+              } else if (onLoginClick) {
+                onLoginClick();
+              } else {
+                navigate("/auth");
+              }
+            }
+          }
+        });
+      }
     } catch (error) {
       if (error.message === 'API quota exceeded') {
-        toast.error("Sorry for the inconvenience! Our API quota has been reached. We're working on increasing our limits to serve you better.");
+        toast.error("API quota exceeded", {
+          description: "Sorry for the inconvenience! Our API quota has been reached. We're working on increasing our limits to serve you better.",
+          duration: 8000
+        });
       }
     }
   };
@@ -91,12 +127,19 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   const handleLikeDiagram = async (diagramId: string | number) => {
     if (!user) {
       // Require login to like diagrams
-      toast.info("Please log in to save diagrams to your collection");
-      if (onLoginClick) {
-        onLoginClick();
-      } else {
-        navigate("/auth", { state: { returnTo: "/" } });
-      }
+      toast.info("Please sign in to save diagrams", {
+        description: "Create a free account to save your favorite diagrams",
+        action: {
+          label: "Sign In",
+          onClick: () => {
+            if (onLoginClick) {
+              onLoginClick();
+            } else {
+              navigate("/auth", { state: { returnTo: "/" } });
+            }
+          }
+        }
+      });
       return;
     }
     
@@ -185,7 +228,10 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   // Handle API quota errors
   useEffect(() => {
     if (error && error.message === 'API quota exceeded') {
-      toast.error("Sorry for the inconvenience! Our API quota has been reached. We're working on increasing our limits to serve you better.");
+      toast.error("API quota exceeded", {
+        description: "Sorry for the inconvenience! Our API quota has been reached. We're working on increasing our limits to serve you better.",
+        duration: 8000
+      });
     }
   }, [error]);
 

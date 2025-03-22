@@ -51,7 +51,7 @@ export default function Auth() {
         });
         
         if (error) throw error;
-        toast.success("Logged in successfully!");
+        toast.success("Logged in successfully! You now have 20 searches per day.");
         navigate("/");
       }
     } catch (error: any) {
@@ -76,7 +76,7 @@ export default function Auth() {
           </h2>
           <p className="text-sm text-muted-foreground text-center">
             {isSignUp 
-              ? "Sign up to access high-quality diagrams and AI generation" 
+              ? "Sign up to access high-quality diagrams (20 free searches daily)" 
               : "Welcome back! Sign in to continue exploring diagrams"}
           </p>
         </div>
@@ -113,7 +113,7 @@ export default function Auth() {
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               />
-            ) : isSignUp ? "Create account" : "Sign in"}
+            ) : isSignUp ? "Create account (20 searches/day)" : "Sign in"}
           </Button>
         </form>
 
@@ -125,6 +125,13 @@ export default function Auth() {
           >
             {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
           </button>
+        </div>
+        
+        <div className="border-t border-border pt-4 mt-4">
+          <p className="text-xs text-center text-muted-foreground">
+            Free accounts get 20 searches per day. <br/>
+            Upgrade to Pro for just $3/month and get 50+ searches per day.
+          </p>
         </div>
       </motion.div>
     </div>
