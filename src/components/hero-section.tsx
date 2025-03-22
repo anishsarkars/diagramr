@@ -4,8 +4,8 @@ import { DiagramrLogo } from "@/components/diagramr-logo";
 import { SearchLimitIndicator } from "./search-limit-indicator";
 import { useState, useEffect } from "react";
 import { Search, LayoutTemplate, Lightbulb, BookOpen, ServerIcon, 
-  NetworkIcon, DatabaseIcon, FlowChartIcon, CircuitIcon, ActivityIcon,
-  GitBranchIcon } from "lucide-react";
+  NetworkIcon, DatabaseIcon, Workflow, Flower, Activity,
+  GitBranch } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
