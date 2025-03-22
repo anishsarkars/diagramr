@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { DiagramrLogo } from "@/components/diagramr-logo";
 import { SearchLimitIndicator } from "./search-limit-indicator";
 import { useState, useEffect } from "react";
-import { Search, LayoutTemplate, BookOpen, Server, 
+import { Search, LayoutTemplate, BookOpen, 
   Network, Database, Workflow, Flower, Activity,
   GitBranch } from "lucide-react";
 import { Button } from "./ui/button";
@@ -94,7 +94,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.3 }}
       >
-        Visualize Knowledge
+        Discover Educational Diagrams
       </motion.h1>
       
       <motion.div
@@ -104,7 +104,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         transition={{ duration: 0.5, delay: 0.4 }}
       >
         <p>
-          Find and generate academic diagrams for research, study, and presentations
+          Find the perfect diagrams, charts, and visualizations for your research, studies, and presentations
         </p>
       </motion.div>
       
@@ -140,7 +140,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         transition={{ duration: 0.5, delay: 0.6 }}
       >
         <SimpleSearchBar 
-          onSearch={(query, mode) => onSearch(query, "search")} 
+          onSearch={(query) => onSearch(query, "search")} 
           isLoading={isLoading}
           className="shadow-lg"
         />
@@ -206,34 +206,6 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           <p className="text-sm text-muted-foreground">Access visual resources for lectures and coursework</p>
         </motion.div>
       </motion.div>
-      
-      <motion.div
-        className="flex justify-center mt-8"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.9 }}
-      >
-        <SearchLimitIndicator />
-      </motion.div>
-      
-      {!user && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1 }}
-          className="mt-4"
-        >
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/auth')}
-            className="gap-2 shadow-sm"
-          >
-            <Search className="h-3.5 w-3.5" />
-            <span>Sign up for more academic searches</span>
-          </Button>
-        </motion.div>
-      )}
     </motion.div>
   );
 }

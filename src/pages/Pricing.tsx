@@ -1,247 +1,200 @@
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { CheckCircle2, Sparkles, Infinity, Star, Zap, AlertCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { DiagramrLogo } from "@/components/diagramr-logo";
-import { useAuth } from "@/components/auth-context";
+import { CheckCircle, ZapIcon, SearchIcon, FileTextIcon, HeartIcon, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { useAuth } from "@/components/auth-context";
 
-export default function Pricing() {
-  const { user, profile } = useAuth();
+const Pricing = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
+  const plans = [
+    {
+      name: "Free",
+      price: "$0",
+      period: "forever",
+      features: [
+        "Up to 10 searches per day",
+        "Basic educational diagrams",
+        "Academic resources access",
+        "View search details",
+      ],
+      isPopular: false,
+      buttonText: user ? "Current Plan" : "Get Started",
+      buttonAction: () => navigate("/"),
+    },
+    {
+      name: "Premium",
+      price: "$9",
+      period: "per month",
+      features: [
+        "Unlimited searches",
+        "Advanced diagram search",
+        "Save unlimited diagrams",
+        "Priority support",
+        "No daily limits"
+      ],
+      isPopular: true,
+      buttonText: "Upgrade",
+      buttonAction: () => {
+        if (!user) {
+          navigate("/auth", { state: { returnTo: "/pricing" } });
+        } else {
+          // Handle subscription logic
+          alert("Premium subscription coming soon! Please check back later.");
+        }
       },
     },
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 },
-  };
-
-  // Direct to payment links
-  const redirectToPayment = () => {
-    window.open("https://diagramr.lemonsqueezy.com/buy/5c0b7ecd-65a5-4e74-95c3-fa001496e2e2", "_blank");
-  };
-
-  // Navigate to auth page if user is not logged in
-  const handleUpgradeClick = () => {
-    if (!user) {
-      navigate("/auth", { state: { returnTo: "/pricing" } });
-    } else {
-      redirectToPayment();
-    }
-  };
-
-  useEffect(() => {
-    // Scroll to top on component mount
-    window.scrollTo(0, 0);
-  }, []);
+    {
+      name: "Teams",
+      price: "$49",
+      period: "per month",
+      features: [
+        "Everything in Premium",
+        "Shared collections",
+        "Team collaboration",
+        "Usage analytics",
+        "Dedicated support",
+      ],
+      isPopular: false,
+      buttonText: "Contact Us",
+      buttonAction: () => {
+        window.location.href = "mailto:teams@diagramr.com";
+      },
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container max-w-7xl mx-auto py-10 px-4 sm:px-6">
-        <div className="flex justify-between items-center mb-12">
-          <DiagramrLogo size="md" />
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate("/")}>
-              Home
-            </Button>
-            {user ? (
-              <Button onClick={() => navigate("/account")}>My Account</Button>
-            ) : (
-              <Button onClick={() => navigate("/auth")}>Sign in</Button>
-            )}
-          </div>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
-        >
-          <Badge variant="outline" className="mb-4 px-3 py-1">
-            <Sparkles className="h-3.5 w-3.5 mr-1" />
-            <span>Beta Launch Offer</span>
-          </Badge>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-            Simple, transparent pricing
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            During our beta period, all features are available to free users. Premium subscriptions help support our development and get early access to new features.
-          </p>
-        </motion.div>
-
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto"
-        >
-          {/* Free Plan */}
-          <motion.div variants={item}>
-            <Card className="h-full transition-all hover:shadow-md border-border">
-              <CardHeader>
-                <CardTitle className="flex justify-between items-center">
-                  <span>Free Plan</span>
-                  <Badge variant="secondary">Standard</Badge>
-                </CardTitle>
-                <div className="flex items-baseline mt-3">
-                  <span className="text-3xl font-bold">₹0</span>
-                  <span className="ml-1 text-muted-foreground">/forever</span>
-                </div>
-                <CardDescription className="mt-2">
-                  Perfect for casual users, students, and professionals.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg mb-4">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-500 shrink-0 mt-0.5" />
-                    <p className="text-sm text-green-800 dark:text-green-400">
-                      <span className="font-semibold">Beta Special:</span> During our beta, all users get access to premium features at no cost!
-                    </p>
-                  </div>
-                </div>
-                <ul className="space-y-3 mt-4">
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>Access to high-quality educational and professional diagrams</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>20 searches per day</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>3 AI-generated diagrams per day</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>Save favorites (during beta)</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>All filtering and sorting options (during beta)</span>
-                  </li>
-                </ul>
-              </CardContent>
-              <CardFooter>
-                <Button className="w-full" variant="outline" onClick={() => navigate("/auth")}>
-                  {user ? "Current Plan" : "Sign Up Free"}
-                </Button>
-              </CardFooter>
-            </Card>
-          </motion.div>
-
-          {/* Premium Plan */}
-          <motion.div variants={item}>
-            <Card className="h-full transition-all hover:shadow-md relative overflow-hidden border-primary/20">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 rounded-full -translate-y-20 translate-x-20 blur-2xl pointer-events-none" />
-              
-              <CardHeader>
-                <CardTitle className="flex justify-between items-center">
-                  <span>Premium</span>
-                  <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-500 hover:to-orange-600">
-                    <Star className="h-3 w-3 mr-1 fill-white" />
-                    Beta Special
-                  </Badge>
-                </CardTitle>
-                <div className="flex items-baseline gap-2 mt-3">
-                  <span className="text-3xl font-bold">₹89</span>
-                  <span className="text-muted-foreground font-medium line-through">₹599</span>
-                  <span className="ml-1 text-muted-foreground">/month</span>
-                </div>
-                <CardDescription className="mt-2">
-                  Early beta special offer, lock in this price forever.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-lg mb-4">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 shrink-0 mt-0.5" />
-                    <p className="text-sm text-yellow-800 dark:text-yellow-400">
-                      <span className="font-semibold">Beta Special:</span> Support our development while getting future premium features automatically!
-                    </p>
-                  </div>
-                </div>
-                
-                <ul className="space-y-3 mt-4">
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span className="font-medium">50+ searches per day</span>
-                  </li>
-                  <li className="flex items-start">
-                    <Zap className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span className="font-medium">10 AI-generated diagrams per day</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>Advanced filters and sorting options</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>Unlimited bookmarks and collections</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>Priority access to AI diagram generation</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mr-2" />
-                    <span>Early access to all upcoming features</span>
-                  </li>
-                </ul>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full relative group overflow-hidden"
-                  onClick={handleUpgradeClick}
-                >
-                  <span className="relative z-10">Upgrade Now</span>
-                  <span className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-primary/20 group-hover:opacity-80 opacity-0 transition-opacity duration-300"></span>
-                </Button>
-              </CardFooter>
-            </Card>
-          </motion.div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.5 }}
-          className="mt-24 text-center max-w-2xl mx-auto"
-        >
-          <h2 className="text-2xl font-bold mb-4">Join Our Beta Program</h2>
-          <p className="text-muted-foreground mb-4">
-            During our beta testing phase, all users get access to premium features. We're constantly improving 
-            our diagram search and generation capabilities based on user feedback.
-          </p>
-          <p className="text-sm text-muted-foreground/70 italic mb-6">
-            Diagramr is in early development. Results may occasionally vary in quality or relevance as we refine our systems.
-          </p>
-          <Button 
-            className="mt-2" 
-            size="lg"
-            onClick={() => navigate("/auth")}
+    <div className="flex flex-col min-h-screen bg-background">
+      <Header />
+      
+      <main className="flex-1 pt-24 pb-16">
+        <div className="container">
+          <motion.div 
+            className="text-center max-w-3xl mx-auto mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
           >
-            Get Started For Free
-          </Button>
-        </motion.div>
-      </div>
+            <h1 className="text-4xl font-bold mb-4">Choose Your Plan</h1>
+            <p className="text-muted-foreground text-lg">
+              Find the perfect educational diagrams to boost your academic and research projects
+            </p>
+          </motion.div>
+          
+          <motion.div 
+            className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            {plans.map((plan, index) => (
+              <motion.div
+                key={plan.name}
+                className={`rounded-xl overflow-hidden border ${
+                  plan.isPopular
+                    ? "border-primary/50 bg-primary/5"
+                    : "border-border bg-background/60"
+                } backdrop-blur-sm shadow-lg relative`}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 * (index + 1) }}
+                whileHover={{ y: -5, transition: { duration: 0.2 } }}
+              >
+                {plan.isPopular && (
+                  <div className="absolute top-0 right-0">
+                    <div className="bg-primary text-primary-foreground text-xs font-medium py-1 px-3 rounded-bl-lg">
+                      Most Popular
+                    </div>
+                  </div>
+                )}
+                <div className="p-6">
+                  <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
+                    {plan.name === "Free" && <SearchIcon className="h-5 w-5 text-muted-foreground" />}
+                    {plan.name === "Premium" && <ZapIcon className="h-5 w-5 text-primary" />}
+                    {plan.name === "Teams" && <FileTextIcon className="h-5 w-5 text-indigo-500" />}
+                    {plan.name}
+                  </h3>
+                  <div className="flex items-end gap-1 mb-6">
+                    <span className="text-3xl font-bold">{plan.price}</span>
+                    <span className="text-muted-foreground mb-1">/{plan.period}</span>
+                  </div>
+                  <ul className="space-y-3 mb-8">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-2">
+                        <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button
+                    className={`w-full ${
+                      plan.isPopular
+                        ? "bg-primary hover:bg-primary/90"
+                        : ""
+                    }`}
+                    variant={plan.isPopular ? "default" : "outline"}
+                    onClick={plan.buttonAction}
+                  >
+                    {plan.buttonText}
+                  </Button>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+          
+          <motion.div 
+            className="mt-16 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
+            <h2 className="text-2xl font-semibold mb-2">Why Choose Diagramr Premium?</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
+              Upgrade to access unlimited diagram searches and resources to enhance your academic journey
+            </p>
+            
+            <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+              <div className="p-4 rounded-lg">
+                <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
+                  <SearchIcon className="h-6 w-6" />
+                </div>
+                <h3 className="font-medium mb-2">Unlimited Searches</h3>
+                <p className="text-sm text-muted-foreground">
+                  No daily limits. Search for any educational diagram whenever you need it.
+                </p>
+              </div>
+              
+              <div className="p-4 rounded-lg">
+                <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
+                  <HeartIcon className="h-6 w-6" />
+                </div>
+                <h3 className="font-medium mb-2">Save Favorites</h3>
+                <p className="text-sm text-muted-foreground">
+                  Create collections of diagrams for your different research and study projects.
+                </p>
+              </div>
+              
+              <div className="p-4 rounded-lg">
+                <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <h3 className="font-medium mb-2">Premium Support</h3>
+                <p className="text-sm text-muted-foreground">
+                  Get priority assistance for any questions about educational resources.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </main>
       
       <Footer />
     </div>
   );
-}
+};
+
+export default Pricing;

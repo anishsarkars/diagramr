@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useRef, useEffect } from "react";
-import { SearchIcon, Sparkles, Wand2, LightbulbIcon, SendIcon, ArrowRight, Search, X } from "lucide-react";
+import { SearchIcon, LightbulbIcon, ArrowRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SearchSuggestions } from "@/components/search-suggestions";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { useTheme } from "@/components/theme-provider";
 
 interface AIInputProps {
   className?: string;
-  onSubmit?: (prompt: string, mode: "search" | "generate") => void;
+  onSubmit?: (prompt: string, mode: "search") => void;
   placeholder?: string;
   isLoading?: boolean;
 }
@@ -19,7 +19,6 @@ interface AIInputProps {
 export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInputProps) {
   const [prompt, setPrompt] = useState("");
   const [isFocused, setIsFocused] = useState(false);
-  const [mode, setMode] = useState<"search" | "generate">("search");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -52,7 +51,7 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
       const newHistory = [prompt, ...history.filter(item => item !== prompt)].slice(0, 10);
       localStorage.setItem('diagramr-search-history', JSON.stringify(newHistory));
       
-      onSubmit(prompt, mode);
+      onSubmit(prompt, "search");
       setShowSuggestions(false);
     }
   };
@@ -130,18 +129,12 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
         >
           <div className="flex-1 flex items-center relative">
             <div className="absolute left-4 text-muted-foreground/80">
-              {mode === "search" ? (
-                <SearchIcon className="h-5 w-5" />
-              ) : (
-                <Wand2 className="h-5 w-5" />
-              )}
+              <SearchIcon className="h-5 w-5" />
             </div>
             <Input
               ref={inputRef}
               type="text"
-              placeholder={placeholder || (mode === "search" 
-                ? "Search for diagrams (e.g., 'network architecture')..." 
-                : "Describe the diagram you want to generate...")}
+              placeholder={placeholder || "Search for educational diagrams (e.g., 'network architecture')..."}
               className="pl-12 py-8 text-base border-0 shadow-none focus-visible:ring-0 bg-transparent"
               value={prompt}
               onChange={(e) => {
@@ -171,33 +164,6 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
           </div>
           
           <div className="flex gap-2 mr-3">
-            <Button
-              size="sm"
-              variant={mode === "search" ? "default" : "outline"}
-              className={cn(
-                "rounded-xl transition-all px-4 py-2.5",
-                mode === "search" ? "bg-primary/90 hover:bg-primary" : "bg-background/60 hover:bg-background"
-              )}
-              onClick={() => setMode("search")}
-              disabled={isLoading}
-            >
-              <SearchIcon className="h-4 w-4 mr-2" />
-              <span>Search</span>
-            </Button>
-            <Button
-              size="sm"
-              variant={mode === "generate" ? "default" : "outline"}
-              className={cn(
-                "rounded-xl transition-all px-4 py-2.5",
-                mode === "generate" ? "bg-primary/90 hover:bg-primary" : "bg-background/60 hover:bg-background"
-              )}
-              onClick={() => setMode("generate")}
-              disabled={isLoading}
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              <span>Generate</span>
-            </Button>
-            
             <AnimatePresence>
               {prompt.trim() && (
                 <motion.div

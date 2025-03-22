@@ -2,7 +2,7 @@
 import { DiagramrLogo } from "./diagramr-logo";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Book, Sparkles } from "lucide-react";
+import { Book, Sparkles, GraduationCap, BookOpen, Search } from "lucide-react";
 
 export function SiteLoader({ className }: { className?: string }) {
   return (
@@ -47,15 +47,42 @@ export function SiteLoader({ className }: { className?: string }) {
           />
         </motion.div>
         
-        <motion.p
-          className="text-sm text-muted-foreground flex items-center gap-2"
+        <motion.div
+          className="flex flex-col items-center gap-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
+          transition={{ delay: 0.8, staggerChildren: 0.1 }}
         >
-          <Book className="h-4 w-4" />
-          <span>Academic & Educational Diagrams</span>
-        </motion.p>
+          <motion.p
+            className="text-sm text-muted-foreground flex items-center gap-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 }}
+          >
+            <Book className="h-4 w-4" />
+            <span>Academic Diagrams & Visualizations</span>
+          </motion.p>
+          
+          <motion.p
+            className="text-sm text-muted-foreground flex items-center gap-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.0 }}
+          >
+            <GraduationCap className="h-4 w-4" />
+            <span>Educational Resources</span>
+          </motion.p>
+          
+          <motion.p
+            className="text-sm text-muted-foreground flex items-center gap-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.1 }}
+          >
+            <Search className="h-4 w-4" />
+            <span>Research Visual Knowledge</span>
+          </motion.p>
+        </motion.div>
         
         <motion.div
           className="absolute inset-0 -z-10"

@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { searchDiagrams } from '@/utils/search-service';
 import { searchGoogleImages } from '@/utils/googleSearch';
-import { generateDiagramWithAI } from '@/utils/ai-image-generator';
 import { toast } from 'sonner';
 import { useSearchLimit } from '@/hooks/use-search-limit';
 
@@ -34,8 +33,8 @@ export function useInfiniteSearch({
   hasMore: boolean;
   loadMore: () => void;
   searchTerm: string;
-  searchFor: (query: string, mode: 'search' | 'generate') => Promise<void>;
-  lastAction: 'search' | 'generate';
+  searchFor: (query: string, mode: 'search') => Promise<void>;
+  lastAction: 'search';
   resetSearch: () => void;
 } {
   const [results, setResults] = useState<DiagramResult[]>([]);
@@ -45,9 +44,9 @@ export function useInfiniteSearch({
   const [page, setPage] = useState(1);
   const [currentSearchPage, setCurrentSearchPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState(initialQuery);
-  const [lastAction, setLastAction] = useState<'search' | 'generate'>('search');
+  const [lastAction, setLastAction] = useState<'search'>('search');
   
-  const { incrementGenerationCount } = useSearchLimit();
+  const { incrementCount } = useSearchLimit();
   
   const allResults = useRef<DiagramResult[]>([]);
   const currentSearchKey = useRef<string>('');
@@ -63,14 +62,14 @@ export function useInfiniteSearch({
     currentSearchKey.current = '';
   }, []);
   
-  const searchFor = useCallback(async (query: string, mode: 'search' | 'generate') => {
+  const searchFor = useCallback(async (query: string, mode: 'search') => {
     if (!query.trim()) return;
     
     console.log(`Starting ${mode} for query: "${query}"`);
     setIsLoading(true);
     setError(null);
     setSearchTerm(query);
-    setLastAction(mode);
+    setLastAction('search');
     setResults([]);
     setPage(1);
     setCurrentSearchPage(1);
@@ -78,93 +77,55 @@ export function useInfiniteSearch({
     currentSearchKey.current = `${mode}:${query}`;
     
     try {
-      if (mode === 'search') {
-        console.log("Searching for diagrams with query:", query);
+      console.log("Searching for diagrams with query:", query);
+      
+      // Use the updated search service (which now always fetches fresh results)
+      console.log("Fetching fresh search results using searchDiagrams");
+      let searchResults: DiagramResult[] = [];
+      
+      // Check if this is a data structure query
+      const isDataStructureQuery = 
+        query.toLowerCase().includes('data structure') || 
+        query.toLowerCase().includes('algorithm') || 
+        query.toLowerCase().includes('dsa');
         
-        // Use the updated search service (which now always fetches fresh results)
-        console.log("Fetching fresh search results using searchDiagrams");
-        let searchResults: DiagramResult[] = [];
-        
-        // Check if this is a data structure query
-        const isDataStructureQuery = 
-          query.toLowerCase().includes('data structure') || 
-          query.toLowerCase().includes('algorithm') || 
-          query.toLowerCase().includes('dsa');
-          
-        if (isDataStructureQuery) {
-          console.log("Data structure query detected, using specialized search");
-          // For data structure queries, directly use the Google API with a specialized query
-          searchResults = await searchGoogleImages(
-            `${query} educational computer science visualization diagram`, 
-            searchKey, 
-            searchId
-          );
-        } else {
-          // For general queries, use the standard search service
-          searchResults = await searchDiagrams(query, 1, searchKey, searchId);
-        }
-        
-        console.log(`Got ${searchResults.length} search results`);
-        
-        // Sort results by relevance
-        const queryTerms = query.toLowerCase().split(' ');
-        searchResults.sort((a, b) => {
-          const aRelevance = calculateRelevance(a, queryTerms);
-          const bRelevance = calculateRelevance(b, queryTerms);
-          return bRelevance - aRelevance;
-        });
-        
-        allResults.current = searchResults;
-        setResults(searchResults.slice(0, pageSize));
-        setHasMore(searchResults.length > pageSize || currentSearchPage < 5);
-        
-        if (searchResults.length > 0) {
-          toast.success(`Found ${searchResults.length} educational diagrams for "${query}"`);
-        } else {
-          toast.info("No results found. Try a different search term or try generating a diagram.");
-        }
-        
-        fetchAdditionalPages(query, 2);
+      if (isDataStructureQuery) {
+        console.log("Data structure query detected, using specialized search");
+        // For data structure queries, directly use the Google API with a specialized query
+        searchResults = await searchGoogleImages(
+          `${query} educational computer science visualization diagram`, 
+          searchKey, 
+          searchId
+        );
       } else {
-        console.log("Generating diagram for query:", query);
-        try {
-          await incrementGenerationCount();
-          
-          const result = await generateDiagramWithAI(query);
-          console.log("Generation result:", result);
-          
-          if (result && result.imageUrl) {
-            const generatedResults: DiagramResult[] = [{
-              id: `ai-${Date.now()}`,
-              title: `AI-Generated Diagram: ${query}`,
-              imageSrc: result.imageUrl,
-              author: 'Diagramr AI',
-              authorUsername: 'diagramr_ai',
-              tags: query.split(' ')
-                .filter(w => w.length > 3)
-                .map(w => w.toLowerCase()),
-              sourceUrl: '#',
-              isGenerated: true
-            }];
-            
-            allResults.current = generatedResults;
-            setResults(generatedResults);
-            setHasMore(false);
-            
-            toast.success('Diagram generated successfully!');
-          } else {
-            console.error("Failed to generate diagram - no imageUrl in result");
-            toast.error('Failed to generate diagram. Please try a different prompt.');
-            setResults([]);
-            setHasMore(false);
-          }
-        } catch (err) {
-          console.error('Generation error:', err);
-          toast.error('Failed to generate diagram. Please try again.');
-          setResults([]);
-          setHasMore(false);
-        }
+        // For general queries, use the standard search service
+        searchResults = await searchDiagrams(query, 1, searchKey, searchId);
       }
+      
+      console.log(`Got ${searchResults.length} search results`);
+      
+      // Sort results by relevance
+      const queryTerms = query.toLowerCase().split(' ');
+      searchResults.sort((a, b) => {
+        const aRelevance = calculateRelevance(a, queryTerms);
+        const bRelevance = calculateRelevance(b, queryTerms);
+        return bRelevance - aRelevance;
+      });
+      
+      allResults.current = searchResults;
+      setResults(searchResults.slice(0, pageSize));
+      setHasMore(searchResults.length > pageSize || currentSearchPage < 5);
+      
+      if (searchResults.length > 0) {
+        toast.success(`Found ${searchResults.length} educational diagrams for "${query}"`);
+      } else {
+        toast.info("No results found. Try a different search term.");
+      }
+      
+      fetchAdditionalPages(query, 2);
+      
+      // Track search count
+      incrementCount();
     } catch (err) {
       console.error('Search error:', err);
       setError(err instanceof Error ? err : new Error('An error occurred during search'));
@@ -174,7 +135,7 @@ export function useInfiniteSearch({
     } finally {
       setIsLoading(false);
     }
-  }, [pageSize, searchKey, searchId, incrementGenerationCount]);
+  }, [pageSize, searchKey, searchId, incrementCount]);
   
   const fetchAdditionalPages = async (query: string, startPage: number) => {
     const maxInitialPages = 5;
@@ -298,7 +259,7 @@ export function useInfiniteSearch({
         setResults(prev => [...prev, ...allResults.current.slice(startIndex, endIndex)]);
         setPage(nextPage);
         setHasMore(allResults.current.length > endIndex);
-      } else if (lastAction === 'search') {
+      } else {
         const nextSearchPage = currentSearchPage + 1;
         console.log(`Need to fetch more results for page ${nextSearchPage}`);
         
@@ -339,9 +300,6 @@ export function useInfiniteSearch({
           console.log("No new unique results found");
           setHasMore(false);
         }
-      } else {
-        console.log("No more results to load for generation");
-        setHasMore(false);
       }
     } catch (error) {
       console.error("Error loading more results:", error);
@@ -349,7 +307,7 @@ export function useInfiniteSearch({
     } finally {
       isLoadingMore.current = false;
     }
-  }, [isLoading, hasMore, page, pageSize, searchTerm, results, lastAction, currentSearchPage, searchKey, searchId]);
+  }, [isLoading, hasMore, page, pageSize, searchTerm, results, currentSearchPage, searchKey, searchId]);
   
   useEffect(() => {
     if (initialQuery) {

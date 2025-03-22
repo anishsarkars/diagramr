@@ -27,11 +27,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// Lazy load components for better performance
-const PremiumPlanDialog = lazy(() => import("./components/premium-plan-dialog").then(module => ({ 
-  default: module.PremiumPlanDialog 
-})));
-
 // App content separated to use router hooks
 function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
@@ -85,9 +80,6 @@ function AppContent() {
             <Route path="/pricing" element={<Pricing />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-          <Suspense fallback={null}>
-            <PremiumPlanDialog open={false} onClose={() => {}} onLoginClick={handleLoginClick} />
-          </Suspense>
         </>
       )}
     </>

@@ -2,20 +2,18 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
-import {Header} from "@/components/header";
-import {Footer} from "@/components/footer";
+import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
 import { useAuth } from "@/components/auth-context";
 import { useSearchLimit } from "@/hooks/use-search-limit";
 import { useNavigate } from "react-router-dom";
 import { useInfiniteSearch } from "@/hooks/use-infinite-search";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { PremiumPlanDialog } from "@/components/premium-plan-dialog";
 
 const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   const [showSearchField, setShowSearchField] = useState(true);
   const [likedDiagrams, setLikedDiagrams] = useState<Set<string>>(new Set());
-  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -58,7 +56,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
         }
       } else {
         // User needs to upgrade
-        setShowPremiumDialog(true);
+        navigate("/pricing");
       }
       return;
     }
@@ -74,7 +72,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     });
     
     setShowSearchField(false);
-    await searchFor(prompt, mode);
+    await searchFor(prompt, "search"); // Always use search mode
   };
 
   const handleNewSearch = () => {
@@ -84,16 +82,13 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
 
   const handleLikeDiagram = async (diagramId: string | number) => {
     if (!user) {
-      // Allow likes without login during beta
-      const newLiked = new Set(likedDiagrams);
-      if (newLiked.has(String(diagramId))) {
-        newLiked.delete(String(diagramId));
-        toast.success("Removed from your liked diagrams");
+      // Require login to like diagrams
+      toast.info("Please log in to save diagrams to your collection");
+      if (onLoginClick) {
+        onLoginClick();
       } else {
-        newLiked.add(String(diagramId));
-        toast.success("Added to your liked diagrams");
+        navigate("/auth", { state: { returnTo: "/" } });
       }
-      setLikedDiagrams(newLiked);
       return;
     }
     
@@ -202,13 +197,6 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
       </main>
       
       <Footer />
-      
-      <PremiumPlanDialog 
-        open={showPremiumDialog} 
-        onClose={() => setShowPremiumDialog(false)} 
-        showLogin={requiresLogin}
-        onLoginClick={onLoginClick || (() => navigate("/auth"))}
-      />
     </div>
   );
 };
