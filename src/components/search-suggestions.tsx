@@ -43,41 +43,41 @@ export function SearchSuggestions({
   // Set up trending searches and category-based search suggestions
   useEffect(() => {
     setTrendingSearches([
-      "system architecture diagram",
-      "UML class diagram",
+      "cell structure diagram",
       "data structure visualization",
       "entity relationship diagram",
-      "network topology"
+      "force diagram physics",
+      "periodic table elements"
     ]);
     
     setCategorySearches({
-      "Software Engineering": [
-        "class diagram",
-        "sequence diagram",
-        "uml diagram", 
-        "microservices architecture",
-        "api architecture"
+      "Biology": [
+        "cell structure",
+        "photosynthesis diagram",
+        "human anatomy", 
+        "dna structure",
+        "nervous system"
       ],
       "Computer Science": [
-        "linked list visualization",
-        "binary tree diagram",
-        "sorting algorithm visualization",
-        "hash table structure",
-        "data structure diagram"
-      ],
-      "Network": [
-        "network topology diagram",
-        "cloud infrastructure",
-        "server architecture",
-        "network security diagram",
-        "vpc diagram"
-      ],
-      "Database": [
-        "ER diagram",
+        "data structure visualization",
+        "algorithm flowchart",
+        "uml class diagram",
         "database schema",
-        "data warehouse architecture",
-        "nosql database model",
-        "database relationship diagram"
+        "system architecture"
+      ],
+      "Physics": [
+        "force diagram",
+        "circuit diagram",
+        "wave interference",
+        "energy transfer",
+        "quantum mechanics"
+      ],
+      "Chemistry": [
+        "molecular structure",
+        "periodic table",
+        "chemical reactions",
+        "bonding diagram",
+        "electron configuration"
       ]
     });
   }, []);
@@ -193,7 +193,7 @@ export function SearchSuggestions({
             <div className="mb-2">
               <div className="px-2 py-1 text-xs font-medium text-muted-foreground flex items-center">
                 <TrendingUpIcon className="h-3 w-3 mr-1" />
-                Trending Searches
+                Trending Academic Searches
               </div>
               <div className="p-2 flex flex-wrap gap-2">
                 {trendingSearches.map((trending, index) => (
@@ -216,16 +216,16 @@ export function SearchSuggestions({
             <div className="mb-2">
               <div className="px-2 py-1 text-xs font-medium text-muted-foreground flex items-center">
                 <ZapIcon className="h-3 w-3 mr-1" />
-                Popular Categories
+                Academic Categories
               </div>
               <div className="p-2 space-y-3">
                 {Object.entries(getRelevantCategorySuggestions()).map(([category, searches], categoryIndex) => (
                   <div key={`category-${categoryIndex}`} className="space-y-1">
                     <div className="text-xs font-medium text-muted-foreground flex items-center mb-1">
-                      {category === "Software Engineering" && <CodeIcon className="h-3 w-3 mr-1" />}
+                      {category === "Biology" && <ActivityIcon className="h-3 w-3 mr-1" />}
                       {category === "Computer Science" && <GitBranchIcon className="h-3 w-3 mr-1" />}
-                      {category === "Network" && <NetworkIcon className="h-3 w-3 mr-1" />}
-                      {category === "Database" && <DatabaseIcon className="h-3 w-3 mr-1" />}
+                      {category === "Physics" && <BarChartIcon className="h-3 w-3 mr-1" />}
+                      {category === "Chemistry" && <DatabaseIcon className="h-3 w-3 mr-1" />}
                       {category}
                     </div>
                     <div className="flex flex-wrap gap-2 pl-1">
@@ -236,10 +236,10 @@ export function SearchSuggestions({
                           className="cursor-pointer hover:bg-secondary/40 transition-colors"
                           onClick={() => onSuggestionClick(search)}
                         >
-                          {category === "Software Engineering" && <CodeIcon className="h-3 w-3 mr-1" />}
+                          {category === "Biology" && <ActivityIcon className="h-3 w-3 mr-1" />}
                           {category === "Computer Science" && <GitBranchIcon className="h-3 w-3 mr-1" />}
-                          {category === "Network" && <NetworkIcon className="h-3 w-3 mr-1" />}
-                          {category === "Database" && <DatabaseIcon className="h-3 w-3 mr-1" />}
+                          {category === "Physics" && <BarChartIcon className="h-3 w-3 mr-1" />}
+                          {category === "Chemistry" && <DatabaseIcon className="h-3 w-3 mr-1" />}
                           {search}
                         </Badge>
                       ))}

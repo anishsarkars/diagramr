@@ -144,7 +144,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
           <div className="relative flex-1">
             <Input
               type="text"
-              placeholder="Search for educational diagrams..."
+              placeholder="Search for educational diagrams & visualizations..."
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -214,7 +214,7 @@ export function SimpleSearchBar({ onSearch, isLoading, className }: SimpleSearch
       
       <div className="mt-1 md:mt-2 flex justify-end items-center">
         <div className="text-xs text-muted-foreground">
-          <span>{remainingSearches} educational searches left{!isPremium && " today"}</span>
+          <span>{remainingSearches} academic searches left{!isPremium && " today"}</span>
         </div>
       </div>
       

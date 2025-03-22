@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { DiagramrLogo } from "@/components/diagramr-logo";
 import { SearchLimitIndicator } from "./search-limit-indicator";
 import { useState, useEffect } from "react";
-import { Search, LayoutTemplate, Lightbulb, BookOpen, Server, 
+import { Search, LayoutTemplate, BookOpen, Server, 
   Network, Database, Workflow, Flower, Activity,
   GitBranch } from "lucide-react";
 import { Button } from "./ui/button";
@@ -25,7 +25,8 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
     "system architecture diagram",
     "network topology diagram",
     "entity relationship diagram",
-    "uml class diagram"
+    "uml class diagram",
+    "data structure visualization"
   ];
   
   const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
@@ -93,7 +94,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.3 }}
       >
-        Professional Diagrams
+        Academic & Research Diagrams
       </motion.h1>
       
       <motion.div
@@ -103,7 +104,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         transition={{ duration: 0.5, delay: 0.4 }}
       >
         <p>
-          Search engine for technical diagrams and visualizations
+          Search platform for educational visualizations and technical diagrams
         </p>
       </motion.div>
       
@@ -190,8 +191,8 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           <div className="text-primary mb-2">
             <GitBranch className="h-6 w-6" />
           </div>
-          <h3 className="font-medium mb-1">For Engineers</h3>
-          <p className="text-sm text-muted-foreground">Technical diagrams for documentation and planning</p>
+          <h3 className="font-medium mb-1">For Researchers</h3>
+          <p className="text-sm text-muted-foreground">Technical diagrams for papers and documentation</p>
         </motion.div>
         
         <motion.div 
@@ -201,8 +202,8 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           <div className="text-primary mb-2">
             <LayoutTemplate className="h-6 w-6" />
           </div>
-          <h3 className="font-medium mb-1">For Professionals</h3>
-          <p className="text-sm text-muted-foreground">Presentation-ready charts and visualizations</p>
+          <h3 className="font-medium mb-1">For Educators</h3>
+          <p className="text-sm text-muted-foreground">Visual resources for lectures and presentations</p>
         </motion.div>
       </motion.div>
       
