@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { searchDiagrams } from '@/utils/search-service';
 import { searchGoogleImages } from '@/utils/googleSearch';
@@ -14,6 +13,7 @@ export interface DiagramResult {
   tags?: string[];
   sourceUrl?: string;
   isGenerated?: boolean;
+  relevanceScore?: number; // Added relevanceScore as optional property
 }
 
 export function useInfiniteSearch({
