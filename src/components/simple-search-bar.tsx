@@ -24,6 +24,7 @@ export function SimpleSearchBar({
 }: SimpleSearchBarProps) {
   const [query, setQuery] = useState(defaultQuery);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -90,7 +91,11 @@ export function SimpleSearchBar({
               setShowSuggestions(e.target.value.length > 0);
             }}
             onKeyDown={handleKeyDown}
-            onFocus={() => setShowSuggestions(query.length > 0)}
+            onFocus={() => {
+              setIsFocused(true);
+              setShowSuggestions(query.length > 0);
+            }}
+            onBlur={() => setIsFocused(false)}
             placeholder={placeholder || "Search for educational diagrams..."}
             className="pl-9 pr-10 py-6 h-11 bg-background/80 backdrop-blur-sm border-border/50"
             disabled={isLoading}

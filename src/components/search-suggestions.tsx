@@ -15,7 +15,16 @@ import {
   BarChartIcon,
   GitBranchIcon,
   ServerIcon,
-  GanttChartIcon
+  GanttChartIcon,
+  Beaker,
+  Atom,
+  Binary,
+  BookOpen,
+  BrainCircuit,
+  FileDigit,
+  FlaskConical,
+  LineChart,
+  MessagesSquare
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/components/theme-provider";
@@ -47,7 +56,10 @@ export function SearchSuggestions({
       "data structure visualization",
       "entity relationship diagram",
       "force diagram physics",
-      "periodic table elements"
+      "periodic table elements",
+      "cpu scheduling algorithm",
+      "operating system process diagram",
+      "network architecture diagram"
     ]);
     
     setCategorySearches({
@@ -56,28 +68,45 @@ export function SearchSuggestions({
         "photosynthesis diagram",
         "human anatomy", 
         "dna structure",
-        "nervous system"
+        "nervous system",
+        "protein synthesis",
+        "cellular respiration"
       ],
       "Computer Science": [
         "data structure visualization",
         "algorithm flowchart",
         "uml class diagram",
         "database schema",
-        "system architecture"
+        "system architecture",
+        "binary tree visualization",
+        "cpu scheduling algorithm"
       ],
       "Physics": [
         "force diagram",
         "circuit diagram",
         "wave interference",
         "energy transfer",
-        "quantum mechanics"
+        "quantum mechanics",
+        "electromagnetic spectrum",
+        "light refraction"
       ],
       "Chemistry": [
         "molecular structure",
         "periodic table",
         "chemical reactions",
         "bonding diagram",
-        "electron configuration"
+        "electron configuration",
+        "organic chemistry structures",
+        "titration curve"
+      ],
+      "Engineering": [
+        "mechanical component diagram",
+        "electrical wiring diagram",
+        "system design blueprint", 
+        "bridge structure",
+        "hydraulic system",
+        "control system diagram",
+        "circuit design"
       ]
     });
   }, []);
@@ -132,6 +161,24 @@ export function SearchSuggestions({
     });
     
     return filteredCategories;
+  };
+
+  // Get an icon for a category
+  const getCategoryIcon = (category: string) => {
+    switch(category) {
+      case "Biology":
+        return <FlaskConical className="h-3 w-3 mr-1" />;
+      case "Computer Science":
+        return <Binary className="h-3 w-3 mr-1" />;
+      case "Physics": 
+        return <Atom className="h-3 w-3 mr-1" />;
+      case "Chemistry":
+        return <Beaker className="h-3 w-3 mr-1" />;
+      case "Engineering":
+        return <FileDigit className="h-3 w-3 mr-1" />;
+      default:
+        return <BookOpen className="h-3 w-3 mr-1" />;
+    }
   };
 
   return (
@@ -222,10 +269,7 @@ export function SearchSuggestions({
                 {Object.entries(getRelevantCategorySuggestions()).map(([category, searches], categoryIndex) => (
                   <div key={`category-${categoryIndex}`} className="space-y-1">
                     <div className="text-xs font-medium text-muted-foreground flex items-center mb-1">
-                      {category === "Biology" && <ActivityIcon className="h-3 w-3 mr-1" />}
-                      {category === "Computer Science" && <GitBranchIcon className="h-3 w-3 mr-1" />}
-                      {category === "Physics" && <BarChartIcon className="h-3 w-3 mr-1" />}
-                      {category === "Chemistry" && <DatabaseIcon className="h-3 w-3 mr-1" />}
+                      {getCategoryIcon(category)}
                       {category}
                     </div>
                     <div className="flex flex-wrap gap-2 pl-1">
@@ -236,10 +280,7 @@ export function SearchSuggestions({
                           className="cursor-pointer hover:bg-secondary/40 transition-colors"
                           onClick={() => onSuggestionClick(search)}
                         >
-                          {category === "Biology" && <ActivityIcon className="h-3 w-3 mr-1" />}
-                          {category === "Computer Science" && <GitBranchIcon className="h-3 w-3 mr-1" />}
-                          {category === "Physics" && <BarChartIcon className="h-3 w-3 mr-1" />}
-                          {category === "Chemistry" && <DatabaseIcon className="h-3 w-3 mr-1" />}
+                          {getCategoryIcon(category)}
                           {search}
                         </Badge>
                       ))}

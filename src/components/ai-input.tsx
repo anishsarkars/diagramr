@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useRef, useEffect } from "react";
-import { SearchIcon, LightbulbIcon, ArrowRight, X } from "lucide-react";
+import { SearchIcon, LightbulbIcon, ArrowRight, X, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SearchSuggestions } from "@/components/search-suggestions";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,8 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
     "Cloud infrastructure architecture",
     "Microservices system diagram",
     "UML class diagram for banking",
+    "CPU scheduling algorithm visualization",
+    "Operating system process diagram"
   ]);
 
   const handleSubmit = () => {
@@ -178,11 +180,7 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
                     disabled={!prompt.trim() || isLoading}
                   >
                     {isLoading ? (
-                      <motion.div 
-                        className="h-4 w-4 border-2 border-white border-t-transparent rounded-full"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <ArrowRight className="h-4 w-4" />
                     )}
