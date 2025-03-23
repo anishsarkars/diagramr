@@ -56,7 +56,7 @@ const extractDomain = (url: string): string => {
 
 export async function searchGoogleImages(
   query: string,
-  apiKey: string = "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4",
+  apiKey: string = "AIzaSyBLb8xMhQIVk5G344igPWC3xEIPKjsbSn8",
   searchId: string = "260090575ae504419",
   page: number = 1
 ): Promise<DiagramResult[]> {

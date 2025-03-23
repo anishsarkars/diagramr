@@ -1,4 +1,3 @@
-
 import { DiagramResult } from "@/hooks/use-infinite-search";
 import { searchGoogleImages } from "@/utils/googleSearch";
 import { toast } from "sonner";
@@ -43,7 +42,7 @@ setInterval(cleanCache, 5 * 60 * 1000);
 export async function searchDiagrams(
   query: string,
   page: number = 1,
-  apiKey: string = "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4",
+  apiKey: string = "AIzaSyBLb8xMhQIVk5G344igPWC3xEIPKjsbSn8",
   searchId: string = "260090575ae504419"
 ): Promise<DiagramResult[]> {
   if (!query.trim()) {

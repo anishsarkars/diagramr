@@ -19,7 +19,7 @@ export interface DiagramResult {
 export function useInfiniteSearch({
   initialQuery = '',
   pageSize = 20,
-  searchKey = "AIzaSyAj41WJ5GYj0FLrz-dlRfoD5Uvo40aFSw4",
+  searchKey = "AIzaSyBLb8xMhQIVk5G344igPWC3xEIPKjsbSn8",
   searchId = "260090575ae504419"
 }: {
   initialQuery?: string;
