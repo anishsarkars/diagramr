@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { searchDiagrams } from '@/utils/search-service';
 import { searchGoogleImages } from '@/utils/googleSearch';
@@ -13,7 +14,7 @@ export interface DiagramResult {
   tags?: string[];
   sourceUrl?: string;
   isGenerated?: boolean;
-  relevanceScore?: number; // Properly defined relevanceScore property
+  relevanceScore?: number;
 }
 
 export function useInfiniteSearch({
@@ -98,10 +99,26 @@ export function useInfiniteSearch({
       if (searchResults.length > 0) {
         toast.success(`Found ${searchResults.length} educational diagrams for "${query}"`);
       } else {
-        toast.info("No results found. Try a different search term.");
+        // If no results from primary search, try a fallback search with modified query
+        console.log("No results found, trying fallback search...");
+        let fallbackQuery = `${query} diagram educational`;
+        const fallbackResults = await searchGoogleImages(fallbackQuery, searchKey, searchId);
+        
+        if (fallbackResults.length > 0) {
+          console.log(`Got ${fallbackResults.length} results from fallback search`);
+          allResults.current = fallbackResults;
+          setResults(fallbackResults.slice(0, pageSize));
+          setHasMore(fallbackResults.length > pageSize || currentSearchPage < 5);
+          toast.success(`Found ${fallbackResults.length} educational diagrams for "${query}"`);
+        } else {
+          toast.info("No results found. Try a different search term.");
+        }
       }
       
-      fetchAdditionalPages(query, 2);
+      // Try to fetch additional pages in the background
+      if (allResults.current.length > 0) {
+        fetchAdditionalPages(query, 2);
+      }
       
     } catch (err) {
       console.error('Search error:', err);

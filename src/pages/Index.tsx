@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
@@ -13,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   const [showSearchField, setShowSearchField] = useState(true);
   const [likedDiagrams, setLikedDiagrams] = useState<Set<string>>(new Set());
+  const [searchAttempts, setSearchAttempts] = useState(0);
   
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -93,6 +95,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     try {
       console.log(`Starting search for query: "${prompt}"`);
       await searchFor(prompt);
+      setSearchAttempts(0); // Reset search attempts on success
       
       // Show remaining searches toast
       if (remainingSearches <= 5 && remainingSearches > 0) {
@@ -114,16 +117,33 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
       }
     } catch (error) {
       console.error("Search error:", error);
+      
+      // Increment search attempts to try alternative queries if repeated failures
+      setSearchAttempts(prev => prev + 1);
+      
       if (error.message === 'API quota exceeded') {
         toast.error("API quota exceeded", {
           description: "Sorry for the inconvenience! Our API quota has been reached. We're working on increasing our limits to serve you better.",
           duration: 8000
         });
       } else {
-        toast.error("Search failed", {
-          description: "There was an error with your search. Please try again or modify your search terms.",
-          duration: 5000
-        });
+        // If this is the second attempt, suggest a simplified search term
+        if (searchAttempts >= 1) {
+          const simplifiedQuery = prompt.split(' ').slice(0, 3).join(' ');
+          toast.error("Search failed", {
+            description: "Try a simplified search term or try again later.",
+            action: {
+              label: `Try "${simplifiedQuery}"`,
+              onClick: () => handleSearch(simplifiedQuery)
+            },
+            duration: 8000
+          });
+        } else {
+          toast.error("Search failed", {
+            description: "There was an error with your search. Please try again or modify your search terms.",
+            duration: 5000
+          });
+        }
       }
       
       // Allow the user to try another search
@@ -134,6 +154,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   const handleNewSearch = () => {
     setShowSearchField(true);
     resetSearch();
+    setSearchAttempts(0);
   };
 
   const handleLikeDiagram = async (diagramId: string | number) => {

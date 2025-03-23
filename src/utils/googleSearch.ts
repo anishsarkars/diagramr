@@ -1,3 +1,4 @@
+
 import { DiagramResult } from "@/hooks/use-infinite-search";
 
 interface GoogleSearchResult {
@@ -154,7 +155,8 @@ export async function searchGoogleImages(
     url.searchParams.append('searchType', 'image');
     url.searchParams.append('start', start.toString());
     url.searchParams.append('num', '10');
-    url.searchParams.append('imgType', 'clipart,drawing,illustration');
+    // Fix: Use proper values for imgType parameter - The error was due to invalid format
+    url.searchParams.append('imgType', 'clipart');
     url.searchParams.append('safe', 'active');
     url.searchParams.append('filter', '1');
     
@@ -263,3 +265,4 @@ export async function searchGoogleImages(
     throw error;
   }
 }
+
