@@ -13,7 +13,7 @@ export interface DiagramResult {
   tags?: string[];
   sourceUrl?: string;
   isGenerated?: boolean;
-  relevanceScore?: number; // Added relevanceScore as optional property
+  relevanceScore?: number; // Properly defined relevanceScore property
 }
 
 export function useInfiniteSearch({

@@ -1,4 +1,3 @@
-
 import { DiagramResult } from "@/hooks/use-infinite-search";
 import { searchGoogleImages } from "@/utils/googleSearch";
 import { toast } from "sonner";
@@ -39,7 +38,7 @@ function cleanCache() {
 // Run cache cleanup every 5 minutes
 setInterval(cleanCache, 5 * 60 * 1000);
 
-// Main search function
+// Main search function with improved fallback strategies
 export async function searchDiagrams(
   query: string,
   page: number = 1,
@@ -52,11 +51,9 @@ export async function searchDiagrams(
   
   console.log(`[SearchService] Searching for "${query}" (page ${page})`);
   
-  // Always perform fresh search for accurate results - no caching
-  console.log(`[SearchService] Fetching fresh results for "${query}" page ${page}`);
-  
   try {
-    // Search with enhanced query
+    // First attempt with standard query
+    console.log(`[SearchService] Fetching fresh results for "${query}" page ${page}`);
     let results = await searchGoogleImages(query, apiKey, searchId, page);
     
     // If no results, try with more specific diagram terms

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
@@ -92,6 +91,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     
     setShowSearchField(false);
     try {
+      console.log(`Starting search for query: "${prompt}"`);
       await searchFor(prompt);
       
       // Show remaining searches toast
@@ -113,12 +113,21 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
         });
       }
     } catch (error) {
+      console.error("Search error:", error);
       if (error.message === 'API quota exceeded') {
         toast.error("API quota exceeded", {
           description: "Sorry for the inconvenience! Our API quota has been reached. We're working on increasing our limits to serve you better.",
           duration: 8000
         });
+      } else {
+        toast.error("Search failed", {
+          description: "There was an error with your search. Please try again or modify your search terms.",
+          duration: 5000
+        });
       }
+      
+      // Allow the user to try another search
+      setShowSearchField(true);
     }
   };
 
