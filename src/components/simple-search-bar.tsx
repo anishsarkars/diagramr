@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X, ArrowRight } from "lucide-react";
+import { Search, X, ArrowRight, Loader2 } from "lucide-react";
 import { SearchSuggestions } from "@/components/search-suggestions";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -92,7 +92,7 @@ export function SimpleSearchBar({
             onKeyDown={handleKeyDown}
             onFocus={() => setShowSuggestions(query.length > 0)}
             placeholder={placeholder || "Search for educational diagrams..."}
-            className="pl-9 py-6 h-11 bg-background/80 backdrop-blur-sm border-border/50"
+            className="pl-9 pr-10 py-6 h-11 bg-background/80 backdrop-blur-sm border-border/50"
             disabled={isLoading}
           />
           {query && (
@@ -122,11 +122,7 @@ export function SimpleSearchBar({
                 disabled={!query.trim() || isLoading}
               >
                 {isLoading ? (
-                  <motion.div 
-                    className="h-4 w-4 border-2 border-current border-t-transparent rounded-full"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <ArrowRight className="h-4 w-4" />
                 )}
