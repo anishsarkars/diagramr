@@ -25,13 +25,6 @@ export function AccessCodeModal() {
   const [phone, setPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Don't show the modal for already signed-in users unless they have no valid access code
-  useEffect(() => {
-    if (user && hasValidAccessCode) {
-      setShowAccessForm(false);
-    }
-  }, [user, hasValidAccessCode, setShowAccessForm]);
-
   const handleSubmitAccessCode = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -78,11 +71,14 @@ export function AccessCodeModal() {
     setIsSubmitting(true);
     
     try {
-      // In a real app, this would submit to a database
-      // For demo, we'll just simulate a submission
+      // Send the feedback to WhatsApp via a direct link
+      const whatsappNumber = "+919589534294";
+      const message = `New Diagramr Waitlist Request:\nName: ${name}\nPhone: ${phone}`;
+      const encodedMessage = encodeURIComponent(message);
+      const whatsappURL = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Open WhatsApp in a new tab
+      window.open(whatsappURL, '_blank');
       
       toast.success('You have been added to the waitlist! We will contact you soon.');
       setName('');

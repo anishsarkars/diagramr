@@ -12,8 +12,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MessageSquare, Send } from 'lucide-react';
+import { MessageSquare, Send, PhoneForwarded } from 'lucide-react';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 
 export function FeedbackButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,9 +33,14 @@ export function FeedbackButton() {
     setIsSubmitting(true);
     
     try {
-      // In a production app, this would send feedback to a server
-      // For now, we'll just simulate a submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Send the feedback to WhatsApp via a direct link
+      const whatsappNumber = "919589534294";
+      const message = `Diagramr Feedback:\n${feedback}${email ? `\nContact: ${email}` : ''}`;
+      const encodedMessage = encodeURIComponent(message);
+      const whatsappURL = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+      
+      // Open WhatsApp in a new tab
+      window.open(whatsappURL, '_blank');
       
       toast.success('Thank you for your feedback! We appreciate your help improving Diagramr.');
       setFeedback('');
@@ -50,15 +56,20 @@ export function FeedbackButton() {
 
   return (
     <>
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        onClick={() => setIsOpen(true)} 
-        className="fixed bottom-4 right-4 shadow-md bg-primary text-white hover:bg-primary/90 rounded-full w-10 h-10 p-0 flex items-center justify-center"
-        aria-label="Provide feedback"
+      <motion.div
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
-        <MessageSquare className="h-5 w-5" />
-      </Button>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => setIsOpen(true)} 
+          className="fixed bottom-4 right-4 shadow-md bg-primary text-white hover:bg-primary/90 rounded-full w-10 h-10 p-0 flex items-center justify-center"
+          aria-label="Provide feedback"
+        >
+          <MessageSquare className="h-5 w-5" />
+        </Button>
+      </motion.div>
       
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-md">
@@ -99,10 +110,17 @@ export function FeedbackButton() {
               <Button 
                 type="submit" 
                 disabled={isSubmitting} 
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto group"
               >
-                {isSubmitting ? 'Submitting...' : 'Send feedback'}
-                {!isSubmitting && <Send className="ml-2 h-4 w-4" />}
+                {isSubmitting ? 'Submitting...' : (
+                  <>
+                    Send feedback
+                    <span className="ml-2 inline-flex items-center">
+                      <PhoneForwarded className="h-4 w-4 mr-1" />
+                      <span className="text-xs">via WhatsApp</span>
+                    </span>
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>

@@ -24,7 +24,8 @@ import {
   FileDigit,
   FlaskConical,
   LineChart,
-  MessagesSquare
+  MessagesSquare,
+  PlusCircle
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/components/theme-provider";
@@ -111,7 +112,7 @@ export function SearchSuggestions({
     });
   }, []);
   
-  // Generate suggestions based on user query
+  // Generate suggestions based on user query with improved relevance
   useEffect(() => {
     // Load recent searches from localStorage
     try {
@@ -119,7 +120,7 @@ export function SearchSuggestions({
       if (savedHistory) {
         const history = JSON.parse(savedHistory);
         const filteredHistory = history
-          .slice(0, 3)
+          .slice(0, 5) // Show more recent searches
           .filter((item: string) => 
             !query || item.toLowerCase().includes(query.toLowerCase())
           );
@@ -130,9 +131,30 @@ export function SearchSuggestions({
       console.error('Error loading search history:', e);
     }
     
-    // Get search suggestions based on query
+    // Get improved search suggestions based on query
     const results = getSearchSuggestions(query);
-    setSuggestions(results);
+    
+    // Add some variations if query is specific enough
+    if (query && query.length >= 3) {
+      const enhancedResults = [...results];
+      
+      // Only add these if they're not already in results
+      if (!results.includes(`${query} diagram`) && !query.includes('diagram')) {
+        enhancedResults.push(`${query} diagram`);
+      }
+      
+      if (!results.includes(`${query} visualization`) && !query.includes('visualization')) {
+        enhancedResults.push(`${query} visualization`);
+      }
+      
+      if (!results.includes(`${query} structure`) && !query.includes('structure')) {
+        enhancedResults.push(`${query} structure`);
+      }
+      
+      setSuggestions(enhancedResults.slice(0, 10)); // Limit to prevent overwhelming
+    } else {
+      setSuggestions(results);
+    }
   }, [query]);
 
   if (!isVisible) return null;
@@ -189,8 +211,8 @@ export function SearchSuggestions({
         exit={{ opacity: 0, y: -10 }}
         className={cn(
           "absolute z-50 w-full bg-background border rounded-xl shadow-lg",
-          "mt-1 overflow-hidden max-h-[450px] overflow-y-auto",
-          isDarkMode ? "border-border/50" : "border-border",
+          "mt-1 overflow-hidden max-h-[450px] overflow-y-auto scrollbar-thin",
+          isDarkMode ? "border-border/50 shadow-xl" : "border-border shadow-lg",
           className
         )}
       >
@@ -203,14 +225,15 @@ export function SearchSuggestions({
                 Recent Searches
               </div>
               {recentSearches.map((search, index) => (
-                <div 
+                <motion.div 
                   key={`recent-${index}`}
                   className="px-3 py-2 hover:bg-muted rounded-lg cursor-pointer flex items-center transition-colors"
                   onClick={() => onSuggestionClick(search)}
+                  whileHover={{ x: 3 }}
                 >
                   <ClockIcon className="h-4 w-4 mr-2 text-muted-foreground" />
                   <span>{search}</span>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}
@@ -223,14 +246,15 @@ export function SearchSuggestions({
                 Suggestions
               </div>
               {suggestions.map((suggestion, index) => (
-                <div 
+                <motion.div 
                   key={`suggestion-${index}`}
                   className="px-3 py-2 hover:bg-muted rounded-lg cursor-pointer flex items-center transition-colors"
                   onClick={() => onSuggestionClick(suggestion)}
+                  whileHover={{ x: 3 }}
                 >
                   <SearchIcon className="h-4 w-4 mr-2 text-muted-foreground" />
                   <span>{suggestion}</span>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}
@@ -244,15 +268,20 @@ export function SearchSuggestions({
               </div>
               <div className="p-2 flex flex-wrap gap-2">
                 {trendingSearches.map((trending, index) => (
-                  <Badge 
+                  <motion.div
                     key={`trending-${index}`}
-                    variant="secondary"
-                    className="cursor-pointer hover:bg-secondary/80 transition-colors"
-                    onClick={() => onSuggestionClick(trending)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    <TrendingUpIcon className="h-3 w-3 mr-1" />
-                    {trending}
-                  </Badge>
+                    <Badge 
+                      variant="secondary"
+                      className="cursor-pointer hover:bg-secondary/80 transition-colors"
+                      onClick={() => onSuggestionClick(trending)}
+                    >
+                      <TrendingUpIcon className="h-3 w-3 mr-1" />
+                      {trending}
+                    </Badge>
+                  </motion.div>
                 ))}
               </div>
             </div>
@@ -274,15 +303,20 @@ export function SearchSuggestions({
                     </div>
                     <div className="flex flex-wrap gap-2 pl-1">
                       {searches.slice(0, 5).map((search, searchIndex) => (
-                        <Badge 
+                        <motion.div
                           key={`category-${categoryIndex}-search-${searchIndex}`}
-                          variant="outline"
-                          className="cursor-pointer hover:bg-secondary/40 transition-colors"
-                          onClick={() => onSuggestionClick(search)}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
                         >
-                          {getCategoryIcon(category)}
-                          {search}
-                        </Badge>
+                          <Badge 
+                            variant="outline"
+                            className="cursor-pointer hover:bg-secondary/40 transition-colors"
+                            onClick={() => onSuggestionClick(search)}
+                          >
+                            {getCategoryIcon(category)}
+                            {search}
+                          </Badge>
+                        </motion.div>
                       ))}
                     </div>
                   </div>
@@ -294,13 +328,44 @@ export function SearchSuggestions({
           {/* Direct search action */}
           {query && (
             <div className="border-t mt-1 pt-1">
-              <div 
+              <motion.div 
                 className="px-3 py-2 hover:bg-muted rounded-lg cursor-pointer flex items-center text-primary transition-colors"
                 onClick={() => onSuggestionClick(query)}
+                whileHover={{ x: 3 }}
               >
                 <SearchIcon className="h-4 w-4 mr-2" />
                 <span>Search for "{query}"</span>
-              </div>
+              </motion.div>
+              
+              {/* Add variations of the search */}
+              {query.length > 2 && (
+                <div className="p-2 flex flex-wrap gap-2">
+                  {!query.includes('diagram') && (
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Badge 
+                        variant="outline"
+                        className="cursor-pointer hover:bg-primary/10 transition-colors"
+                        onClick={() => onSuggestionClick(`${query} diagram`)}
+                      >
+                        <PlusCircle className="h-3 w-3 mr-1" />
+                        {query} diagram
+                      </Badge>
+                    </motion.div>
+                  )}
+                  {!query.includes('visualization') && (
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Badge 
+                        variant="outline"
+                        className="cursor-pointer hover:bg-primary/10 transition-colors"
+                        onClick={() => onSuggestionClick(`${query} visualization`)}
+                      >
+                        <PlusCircle className="h-3 w-3 mr-1" />
+                        {query} visualization
+                      </Badge>
+                    </motion.div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -19,6 +19,11 @@ export function OAuthSignIn({ isPremium = false }: OAuthSignInProps) {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth`,
+          queryParams: {
+            client_id: '680718326327-duph7gibjc8kdejfsv6h7qafo1lcc478.apps.googleusercontent.com',
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
       });
     } catch (error) {

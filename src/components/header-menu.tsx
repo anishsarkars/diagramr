@@ -89,7 +89,7 @@ export function HeaderMenu({ onShowAccessModal }: HeaderMenuProps) {
             )}
             <DropdownMenuItem onClick={handleAccessCode}>
               <Key className="mr-2 h-4 w-4" />
-              <span>{hasValidAccessCode ? "View Access Status" : "Enter Access Code"}</span>
+              <span>Enter Access Code</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>

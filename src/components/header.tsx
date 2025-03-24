@@ -21,7 +21,7 @@ export function Header() {
         <div className="flex items-center mr-4">
           <Link to="/" className="flex items-center space-x-2">
             <DiagramrLogo size="sm" />
-            <span className={`font-bold ${isPremiumUser ? "bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-purple-600" : ""}`}>Diagramr</span>
+            {/* Removed the Diagramr title text as requested */}
           </Link>
         </div>
         
@@ -39,7 +39,7 @@ export function Header() {
               </Link>
             ) : null}
             
-            <Link to={user ? "/pricing" : "/auth?returnTo=/pricing"}>
+            <Link to="/pricing">
               <Button variant="ghost" size="sm">
                 {user ? "Upgrade" : "Pricing"}
               </Button>

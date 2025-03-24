@@ -25,15 +25,16 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
   const { isDarkMode } = useTheme();
   
   const [examples, setExamples] = useState<string[]>([
-    "Data flow diagram for e-commerce",
+    "Data structure visualization",
+    "UML class diagram for banking system",
     "Network architecture diagram",
-    "Software development lifecycle",
+    "Human anatomy diagram",
+    "Photosynthesis process visualization",
+    "Circuit diagram for Arduino",
     "Database schema for social media",
-    "Cloud infrastructure architecture",
-    "Microservices system diagram",
-    "UML class diagram for banking",
-    "CPU scheduling algorithm visualization",
-    "Operating system process diagram"
+    "Chemical bonding illustration",
+    "Force diagram in physics",
+    "Protein synthesis process"
   ]);
 
   const handleSubmit = () => {
@@ -192,7 +193,7 @@ export function AIInput({ className, onSubmit, placeholder, isLoading }: AIInput
         </motion.div>
       </AnimatePresence>
       
-      {/* Search suggestions dropdown */}
+      {/* Enhanced Search suggestions dropdown */}
       <SearchSuggestions
         isVisible={showSuggestions && !isLoading}
         query={prompt}
