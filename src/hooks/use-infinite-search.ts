@@ -5,6 +5,15 @@ import { searchGoogleImages } from '@/utils/googleSearch';
 import { toast } from 'sonner';
 import { useSearchLimit } from '@/hooks/use-search-limit';
 
+// API keys for rotation to prevent quota limits
+const API_KEYS = [
+  'AIzaSyA1zArEu4m9HzEh-CO2Y7oFw0z_E_cFPsg',
+  'AIzaSyBLb8xMhQIVk5G344igPWC3xEIPKjsbSn8',
+  'AIzaSyDJBtnO8ZGzlDVfOTsL6BmCOn-yhGfPqgc'
+];
+
+const SEARCH_ENGINE_ID = '260090575ae504419';
+
 export interface DiagramResult {
   id: string | number;
   title: string;
@@ -40,12 +49,20 @@ export function useInfiniteSearch({
   const [page, setPage] = useState(1);
   const [currentSearchPage, setCurrentSearchPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState(initialQuery);
+  const [currentApiKeyIndex, setCurrentApiKeyIndex] = useState(0);
   
   const { incrementCount } = useSearchLimit();
   
   const allResults = useRef<DiagramResult[]>([]);
   const currentSearchKey = useRef<string>('');
   const isLoadingMore = useRef<boolean>(false);
+  
+  // Get current API key with rotation
+  const getApiKey = useCallback(() => {
+    const key = API_KEYS[currentApiKeyIndex];
+    setCurrentApiKeyIndex((prevIndex) => (prevIndex + 1) % API_KEYS.length); // Rotate to next key
+    return key;
+  }, [currentApiKeyIndex]);
   
   const resetSearch = useCallback(() => {
     setResults([]);
@@ -74,9 +91,12 @@ export function useInfiniteSearch({
     try {
       console.log("Searching for diagrams with query:", query);
       
-      // Direct Google search with the query
+      // Direct Google search with the query using the current API key
       console.log("Fetching search results using Google Custom Search API");
-      const searchResults = await searchGoogleImages(query);
+      const apiKey = getApiKey();
+      console.log(`Using API key: ${apiKey.substring(0, 8)}...`);
+      
+      const searchResults = await searchGoogleImages(query, apiKey, SEARCH_ENGINE_ID);
       
       console.log(`Got ${searchResults.length} search results`);
       
@@ -90,7 +110,10 @@ export function useInfiniteSearch({
         // If no results from primary search, try a fallback search with modified query
         console.log("No results found, trying fallback search...");
         let fallbackQuery = `${query} image diagram`;
-        const fallbackResults = await searchGoogleImages(fallbackQuery);
+        const fallbackApiKey = getApiKey(); // Get a different API key for the fallback
+        console.log(`Using fallback API key: ${fallbackApiKey.substring(0, 8)}...`);
+        
+        const fallbackResults = await searchGoogleImages(fallbackQuery, fallbackApiKey, SEARCH_ENGINE_ID);
         
         if (fallbackResults.length > 0) {
           console.log(`Got ${fallbackResults.length} results from fallback search`);
@@ -118,16 +141,18 @@ export function useInfiniteSearch({
     } finally {
       setIsLoading(false);
     }
-  }, [pageSize]);
+  }, [pageSize, getApiKey]);
   
   const fetchAdditionalPages = async (query: string, startPage: number) => {
     const maxInitialPages = 5;
     if (startPage > maxInitialPages) return;
     
     try {
-      // Always fetch fresh results for additional pages
-      console.log(`Fetching additional results for page ${startPage}`);
-      const additionalResults = await searchGoogleImages(query, undefined, undefined, startPage);
+      // Always fetch fresh results for additional pages with a different API key
+      const apiKey = getApiKey();
+      console.log(`Fetching additional results for page ${startPage} with API key: ${apiKey.substring(0, 8)}...`);
+      
+      const additionalResults = await searchGoogleImages(query, apiKey, SEARCH_ENGINE_ID, startPage);
       
       if (additionalResults.length > 0) {
         console.log(`Got ${additionalResults.length} results for page ${startPage}`);
@@ -170,9 +195,11 @@ export function useInfiniteSearch({
         const nextSearchPage = currentSearchPage + 1;
         console.log(`Need to fetch more results for page ${nextSearchPage}`);
         
-        // Always fetch fresh results
-        console.log(`Fetching new page ${nextSearchPage} for ${searchTerm}`);
-        const newPageResults = await searchGoogleImages(searchTerm, undefined, undefined, nextSearchPage);
+        // Always fetch fresh results with a different API key
+        const apiKey = getApiKey();
+        console.log(`Fetching new page ${nextSearchPage} for ${searchTerm} with API key: ${apiKey.substring(0, 8)}...`);
+        
+        const newPageResults = await searchGoogleImages(searchTerm, apiKey, SEARCH_ENGINE_ID, nextSearchPage);
         
         const existingUrls = new Set(results.map(r => r.imageSrc));
         const uniqueNewResults = newPageResults.filter(r => !existingUrls.has(r.imageSrc));
@@ -196,12 +223,31 @@ export function useInfiniteSearch({
       
       if (error.message === 'API quota exceeded') {
         setError(new Error('API quota exceeded'));
-        toast.error("We've hit our API quota limit. Please try again later.");
+        toast.error("We've hit our API quota limit. Switching to another API key.");
+        // Try one more time with a different API key
+        try {
+          const apiKey = getApiKey();
+          console.log(`Retrying with new API key: ${apiKey.substring(0, 8)}...`);
+          const newPageResults = await searchGoogleImages(searchTerm, apiKey, SEARCH_ENGINE_ID, currentSearchPage);
+          
+          const existingUrls = new Set(results.map(r => r.imageSrc));
+          const uniqueNewResults = newPageResults.filter(r => !existingUrls.has(r.imageSrc));
+          
+          if (uniqueNewResults.length > 0) {
+            console.log(`Successfully retrieved ${uniqueNewResults.length} results with new API key`);
+            allResults.current = [...allResults.current, ...uniqueNewResults];
+            setResults(prev => [...prev, ...uniqueNewResults]);
+            setHasMore(uniqueNewResults.length >= 5);
+            setError(null);
+          }
+        } catch (retryError) {
+          console.error("Retry with new API key also failed:", retryError);
+        }
       }
     } finally {
       isLoadingMore.current = false;
     }
-  }, [isLoading, hasMore, page, pageSize, searchTerm, results, currentSearchPage]);
+  }, [isLoading, hasMore, page, pageSize, searchTerm, results, currentSearchPage, getApiKey]);
   
   useEffect(() => {
     if (initialQuery) {

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Github } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
+import { Icons } from "@/components/icons";
 
 export function OAuthSignIn() {
   const [isLoading, setIsLoading] = useState<boolean>(false);

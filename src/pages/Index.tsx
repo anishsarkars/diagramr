@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
@@ -29,10 +28,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     searchFor,
     error,
     resetSearch
-  } = useInfiniteSearch({
-    searchKey: "AIzaSyBLb8xMhQIVk5G344igPWC3xEIPKjsbSn8",
-    searchId: "260090575ae504419"
-  });
+  } = useInfiniteSearch();
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastResultRef = useCallback((node: HTMLDivElement | null) => {
@@ -49,10 +45,8 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   }, [isLoading, hasMore, loadMore]);
 
   const handleSearch = async (prompt: string) => {
-    // Check if user has reached limit
     if (hasReachedLimit) {
       if (requiresLogin) {
-        // User needs to login first
         toast.info("Sign in to get more searches (20 free searches daily)", {
           description: "Create a free account to continue searching",
           action: {
@@ -68,7 +62,6 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
         });
         return;
       } else {
-        // User needs to upgrade
         toast.info("You've reached your daily search limit!", {
           description: "Upgrade to Pro for 50+ searches per day",
           action: {
@@ -80,11 +73,9 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
       }
     }
     
-    // Increment count and track usage
     const success = await incrementCount();
     if (!success) return;
     
-    // Clear session storage to ensure fresh results
     Object.keys(sessionStorage).forEach(key => {
       if (key.startsWith('diagramr-search-')) {
         sessionStorage.removeItem(key);
@@ -95,9 +86,8 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     try {
       console.log(`Starting search for query: "${prompt}"`);
       await searchFor(prompt);
-      setSearchAttempts(0); // Reset search attempts on success
+      setSearchAttempts(0);
       
-      // Show remaining searches toast
       if (remainingSearches <= 5 && remainingSearches > 0) {
         toast.info(`${remainingSearches} searches remaining today`, {
           description: user ? "Upgrade to Pro for more searches" : "Sign in for 20 searches/day",
@@ -118,7 +108,6 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     } catch (error) {
       console.error("Search error:", error);
       
-      // Increment search attempts to try alternative queries if repeated failures
       setSearchAttempts(prev => prev + 1);
       
       if (error.message === 'API quota exceeded') {
@@ -127,7 +116,6 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
           duration: 8000
         });
       } else {
-        // If this is the second attempt, suggest a simplified search term
         if (searchAttempts >= 1) {
           const simplifiedQuery = prompt.split(' ').slice(0, 3).join(' ');
           toast.error("Search failed", {
@@ -146,7 +134,6 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
         }
       }
       
-      // Allow the user to try another search
       setShowSearchField(true);
     }
   };
@@ -159,7 +146,6 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
 
   const handleLikeDiagram = async (diagramId: string | number) => {
     if (!user) {
-      // Require login to like diagrams
       toast.info("Please sign in to save diagrams", {
         description: "Create a free account to save your favorite diagrams",
         action: {
@@ -182,7 +168,6 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
         const isLiked = likedDiagrams.has(String(diagramId));
         
         if (isLiked) {
-          // Remove from liked
           const { error } = await supabase
             .from('saved_diagrams')
             .delete()
@@ -191,14 +176,12 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
           
           if (error) throw error;
           
-          // Update local state
           const newLiked = new Set(likedDiagrams);
           newLiked.delete(String(diagramId));
           setLikedDiagrams(newLiked);
           
           toast.success("Diagram removed from favorites");
         } else {
-          // Add to liked
           const diagramData = {
             id: String(diagramToLike.id),
             title: diagramToLike.title,
@@ -220,7 +203,6 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
           
           if (error) throw error;
           
-          // Update local state
           const newLiked = new Set(likedDiagrams);
           newLiked.add(String(diagramId));
           setLikedDiagrams(newLiked);
@@ -258,7 +240,6 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     fetchLikedDiagrams();
   }, [fetchLikedDiagrams]);
 
-  // Handle API quota errors
   useEffect(() => {
     if (error && error.message === 'API quota exceeded') {
       toast.error("API quota exceeded", {
