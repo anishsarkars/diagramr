@@ -1,9 +1,9 @@
 
 import { Button } from "@/components/ui/button";
-import { Github } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Icons } from "@/components/icons";
+import { toast } from "sonner";
 
 interface OAuthSignInProps {
   isPremium?: boolean;
@@ -12,17 +12,18 @@ interface OAuthSignInProps {
 export function OAuthSignIn({ isPremium = false }: OAuthSignInProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const handleGithubSignIn = async () => {
+  const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
       await supabase.auth.signInWithOAuth({
-        provider: 'github',
+        provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth`,
         },
       });
     } catch (error) {
       console.error("OAuth sign-in error:", error);
+      toast.error("Failed to sign in with Google. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -34,15 +35,15 @@ export function OAuthSignIn({ isPremium = false }: OAuthSignInProps) {
         variant="outline" 
         type="button" 
         disabled={isLoading} 
-        onClick={handleGithubSignIn}
+        onClick={handleGoogleSignIn}
         className={`w-full ${isPremium ? "border-purple-500/20 hover:border-purple-500/30 hover:bg-purple-500/10" : ""}`}
       >
         {isLoading ? (
           <Icons.spinner className="mr-2 h-4 w-4" />
         ) : (
-          <Github className="mr-2 h-4 w-4" />
+          <Icons.google className="mr-2 h-4 w-4" />
         )}
-        GitHub
+        Google
       </Button>
     </div>
   );

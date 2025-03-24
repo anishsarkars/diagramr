@@ -2,6 +2,7 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import confetti from 'canvas-confetti';
+import { toast } from 'sonner';
 
 type AccessStatus = 'unknown' | 'checking' | 'authorized' | 'unauthorized';
 
@@ -13,6 +14,7 @@ interface AccessContextType {
   hasValidAccessCode: boolean;
   celebrateAccess: () => void;
   isPremiumUser: boolean;
+  isAnishInvite: boolean;
 }
 
 const AccessContext = createContext<AccessContextType | undefined>(undefined);
@@ -26,6 +28,7 @@ export function AccessProvider({ children }: AccessProviderProps) {
   const [showAccessForm, setShowAccessForm] = useState(false);
   const [hasValidAccessCode, setHasValidAccessCode] = useState(false);
   const [isPremiumUser, setIsPremiumUser] = useState(false);
+  const [isAnishInvite, setIsAnishInvite] = useState(false);
 
   // Check localStorage for existing valid access code on mount
   useEffect(() => {
@@ -33,6 +36,8 @@ export function AccessProvider({ children }: AccessProviderProps) {
       setAccessStatus('checking');
       
       const storedCode = localStorage.getItem('diagramr-access-code');
+      const isAnishInviteStored = localStorage.getItem('diagramr-anish-invite') === 'true';
+      
       if (storedCode) {
         // Validate the stored code against valid codes
         const validCodes = ["DIAGRAMR2023", "DIA2025"];
@@ -40,9 +45,11 @@ export function AccessProvider({ children }: AccessProviderProps) {
           setAccessStatus('authorized');
           setHasValidAccessCode(true);
           setIsPremiumUser(storedCode === "DIA2025"); // Set as premium user if using the exclusive code
+          setIsAnishInvite(isAnishInviteStored); // Set the Anish invite flag
         } else {
           setAccessStatus('unauthorized');
           localStorage.removeItem('diagramr-access-code');
+          localStorage.removeItem('diagramr-anish-invite');
         }
       } else {
         setAccessStatus('unauthorized');
@@ -82,17 +89,21 @@ export function AccessProvider({ children }: AccessProviderProps) {
     try {
       // For now, we'll use hardcoded valid codes
       const validCodes = ["DIAGRAMR2023", "DIA2025"];
+      const uppercaseCode = code.toUpperCase();
       
       // Check if the code is valid
-      if (validCodes.includes(code)) {
+      if (validCodes.includes(uppercaseCode)) {
         // Store the valid code
-        localStorage.setItem('diagramr-access-code', code);
+        localStorage.setItem('diagramr-access-code', uppercaseCode);
         setAccessStatus('authorized');
         setHasValidAccessCode(true);
         
-        // Check if it's our premium code
-        if (code === "DIA2025") {
+        // Check if it's Anish's invite code (DIA2025)
+        if (uppercaseCode === "DIA2025") {
           setIsPremiumUser(true);
+          setIsAnishInvite(true);
+          localStorage.setItem('diagramr-anish-invite', 'true');
+          toast.success("Hurray! You're using @Anish's personal invite. Welcome to the exclusive Diagramr experience!");
           celebrateAccess();
         }
         
@@ -117,7 +128,8 @@ export function AccessProvider({ children }: AccessProviderProps) {
         setShowAccessForm,
         hasValidAccessCode,
         celebrateAccess,
-        isPremiumUser
+        isPremiumUser,
+        isAnishInvite
       }}
     >
       {children}

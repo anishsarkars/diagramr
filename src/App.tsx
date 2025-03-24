@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-ro
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider, useAuth } from "@/components/auth-context";
 import { AccessProvider, useAccess } from "@/components/access-context";
-import { useState, useEffect, Suspense, lazy } from "react";
+import { useState, useEffect } from "react";
 import Index from "./pages/Index";
 import Auth from "./pages/auth";
 import Liked from "./pages/Liked";
@@ -16,6 +16,7 @@ import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import { SiteLoader } from "./components/site-loader";
 import { AccessCodeModal } from "./components/access-code-modal";
+import { FeedbackButton } from "./components/feedback-button";
 
 // Create a query client with better retry settings for failed API requests
 const queryClient = new QueryClient({
@@ -100,6 +101,7 @@ function AppContent() {
             <Route path="/pricing" element={<Pricing />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <FeedbackButton />
         </>
       )}
     </>

@@ -7,14 +7,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
-import { ArrowRight, Key, Lock, User, Phone, Crown, Sparkles } from 'lucide-react';
+import { ArrowRight, Key, Lock, User, Phone, Crown, Sparkles, Gift, Star } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth-context';
 import { motion } from 'framer-motion';
 
 export function AccessCodeModal() {
-  const { showAccessForm, setShowAccessForm, validateAccessCode, hasValidAccessCode, isPremiumUser } = useAccess();
+  const { showAccessForm, setShowAccessForm, validateAccessCode, hasValidAccessCode, isPremiumUser, isAnishInvite } = useAccess();
   const { user } = useAuth();
   const [accessCode, setAccessCode] = useState('');
   const [isValidating, setIsValidating] = useState(false);
@@ -46,9 +46,9 @@ export function AccessCodeModal() {
       const isValid = await validateAccessCode(accessCode);
       
       if (isValid) {
-        // Special premium code celebration happens in context
         if (accessCode.toUpperCase() === "DIA2025") {
-          toast.success('🎉 Exclusive beta access granted! Welcome to the premium experience.');
+          // Premium code celebration happens in context
+          // No additional action needed here as it's handled in the context
         } else {
           // Trigger regular confetti effect
           triggerConfetti();
@@ -109,7 +109,14 @@ export function AccessCodeModal() {
       <DialogContent className={`sm:max-w-md ${isPremiumUser ? 'bg-gradient-to-b from-background to-background/90 border-purple-300/20' : ''}`}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {isPremiumUser ? (
+            {isAnishInvite ? (
+              <>
+                <Gift className="h-5 w-5 text-amber-400" />
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-purple-400">
+                  @Anish's Personal Invite
+                </span>
+              </>
+            ) : isPremiumUser ? (
               <>
                 <Crown className="h-5 w-5 text-amber-400" />
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-purple-400">
@@ -156,9 +163,23 @@ export function AccessCodeModal() {
                 </div>
               </div>
               <DialogFooter className="mt-6">
-                <Button type="submit" disabled={isValidating}>
+                <Button type="submit" disabled={isValidating} className="group">
                   {isValidating ? 'Validating...' : 'Verify Access'}
-                  {!isValidating && <ArrowRight className="ml-2 h-4 w-4" />}
+                  {!isValidating && (
+                    <motion.div 
+                      className="inline-flex ml-2"
+                      initial={{ x: 0 }}
+                      animate={{ x: [0, 5, 0] }}
+                      transition={{ 
+                        repeat: Infinity, 
+                        repeatType: "mirror",
+                        duration: 1, 
+                        repeatDelay: 1 
+                      }}
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                    </motion.div>
+                  )}
                 </Button>
               </DialogFooter>
             </form>

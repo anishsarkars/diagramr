@@ -35,6 +35,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { useAccess } from '@/components/access-context';
 import { Key, Sparkles, Crown } from "lucide-react";
+import { toast } from "sonner";
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -51,6 +52,7 @@ const Auth = () => {
     hasValidAccessCode, 
     setShowAccessForm,
     isPremiumUser, 
+    isAnishInvite,
     celebrateAccess 
   } = useAccess();
   
@@ -58,13 +60,8 @@ const Auth = () => {
   useEffect(() => {
     if (searchParams.get('signup') === 'true') {
       setShowSignUp(true);
-      
-      // If signing up and no valid access code, show the access form
-      if (!hasValidAccessCode && accessStatus !== 'checking') {
-        setShowAccessForm(true);
-      }
     }
-  }, [searchParams, hasValidAccessCode, accessStatus, setShowAccessForm]);
+  }, [searchParams]);
   
   // Redirect if already logged in
   useEffect(() => {
@@ -99,6 +96,11 @@ const Auth = () => {
   const continueAsGuest = async () => {
     await signOut();
     navigate("/");
+    toast.success("Continuing as guest. You have 3 free searches.");
+  };
+  
+  const handleAccessCodeClick = () => {
+    setShowAccessForm(true);
   };
   
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -219,7 +221,9 @@ const Auth = () => {
                 transition={{ delay: 0.3 }}
                 className="mt-2 text-sm font-medium text-purple-400"
               >
-                You have exclusive beta access
+                {isAnishInvite 
+                  ? "You have @Anish's personal invite" 
+                  : "You have exclusive beta access"}
               </motion.div>
             )}
           </div>
@@ -303,9 +307,20 @@ const Auth = () => {
                   ? "Already have an account? Sign in"
                   : "Don't have an account? Sign up"}
               </Button>
-              <Button variant="ghost" size="sm" onClick={continueAsGuest}>
-                Continue as guest (3 free searches)
-              </Button>
+              <div className="flex gap-2 flex-wrap justify-center">
+                <Button variant="ghost" size="sm" onClick={continueAsGuest}>
+                  Continue as guest
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleAccessCodeClick}
+                  className={`flex items-center gap-1 ${isPremiumUser ? "border-purple-500/30 bg-purple-500/5" : ""}`}
+                >
+                  <Key className="h-3.5 w-3.5" />
+                  {isPremiumUser ? "View Access Status" : "Enter Access Code"}
+                </Button>
+              </div>
             </CardFooter>
           </Card>
         </div>
