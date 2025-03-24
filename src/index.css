@@ -116,6 +116,31 @@
   .shimmer {
     @apply animate-shimmer bg-gradient-to-r from-transparent via-muted-foreground/10 to-transparent bg-[length:200%_100%];
   }
+  
+  /* Premium UI components */
+  .glass-card {
+    @apply bg-background/70 backdrop-blur-xl border border-border/30 shadow-md;
+  }
+  
+  .premium-card {
+    @apply bg-gradient-to-b from-card/90 to-card/60 backdrop-blur-md border-purple-500/20 shadow-sm hover:shadow-md transition-all duration-300;
+  }
+  
+  .premium-button {
+    @apply bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-sm hover:shadow-md transition-all duration-300;
+  }
+  
+  .premium-badge {
+    @apply bg-gradient-to-r from-amber-400 to-purple-500 text-white px-2 py-0.5 text-xs rounded-full;
+  }
+  
+  .premium-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-purple-400;
+  }
+  
+  .premium-title {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-amber-400 via-purple-500 to-amber-400;
+  }
 }
 
 /* Responsive design improvements */
@@ -264,6 +289,21 @@ button:focus-visible, a:focus-visible, input:focus-visible {
     rgba(0, 0, 0, 0) 50%);
 }
 
+/* Premium hero gradient */
+.premium-hero-gradient {
+  background: radial-gradient(circle at 50% 50%, 
+    rgba(139, 92, 246, 0.15) 0%, 
+    rgba(139, 92, 246, 0.05) 25%, 
+    rgba(255, 255, 255, 0) 50%);
+}
+
+.dark .premium-hero-gradient {
+  background: radial-gradient(circle at 50% 50%, 
+    rgba(139, 92, 246, 0.2) 0%, 
+    rgba(139, 92, 246, 0.08) 25%, 
+    rgba(0, 0, 0, 0) 50%);
+}
+
 /* Blurred background elements */
 .bg-blur-circle {
   border-radius: 50%;
@@ -280,4 +320,49 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 
 .dark .btn-glow:hover {
   box-shadow: 0 0 20px rgba(255, 100, 80, 0.4);
+}
+
+/* Premium button glow */
+.premium-btn-glow:hover {
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
+}
+
+.dark .premium-btn-glow:hover {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+}
+
+/* Premium animations */
+@keyframes shimmerPurple {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+
+.animate-shimmer-purple {
+  animation: shimmerPurple 3s infinite linear;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(139, 92, 246, 0.2) 25%, 
+    transparent 50%);
+  background-size: 200% 100%;
+}
+
+@keyframes floatPremium {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float-premium {
+  animation: floatPremium 3s ease-in-out infinite;
+}
+
+/* Mobile adaptations */
+@media (max-width: 640px) {
+  .image-preview-modal {
+    @apply p-2 max-w-[95vw] max-h-[90vh];
+  }
+  
+  .mobile-menu-fullwidth {
+    @apply w-screen left-0 right-0 max-w-none rounded-none border-x-0;
+  }
 }

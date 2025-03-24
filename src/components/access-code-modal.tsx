@@ -102,7 +102,7 @@ export function AccessCodeModal() {
 
   return (
     <Dialog open={showAccessForm} onOpenChange={setShowAccessForm}>
-      <DialogContent className={`sm:max-w-md ${isPremiumUser ? 'bg-gradient-to-b from-background to-background/90 border-purple-300/20' : ''}`}>
+      <DialogContent className={`sm:max-w-md ${isPremiumUser ? 'glass-card border-purple-300/20' : ''}`}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {isAnishInvite ? (
@@ -133,8 +133,8 @@ export function AccessCodeModal() {
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="access-code">Access Code</TabsTrigger>
-            <TabsTrigger value="waitlist">Join Waitlist</TabsTrigger>
+            <TabsTrigger value="access-code" className="transition-all duration-300">Access Code</TabsTrigger>
+            <TabsTrigger value="waitlist" className="transition-all duration-300">Join Waitlist</TabsTrigger>
           </TabsList>
           
           <TabsContent value="access-code" className="mt-4">
@@ -150,7 +150,7 @@ export function AccessCodeModal() {
                     placeholder="Enter your access code..."
                     value={accessCode}
                     onChange={(e) => setAccessCode(e.target.value)}
-                    className="text-center tracking-wider"
+                    className="text-center tracking-wider transition-all duration-300 focus:ring-1 focus:ring-purple-500/30"
                     autoComplete="off"
                   />
                   <div className="text-xs text-muted-foreground mt-1">
@@ -159,7 +159,7 @@ export function AccessCodeModal() {
                 </div>
               </div>
               <DialogFooter className="mt-6">
-                <Button type="submit" disabled={isValidating} className="group">
+                <Button type="submit" disabled={isValidating} className="group transition-all duration-300 hover:shadow-md">
                   {isValidating ? 'Validating...' : 'Verify Access'}
                   {!isValidating && (
                     <motion.div 
@@ -194,6 +194,7 @@ export function AccessCodeModal() {
                     placeholder="Enter your name..."
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    className="transition-all duration-300 focus:ring-1 focus:ring-purple-500/30"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -206,11 +207,12 @@ export function AccessCodeModal() {
                     placeholder="Enter your phone number..."
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
+                    className="transition-all duration-300 focus:ring-1 focus:ring-purple-500/30"
                   />
                 </div>
               </div>
               <DialogFooter className="mt-6">
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting} className="transition-all duration-300 hover:shadow-md">
                   {isSubmitting ? 'Submitting...' : 'Join Waitlist'}
                   {!isSubmitting && <ArrowRight className="ml-2 h-4 w-4" />}
                 </Button>

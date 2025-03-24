@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Icons } from "@/components/icons";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 interface OAuthSignInProps {
   isPremium?: boolean;
@@ -36,20 +37,27 @@ export function OAuthSignIn({ isPremium = false }: OAuthSignInProps) {
 
   return (
     <div className="flex flex-col space-y-2">
-      <Button 
-        variant="outline" 
-        type="button" 
-        disabled={isLoading} 
-        onClick={handleGoogleSignIn}
-        className={`w-full ${isPremium ? "border-purple-500/20 hover:border-purple-500/30 hover:bg-purple-500/10" : ""}`}
+      <motion.div 
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
       >
-        {isLoading ? (
-          <Icons.spinner className="mr-2 h-4 w-4" />
-        ) : (
-          <Icons.google className="mr-2 h-4 w-4" />
-        )}
-        Google
-      </Button>
+        <Button 
+          variant="outline" 
+          type="button" 
+          disabled={isLoading} 
+          onClick={handleGoogleSignIn}
+          className={`w-full transition-all duration-300 ${isPremium 
+            ? "border-purple-500/20 hover:border-purple-500/30 hover:bg-purple-500/10 hover:shadow-sm" 
+            : "hover:shadow-sm"}`}
+        >
+          {isLoading ? (
+            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Icons.google className="mr-2 h-4 w-4" />
+          )}
+          Sign in with Google
+        </Button>
+      </motion.div>
     </div>
   );
 }
