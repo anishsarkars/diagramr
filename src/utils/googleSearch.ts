@@ -53,9 +53,27 @@ const extractDomain = (url: string): string => {
   }
 };
 
+// Array of API keys to rotate through
+const API_KEYS = [
+  "AIzaSyA1zArEu4m9HzEh-CO2Y7oFw0z_E_cFPsg",
+  "AIzaSyBLb8xMhQIVk5G344igPWC3xEIPKjsbSn8", 
+  "AIzaSyDJBtnO8ZGzlDVfOTsL6BmCOn-yhGfPqgc"
+];
+
+// Track API key usage and errors
+let currentApiKeyIndex = 0;
+const apiErrorCounts: Record<number, number> = {};
+
+// Function to get the next available API key
+const getNextApiKey = (): string => {
+  // Simple rotation through available keys
+  currentApiKeyIndex = (currentApiKeyIndex + 1) % API_KEYS.length;
+  return API_KEYS[currentApiKeyIndex];
+};
+
 export async function searchGoogleImages(
   query: string,
-  apiKey: string = "AIzaSyBLb8xMhQIVk5G344igPWC3xEIPKjsbSn8",
+  apiKey: string = API_KEYS[currentApiKeyIndex],
   searchId: string = "260090575ae504419",
   page: number = 1
 ): Promise<DiagramResult[]> {
@@ -68,83 +86,9 @@ export async function searchGoogleImages(
   try {
     console.log(`Searching for: "${query}" (page ${page}, start ${start})`);
     
-    let enhancedQuery = '';
-    
-    if (query.toLowerCase().includes('biology') || 
-        query.toLowerCase().includes('cell') || 
-        query.toLowerCase().includes('anatomy') ||
-        query.toLowerCase().includes('organism') ||
-        query.toLowerCase().includes('plant') ||
-        query.toLowerCase().includes('animal')) {
-      enhancedQuery = `${query} biology educational diagram illustration high quality scientific`;
-    }
-    else if (query.toLowerCase().includes('chemistry') || 
-             query.toLowerCase().includes('molecule') || 
-             query.toLowerCase().includes('reaction') ||
-             query.toLowerCase().includes('element') ||
-             query.toLowerCase().includes('organic') ||
-             query.toLowerCase().includes('periodic')) {
-      enhancedQuery = `${query} chemistry educational diagram scientific illustration high quality`;
-    }
-    else if (query.toLowerCase().includes('physics') || 
-             query.toLowerCase().includes('force') || 
-             query.toLowerCase().includes('motion') ||
-             query.toLowerCase().includes('energy') ||
-             query.toLowerCase().includes('quantum') ||
-             query.toLowerCase().includes('circuit')) {
-      enhancedQuery = `${query} physics educational diagram scientific illustration high quality`;
-    }
-    else if (query.toLowerCase().includes('math') || 
-             query.toLowerCase().includes('calculus') || 
-             query.toLowerCase().includes('geometry') ||
-             query.toLowerCase().includes('algebra') ||
-             query.toLowerCase().includes('trigonometry')) {
-      enhancedQuery = `${query} mathematics educational diagram illustration concept visualization high quality`;
-    }
-    else if (query.toLowerCase().includes('architecture') || 
-             query.toLowerCase().includes('system') ||
-             query.toLowerCase().includes('design') ||
-             query.toLowerCase().includes('structure') ||
-             query.toLowerCase().includes('blueprint')) {
-      enhancedQuery = `${query} technical diagram professional illustration schematic high quality`;
-    }
-    else if (query.toLowerCase().includes('flow') ||
-             query.toLowerCase().includes('process') ||
-             query.toLowerCase().includes('workflow') ||
-             query.toLowerCase().includes('sequence') ||
-             query.toLowerCase().includes('pipeline')) {
-      enhancedQuery = `${query} flowchart process diagram educational visualization high quality`;
-    }
-    else if (query.toLowerCase().includes('uml') ||
-             query.toLowerCase().includes('class diagram') ||
-             query.toLowerCase().includes('sequence diagram') ||
-             query.toLowerCase().includes('object diagram')) {
-      enhancedQuery = `${query} software engineering diagram uml visualization professional high quality`;
-    }
-    else if (query.toLowerCase().includes('data structure') || 
-             query.toLowerCase().includes('algorithm') ||
-             query.toLowerCase().includes('binary tree') ||
-             query.toLowerCase().includes('hash table') ||
-             query.toLowerCase().includes('linked list')) {
-      enhancedQuery = `${query} computer science diagram visualization high quality educational`;
-    }
-    else if (query.toLowerCase().includes('network') || 
-             query.toLowerCase().includes('topology') ||
-             query.toLowerCase().includes('protocol') ||
-             query.toLowerCase().includes('router') ||
-             query.toLowerCase().includes('infrastructure')) {
-      enhancedQuery = `${query} network diagram topology illustration professional high quality`;
-    }
-    else if (query.toLowerCase().includes('database') || 
-             query.toLowerCase().includes('schema') ||
-             query.toLowerCase().includes('entity') ||
-             query.toLowerCase().includes('er diagram') ||
-             query.toLowerCase().includes('relational')) {
-      enhancedQuery = `${query} database schema er diagram entity relationship illustration professional`;
-    }
-    else {
-      enhancedQuery = `${query} educational diagram visualization infographic high quality illustration`;
-    }
+    // Build a less restrictive search query that allows for broader results
+    // but still focuses on diagram-like content
+    let enhancedQuery = `${query} diagram OR chart OR visualization OR infographic`;
     
     console.log(`Enhanced query: "${enhancedQuery}"`);
     
@@ -155,8 +99,7 @@ export async function searchGoogleImages(
     url.searchParams.append('searchType', 'image');
     url.searchParams.append('start', start.toString());
     url.searchParams.append('num', '10');
-    // Fix: Use proper values for imgType parameter - The error was due to invalid format
-    url.searchParams.append('imgType', 'clipart');
+    url.searchParams.append('imgType', 'clipart,drawing,photo');
     url.searchParams.append('safe', 'active');
     url.searchParams.append('filter', '1');
     
@@ -169,11 +112,27 @@ export async function searchGoogleImages(
       console.error('Google API error response:', errorText);
       
       if (response.status === 429 || response.status === 403) {
-        console.error('API quota exceeded or access denied');
+        console.error('API quota exceeded or access denied for key index', currentApiKeyIndex);
+        
+        // Increment error count for this API key
+        apiErrorCounts[currentApiKeyIndex] = (apiErrorCounts[currentApiKeyIndex] || 0) + 1;
+        
+        // If we've had multiple errors with this key, try the next one
+        if (apiErrorCounts[currentApiKeyIndex] > 2) {
+          const nextApiKey = getNextApiKey();
+          console.log(`Switching to next API key: ${nextApiKey}`);
+          
+          // Recursive call with the new API key
+          return searchGoogleImages(query, nextApiKey, searchId, page);
+        }
+        
         throw new Error('API quota exceeded');
       }
       throw new Error(`Google search failed with status: ${response.status}`);
     }
+    
+    // Reset error count for this API key since it worked
+    apiErrorCounts[currentApiKeyIndex] = 0;
     
     const data: GoogleSearchResponse = await response.json();
     
@@ -182,43 +141,32 @@ export async function searchGoogleImages(
       return [];
     }
     
-    const scoredResults = data.items.map((item, index) => {
+    const results = data.items.map((item, index) => {
       const domain = extractDomain(item.image.contextLink);
       
+      // Simplified relevance scoring that doesn't overly filter
       let relevanceScore = 10 - Math.min(index, 9);
       
       const title = item.title.toLowerCase();
       const snippet = (item.snippet || '').toLowerCase();
       const queryTerms = query.toLowerCase().split(' ');
       
-      if (title.includes(query.toLowerCase())) relevanceScore += 20;
+      // Boost exact matches to query
+      if (title.includes(query.toLowerCase())) relevanceScore += 10;
       
+      // Boost matches to query terms
       queryTerms.forEach(term => {
-        if (term.length > 2 && title.includes(term)) relevanceScore += 5;
-        if (term.length > 2 && snippet.includes(term)) relevanceScore += 3;
+        if (term.length > 2 && title.includes(term)) relevanceScore += 3;
+        if (term.length > 2 && snippet.includes(term)) relevanceScore += 2;
       });
       
-      if (title.includes('diagram')) relevanceScore += 15;
-      if (title.includes('chart') || title.includes('graph')) relevanceScore += 10;
-      if (title.includes('illustration') || title.includes('visualization')) relevanceScore += 8;
-      if (title.includes('educational') || title.includes('academic')) relevanceScore += 12;
-      if (title.includes('scientific') || title.includes('technical')) relevanceScore += 10;
+      // Small boost for diagram-related content
+      if (title.includes('diagram') || title.includes('chart') || 
+          title.includes('illustration') || title.includes('visualization')) {
+        relevanceScore += 5;
+      }
       
-      const qualitySources = [
-        'edu', 'ac.uk', 'ac.jp', '.edu.', 'university', 'college', 'school',
-        'lucidchart', 'draw.io', 'diagrams.net', 'researchgate', 'springer',
-        'ieee', 'acm.org', 'sciencedirect', 'nature.com', 'textbook',
-        'creately', 'gliffy', 'visual-paradigm', 'geeksforgeeks',
-        'javatpoint', 'tutorialspoint', 'khanacademy', 'coursera', 'edx',
-        'stackoverflow', 'github', 'visualgo.net', 'medium', 'dev.to',
-        'microsoft', 'amazon', 'google', 'ibm', 'cisco', 'oracle', 
-        'mongodb', 'mysql', 'postgresql'
-      ];
-      
-      qualitySources.forEach(source => {
-        if (domain.includes(source)) relevanceScore += 20;
-      });
-      
+      // Extract tags from title
       const tags = title.split(/\s+/)
                     .filter(word => word.length > 3)
                     .filter(word => !['and', 'the', 'for', 'with', 'this', 'that'].includes(word))
@@ -233,10 +181,6 @@ export async function searchGoogleImages(
       let enhancedTitle = item.title;
       if (enhancedTitle.length > 100) {
         enhancedTitle = enhancedTitle.substring(0, 100) + '...';
-      }
-      
-      if (!enhancedTitle.toLowerCase().includes(query.toLowerCase())) {
-        enhancedTitle = `${query.charAt(0).toUpperCase() + query.slice(1)} - ${enhancedTitle}`;
       }
       
       const result: DiagramResult = {
@@ -254,15 +198,21 @@ export async function searchGoogleImages(
       return result;
     });
     
-    const sortedResults = scoredResults.sort((a, b) => 
+    // Sort by relevance but don't remove any results
+    return results.sort((a, b) => 
       (b.relevanceScore || 0) - (a.relevanceScore || 0)
     );
     
-    return sortedResults;
-    
   } catch (error) {
     console.error('Error in Google search:', error);
+    
+    // If this isn't already a retry and it's not a quota error, try with a different API key
+    if (error.message !== 'API quota exceeded' && apiKey === API_KEYS[currentApiKeyIndex]) {
+      const nextApiKey = getNextApiKey();
+      console.log(`Error occurred. Trying with next API key: ${nextApiKey}`);
+      return searchGoogleImages(query, nextApiKey, searchId, page);
+    }
+    
     throw error;
   }
 }
-

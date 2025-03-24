@@ -19,14 +19,10 @@ export interface DiagramResult {
 
 export function useInfiniteSearch({
   initialQuery = '',
-  pageSize = 20,
-  searchKey = "AIzaSyBLb8xMhQIVk5G344igPWC3xEIPKjsbSn8",
-  searchId = "260090575ae504419"
+  pageSize = 20
 }: {
   initialQuery?: string;
   pageSize?: number;
-  searchKey?: string;
-  searchId?: string;
 } = {}): {
   results: DiagramResult[];
   isLoading: boolean;
@@ -78,38 +74,30 @@ export function useInfiniteSearch({
     try {
       console.log("Searching for diagrams with query:", query);
       
-      // Direct Google search for educational diagrams
+      // Direct Google search with the query
       console.log("Fetching search results using Google Custom Search API");
-      const searchResults = await searchGoogleImages(query, searchKey, searchId);
+      const searchResults = await searchGoogleImages(query);
       
       console.log(`Got ${searchResults.length} search results`);
-      
-      // Sort results by relevance
-      const queryTerms = query.toLowerCase().split(' ');
-      searchResults.sort((a, b) => {
-        const aRelevance = calculateRelevance(a, queryTerms);
-        const bRelevance = calculateRelevance(b, queryTerms);
-        return bRelevance - aRelevance;
-      });
       
       allResults.current = searchResults;
       setResults(searchResults.slice(0, pageSize));
       setHasMore(searchResults.length > pageSize || currentSearchPage < 5);
       
       if (searchResults.length > 0) {
-        toast.success(`Found ${searchResults.length} educational diagrams for "${query}"`);
+        toast.success(`Found ${searchResults.length} diagrams for "${query}"`);
       } else {
         // If no results from primary search, try a fallback search with modified query
         console.log("No results found, trying fallback search...");
-        let fallbackQuery = `${query} diagram educational`;
-        const fallbackResults = await searchGoogleImages(fallbackQuery, searchKey, searchId);
+        let fallbackQuery = `${query} image diagram`;
+        const fallbackResults = await searchGoogleImages(fallbackQuery);
         
         if (fallbackResults.length > 0) {
           console.log(`Got ${fallbackResults.length} results from fallback search`);
           allResults.current = fallbackResults;
           setResults(fallbackResults.slice(0, pageSize));
           setHasMore(fallbackResults.length > pageSize || currentSearchPage < 5);
-          toast.success(`Found ${fallbackResults.length} educational diagrams for "${query}"`);
+          toast.success(`Found ${fallbackResults.length} diagrams for "${query}"`);
         } else {
           toast.info("No results found. Try a different search term.");
         }
@@ -130,7 +118,7 @@ export function useInfiniteSearch({
     } finally {
       setIsLoading(false);
     }
-  }, [pageSize, searchKey, searchId]);
+  }, [pageSize]);
   
   const fetchAdditionalPages = async (query: string, startPage: number) => {
     const maxInitialPages = 5;
@@ -139,7 +127,7 @@ export function useInfiniteSearch({
     try {
       // Always fetch fresh results for additional pages
       console.log(`Fetching additional results for page ${startPage}`);
-      const additionalResults = await searchGoogleImages(query, searchKey, searchId, startPage);
+      const additionalResults = await searchGoogleImages(query, undefined, undefined, startPage);
       
       if (additionalResults.length > 0) {
         console.log(`Got ${additionalResults.length} results for page ${startPage}`);
@@ -160,37 +148,6 @@ export function useInfiniteSearch({
     } catch (err) {
       console.error(`Error fetching page ${startPage}:`, err);
     }
-  };
-  
-  const calculateRelevance = (result: DiagramResult, queryTerms: string[]): number => {
-    let score = 0;
-    
-    const title = result.title.toLowerCase();
-    
-    // Heavily prioritize educational diagram content
-    if (title.includes('educational') || title.includes('learning') || 
-        title.includes('student') || title.includes('study')) {
-      score += 15;
-    }
-    
-    if (title.includes('diagram') || title.includes('visualization') || 
-        title.includes('chart') || title.includes('infographic')) {
-      score += 12;
-    }
-    
-    // Check if title contains query terms
-    queryTerms.forEach(term => {
-      if (title.includes(term)) score += 10;
-    });
-    
-    // Check if tags contain query terms
-    if (result.tags) {
-      queryTerms.forEach(term => {
-        if (result.tags?.some(tag => tag.includes(term))) score += 5;
-      });
-    }
-    
-    return score;
   };
   
   const loadMore = useCallback(async () => {
@@ -215,7 +172,7 @@ export function useInfiniteSearch({
         
         // Always fetch fresh results
         console.log(`Fetching new page ${nextSearchPage} for ${searchTerm}`);
-        const newPageResults = await searchGoogleImages(searchTerm, searchKey, searchId, nextSearchPage);
+        const newPageResults = await searchGoogleImages(searchTerm, undefined, undefined, nextSearchPage);
         
         const existingUrls = new Set(results.map(r => r.imageSrc));
         const uniqueNewResults = newPageResults.filter(r => !existingUrls.has(r.imageSrc));
@@ -239,12 +196,12 @@ export function useInfiniteSearch({
       
       if (error.message === 'API quota exceeded') {
         setError(new Error('API quota exceeded'));
-        toast.error("Sorry for the inconvenience! Our API quota has been reached. We're working on increasing our limits.");
+        toast.error("We've hit our API quota limit. Please try again later.");
       }
     } finally {
       isLoadingMore.current = false;
     }
-  }, [isLoading, hasMore, page, pageSize, searchTerm, results, currentSearchPage, searchKey, searchId]);
+  }, [isLoading, hasMore, page, pageSize, searchTerm, results, currentSearchPage]);
   
   useEffect(() => {
     if (initialQuery) {

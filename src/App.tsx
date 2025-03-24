@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider, useAuth } from "@/components/auth-context";
+import { AccessProvider, useAccess } from "@/components/access-context";
 import { useState, useEffect, Suspense, lazy } from "react";
 import Index from "./pages/Index";
 import Auth from "./pages/auth";
@@ -14,6 +15,7 @@ import Account from "./pages/Account";
 import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import { SiteLoader } from "./components/site-loader";
+import { AccessCodeModal } from "./components/access-code-modal";
 
 // Create a query client with better retry settings for failed API requests
 const queryClient = new QueryClient({
@@ -33,6 +35,7 @@ function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { accessStatus, setShowAccessForm, hasValidAccessCode } = useAccess();
   
   // Enhanced loading timeout for better UX
   useEffect(() => {
@@ -53,10 +56,18 @@ function AppContent() {
   // Protected route handler
   useEffect(() => {
     const protectedRoutes = ['/account', '/liked'];
+    
+    // Check if the route is protected and user is not logged in
     if (protectedRoutes.includes(location.pathname) && !user) {
       navigate('/auth', { state: { returnTo: location.pathname } });
+      return;
     }
-  }, [location.pathname, user, navigate]);
+    
+    // If not on auth page and no valid access code, show access form
+    if (accessStatus === 'unauthorized' && location.pathname !== '/auth' && !hasValidAccessCode) {
+      setShowAccessForm(true);
+    }
+  }, [location.pathname, user, navigate, accessStatus, setShowAccessForm, hasValidAccessCode]);
 
   const handleLoginClick = () => {
     navigate('/auth', { 
@@ -72,6 +83,7 @@ function AppContent() {
         <>
           <Toaster />
           <Sonner closeButton position="top-right" />
+          <AccessCodeModal />
           <Routes>
             <Route path="/" element={<Index onLoginClick={handleLoginClick} />} />
             <Route path="/auth" element={<Auth />} />
@@ -100,11 +112,13 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme={defaultTheme} storageKey="diagramr-theme">
         <AuthProvider>
-          <TooltipProvider>
-            <BrowserRouter>
-              <AppContent />
-            </BrowserRouter>
-          </TooltipProvider>
+          <AccessProvider>
+            <TooltipProvider>
+              <BrowserRouter>
+                <AppContent />
+              </BrowserRouter>
+            </TooltipProvider>
+          </AccessProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
