@@ -1,310 +1,207 @@
 
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { 
-  Search, 
-  Menu, 
-  X, 
-  LogIn, 
-  User, 
-  LogOut, 
-  Moon, 
-  Sun, 
-  Heart, 
-  Settings,
-  BadgeCheck,
-  Home,
-  CreditCard
-} from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "./auth-context";
-import { useTheme } from "./theme-provider";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { DiagramrLogo } from "@/components/diagramr-logo";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/components/auth-context";
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetDescription, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetTrigger, 
+  SheetFooter, 
+  SheetClose
+} from "@/components/ui/sheet";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { motion } from "framer-motion";
-import { toast } from "sonner";
-import { Logo } from "./logo";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Heart, LogOut, Menu, Sparkles, Crown, User as UserIcon } from "lucide-react";
+import { useAccess } from "./access-context";
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const location = useLocation();
+  const { user, signOut } = useAuth();
+  const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { user, profile, signOut } = useAuth();
-  const { theme, setTheme } = useTheme();
-
-  const handleScroll = () => {
-    const offset = window.scrollY;
-    setScrolled(offset > 10);
-  };
-
+  const { isPremiumUser } = useAccess();
+  
+  const isActive = (path: string) => pathname === path;
+  
   useEffect(() => {
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
+    const scrollHandler = () => {
+      setScrolled(window.scrollY > 10);
     };
+    
+    window.addEventListener("scroll", scrollHandler);
+    return () => window.removeEventListener("scroll", scrollHandler);
   }, []);
-
-  useEffect(() => {
-    // Default to light mode on initial load
-    if (!theme || theme === 'system') {
-      setTheme('light');
-    }
-  }, [theme, setTheme]);
-
+  
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
-    toast.success("Signed out successfully");
+    navigate("/");
   };
-
-  const handleMenuClick = (path: string) => {
-    navigate(path);
-    setMobileMenuOpen(false);
+  
+  const getUserInitials = () => {
+    if (!user?.email) return "U";
+    return user.email.substring(0, 1).toUpperCase();
   };
-
+  
+  // Navigation items including conditional upgrade/pricing label
+  const navItems = [
+    { label: "Home", href: "/" },
+    { label: user ? "Upgrade" : "Pricing", href: "/pricing" },
+    ...(user ? [{ label: "My Diagrams", href: "/liked" }] : []),
+  ];
+  
   return (
-    <header
-      className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-200",
-        scrolled ? "bg-background/90 backdrop-blur-lg shadow-sm" : "bg-transparent"
-      )}
-    >
-      <div className="container flex h-16 items-center justify-between">
-        <motion.div 
-          className="flex items-center gap-2"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Link to="/" className="flex items-center gap-2">
-            <Logo size="md" className="h-12 w-auto" showBeta={false} />
-          </Link>
-        </motion.div>
-
+    <header className={cn(
+      "fixed top-0 w-full z-50 transition-all duration-200 h-16 lg:h-20",
+      scrolled ? "bg-background/80 backdrop-blur-md border-b" : "bg-transparent"
+    )}>
+      <div className="container flex justify-between items-center h-full">
+        <Link to="/" className="flex items-center gap-2">
+          <DiagramrLogo size="sm" />
+          {isPremiumUser && (
+            <Crown className="h-4 w-4 text-amber-400" />
+          )}
+        </Link>
+        
         {/* Desktop Navigation */}
-        <motion.nav 
-          className="hidden md:flex items-center gap-6"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <Link
-            to="/"
-            className={cn(
-              "text-sm font-medium transition-colors hover:text-primary",
-              location.pathname === "/"
-                ? "text-foreground"
-                : "text-foreground/60"
-            )}
-          >
-            Home
-          </Link>
-          
-          <Link
-            to="/pricing"
-            className={cn(
-              "text-sm font-medium transition-colors hover:text-primary",
-              location.pathname === "/pricing"
-                ? "text-foreground"
-                : "text-foreground/60"
-            )}
-          >
-            Pricing
-          </Link>
-          
-          {user && (
-            <Link
-              to="/liked"
+        <nav className="hidden md:flex items-center gap-6">
+          {navItems.map((item) => (
+            <Link 
+              key={item.href} 
+              to={item.href}
               className={cn(
-                "text-sm font-medium transition-colors hover:text-primary",
-                location.pathname === "/liked"
-                  ? "text-foreground"
-                  : "text-foreground/60"
+                "text-sm font-medium transition-colors",
+                isActive(item.href) ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                item.label === "Upgrade" && isPremiumUser ? "flex items-center gap-1 text-purple-400 hover:text-purple-300" : ""
               )}
             >
-              Liked
+              {item.label}
+              {item.label === "Upgrade" && isPremiumUser && <Sparkles className="h-3.5 w-3.5" />}
             </Link>
-          )}
-          
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="mr-2"
-          >
-            {theme === 'dark' ? (
-              <Sun className="h-[1.2rem] w-[1.2rem]" />
-            ) : (
-              <Moon className="h-[1.2rem] w-[1.2rem]" />
-            )}
-            <span className="sr-only">Toggle theme</span>
-          </Button>
+          ))}
+          <ThemeToggle />
           
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <User className="h-4 w-4" />
-                  <span>Account</span>
+                <Button variant="ghost" className="relative rounded-full h-8 w-8 p-0">
+                  <Avatar className={`h-8 w-8 border ${isPremiumUser ? "border-purple-400/30" : "border-border"}`}>
+                    <AvatarImage src={user.user_metadata?.avatar_url} />
+                    <AvatarFallback className={isPremiumUser ? "bg-purple-600/10 text-purple-400" : ""}>
+                      {getUserInitials()}
+                    </AvatarFallback>
+                  </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>
-                  {profile?.username || user.email}
-                  <div className="text-xs font-normal text-muted-foreground mt-1 flex items-center">
-                    <BadgeCheck className="h-3 w-3 mr-1 text-primary" />
-                    <span>{profile?.is_premium ? "Premium" : "Free Account"}</span>
-                  </div>
-                </DropdownMenuLabel>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                
-                <DropdownMenuItem onClick={() => navigate('/liked')}>
-                  <Heart className="mr-2 h-4 w-4 text-rose-500" />
-                  <span>Liked Diagrams</span>
+                <DropdownMenuItem onClick={() => navigate("/liked")}>
+                  <Heart className="mr-2 h-4 w-4" />
+                  <span>Saved Diagrams</span>
                 </DropdownMenuItem>
-                
-                <DropdownMenuItem onClick={() => navigate('/account')}>
-                  <Settings className="mr-2 h-4 w-4 text-slate-500" />
+                <DropdownMenuItem onClick={() => navigate("/account")}>
+                  <UserIcon className="mr-2 h-4 w-4" />
                   <span>Account Settings</span>
                 </DropdownMenuItem>
-                
-                {!profile?.is_premium && (
-                  <DropdownMenuItem onClick={() => navigate('/pricing')}>
-                    <CreditCard className="mr-2 h-4 w-4 text-green-500" />
-                    <span>Upgrade to Premium</span>
-                  </DropdownMenuItem>
-                )}
-                
-                <DropdownMenuSeparator />
-                
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
+                  <span>Sign Out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Link to="/auth">
-              <Button size="sm" variant="default" className="gap-2">
-                <LogIn className="h-4 w-4" />
-                <span>Sign in</span>
-              </Button>
-            </Link>
+            <Button
+              variant="default" 
+              size="sm" 
+              onClick={() => navigate("/auth")}
+            >
+              Sign In
+            </Button>
           )}
-        </motion.nav>
-
-        {/* Mobile Menu Button */}
-        <div className="md:hidden flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          >
-            {theme === 'dark' ? (
-              <Sun className="h-[1.2rem] w-[1.2rem]" />
-            ) : (
-              <Moon className="h-[1.2rem] w-[1.2rem]" />
-            )}
-          </Button>
+        </nav>
+        
+        {/* Mobile Navigation */}
+        <div className="flex items-center gap-4 md:hidden">
+          <ThemeToggle />
           
-          <button
-            className="md:hidden p-2 rounded-md hover:bg-accent"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Menu className="h-5 w-5" />
-            )}
-          </button>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button size="sm" variant="ghost">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <DiagramrLogo size="sm" />
+                  {isPremiumUser && <Crown className="h-4 w-4 text-amber-400" />}
+                </SheetTitle>
+                <SheetDescription>
+                  {isPremiumUser ? "Exclusive beta access" : "Diagramr Beta"}
+                </SheetDescription>
+              </SheetHeader>
+              <div className="py-8 flex flex-col space-y-4">
+                {navItems.map((item) => (
+                  <SheetClose asChild key={item.href}>
+                    <Link
+                      to={item.href}
+                      className={cn(
+                        "text-sm font-medium px-2 py-1.5 rounded-md transition-colors",
+                        isActive(item.href) 
+                          ? "bg-accent text-accent-foreground" 
+                          : "hover:bg-accent hover:text-accent-foreground",
+                        item.label === "Upgrade" && isPremiumUser ? "flex items-center gap-1 text-purple-400" : ""
+                      )}
+                    >
+                      {item.label}
+                      {item.label === "Upgrade" && isPremiumUser && <Sparkles className="h-3.5 w-3.5" />}
+                    </Link>
+                  </SheetClose>
+                ))}
+                {user && (
+                  <>
+                    <SheetClose asChild>
+                      <Link
+                        to="/account"
+                        className="text-sm font-medium px-2 py-1.5 rounded-md transition-colors hover:bg-accent hover:text-accent-foreground"
+                      >
+                        Account Settings
+                      </Link>
+                    </SheetClose>
+                    <Button variant="outline" onClick={handleSignOut} className="mt-2">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign Out
+                    </Button>
+                  </>
+                )}
+              </div>
+              <SheetFooter>
+                {!user && (
+                  <SheetClose asChild>
+                    <Button onClick={() => navigate("/auth")} className="w-full">
+                      Sign In
+                    </Button>
+                  </SheetClose>
+                )}
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
-
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <motion.div 
-          className="md:hidden border-t border-border"
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <div className="container p-4 space-y-4">
-            <button
-              className="flex items-center w-full py-2 text-foreground/70 hover:text-foreground"
-              onClick={() => handleMenuClick('/')}
-            >
-              <Home className="h-4 w-4 inline mr-2" />
-              Home
-            </button>
-            
-            <button
-              className="flex items-center w-full py-2 text-foreground/70 hover:text-foreground"
-              onClick={() => handleMenuClick('/pricing')}
-            >
-              <CreditCard className="h-4 w-4 inline mr-2" />
-              Pricing
-            </button>
-            
-            {user && (
-              <>
-                <button
-                  className="flex items-center w-full py-2 text-foreground/70 hover:text-foreground"
-                  onClick={() => handleMenuClick('/liked')}
-                >
-                  <Heart className="h-4 w-4 inline mr-2 text-rose-500" />
-                  Liked Diagrams
-                </button>
-                
-                <button
-                  className="flex items-center w-full py-2 text-foreground/70 hover:text-foreground"
-                  onClick={() => handleMenuClick('/account')}
-                >
-                  <Settings className="h-4 w-4 inline mr-2 text-slate-500" />
-                  Account Settings
-                </button>
-              </>
-            )}
-            
-            {user ? (
-              <>
-                <div className="py-2 text-sm font-medium flex items-center gap-2">
-                  <BadgeCheck className="h-4 w-4 text-primary" />
-                  <span>{profile?.is_premium ? "Premium Account" : "Free Account"}</span>
-                </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-center"
-                  onClick={() => {
-                    handleSignOut();
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign out
-                </Button>
-              </>
-            ) : (
-              <Button 
-                variant="default" 
-                className="w-full justify-center"
-                onClick={() => handleMenuClick('/auth')}
-              >
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign in
-              </Button>
-            )}
-          </div>
-        </motion.div>
-      )}
     </header>
   );
 }

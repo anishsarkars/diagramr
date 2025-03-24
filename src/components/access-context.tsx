@@ -1,6 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import confetti from 'canvas-confetti';
 
 type AccessStatus = 'unknown' | 'checking' | 'authorized' | 'unauthorized';
 
@@ -10,6 +11,8 @@ interface AccessContextType {
   showAccessForm: boolean;
   setShowAccessForm: (show: boolean) => void;
   hasValidAccessCode: boolean;
+  celebrateAccess: () => void;
+  isPremiumUser: boolean;
 }
 
 const AccessContext = createContext<AccessContextType | undefined>(undefined);
@@ -22,6 +25,7 @@ export function AccessProvider({ children }: AccessProviderProps) {
   const [accessStatus, setAccessStatus] = useState<AccessStatus>('unknown');
   const [showAccessForm, setShowAccessForm] = useState(false);
   const [hasValidAccessCode, setHasValidAccessCode] = useState(false);
+  const [isPremiumUser, setIsPremiumUser] = useState(false);
 
   // Check localStorage for existing valid access code on mount
   useEffect(() => {
@@ -30,11 +34,12 @@ export function AccessProvider({ children }: AccessProviderProps) {
       
       const storedCode = localStorage.getItem('diagramr-access-code');
       if (storedCode) {
-        // Validate the stored code against hard-coded valid codes
-        const validCodes = ["DIAGRAMR2023"];
+        // Validate the stored code against valid codes
+        const validCodes = ["DIAGRAMR2023", "DIA2025"];
         if (validCodes.includes(storedCode)) {
           setAccessStatus('authorized');
           setHasValidAccessCode(true);
+          setIsPremiumUser(storedCode === "DIA2025"); // Set as premium user if using the exclusive code
         } else {
           setAccessStatus('unauthorized');
           localStorage.removeItem('diagramr-access-code');
@@ -47,11 +52,36 @@ export function AccessProvider({ children }: AccessProviderProps) {
     checkExistingAccess();
   }, []);
 
+  const celebrateAccess = () => {
+    // Trigger premium confetti effect
+    confetti({
+      particleCount: 150,
+      spread: 80,
+      origin: { y: 0.6 },
+      colors: ['#FFD700', '#9b87f5', '#7E69AB', '#D946EF'], // Gold and purple theme
+    });
+    
+    // Add additional burst for premium effect
+    setTimeout(() => {
+      confetti({
+        particleCount: 100,
+        angle: 60,
+        spread: 70,
+        origin: { x: 0, y: 0.6 }
+      });
+      confetti({
+        particleCount: 100,
+        angle: 120,
+        spread: 70,
+        origin: { x: 1, y: 0.6 }
+      });
+    }, 300);
+  };
+
   const validateAccessCode = async (code: string): Promise<boolean> => {
     try {
-      // In a real app, this would validate against a database
       // For now, we'll use hardcoded valid codes
-      const validCodes = ["DIAGRAMR2023"];
+      const validCodes = ["DIAGRAMR2023", "DIA2025"];
       
       // Check if the code is valid
       if (validCodes.includes(code)) {
@@ -59,6 +89,13 @@ export function AccessProvider({ children }: AccessProviderProps) {
         localStorage.setItem('diagramr-access-code', code);
         setAccessStatus('authorized');
         setHasValidAccessCode(true);
+        
+        // Check if it's our premium code
+        if (code === "DIA2025") {
+          setIsPremiumUser(true);
+          celebrateAccess();
+        }
+        
         return true;
       } else {
         setAccessStatus('unauthorized');
@@ -78,7 +115,9 @@ export function AccessProvider({ children }: AccessProviderProps) {
         validateAccessCode,
         showAccessForm,
         setShowAccessForm,
-        hasValidAccessCode
+        hasValidAccessCode,
+        celebrateAccess,
+        isPremiumUser
       }}
     >
       {children}

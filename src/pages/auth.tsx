@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +14,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -29,13 +29,12 @@ import { OAuthSignIn } from "@/components/oauth-sign-in";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { DiagramrLogo } from "@/components/diagramr-logo";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/components/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { useAccess } from '@/components/access-context';
-import { Key } from "lucide-react";
-import confetti from 'canvas-confetti';
+import { Key, Sparkles, Crown } from "lucide-react";
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -43,12 +42,42 @@ const Auth = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const location = useLocation();
+  const { signOut, user } = useAuth();
   
-  const { accessStatus, validateAccessCode, hasValidAccessCode } = useAccess();
-  const [accessCode, setAccessCode] = useState("");
-  const [isValidatingCode, setIsValidatingCode] = useState(false);
-  const [showAccessCodeSection, setShowAccessCodeSection] = useState(!hasValidAccessCode);
+  const { 
+    accessStatus, 
+    validateAccessCode, 
+    hasValidAccessCode, 
+    setShowAccessForm,
+    isPremiumUser, 
+    celebrateAccess 
+  } = useAccess();
+  
+  // Initialize sign-up state from query params
+  useEffect(() => {
+    if (searchParams.get('signup') === 'true') {
+      setShowSignUp(true);
+      
+      // If signing up and no valid access code, show the access form
+      if (!hasValidAccessCode && accessStatus !== 'checking') {
+        setShowAccessForm(true);
+      }
+    }
+  }, [searchParams, hasValidAccessCode, accessStatus, setShowAccessForm]);
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      const returnTo = searchParams.get("returnTo") || "/";
+      // Small delay to ensure any toast messages are seen
+      const timer = setTimeout(() => {
+        navigate(returnTo);
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [user, navigate, searchParams]);
   
   const formSchema = z.object({
     email: z.string().email({
@@ -72,44 +101,18 @@ const Auth = () => {
     navigate("/");
   };
   
-  const handleAccessCodeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!accessCode.trim()) {
-      toast.error("Please enter your access code");
-      return;
-    }
-    
-    setIsValidatingCode(true);
-    
-    try {
-      const isValid = await validateAccessCode(accessCode);
-      
-      if (isValid) {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
-        
-        toast.success("Access granted! You can now create an account.");
-        setShowAccessCodeSection(false);
-      } else {
-        toast.error("Invalid access code. Please try again or request access.");
-      }
-    } catch (error) {
-      console.error("Error validating access code:", error);
-      toast.error("Failed to validate access code. Please try again.");
-    } finally {
-      setIsValidatingCode(false);
-    }
-  };
-  
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     
     try {
       if (showSignUp) {
+        // Need valid access code to create an account
+        if (!hasValidAccessCode) {
+          setShowAccessForm(true);
+          setIsLoading(false);
+          return;
+        }
+        
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: values.email,
           password: values.password,
@@ -127,10 +130,19 @@ const Auth = () => {
           });
         } else {
           console.log("Sign-up successful:", signUpData);
-          toast({
-            title: "Check your email",
-            description: "We've sent you a link to verify your email address.",
-          });
+          
+          if (isPremiumUser) {
+            celebrateAccess();
+            toast({
+              title: "🎉 Welcome to the premium Diagramr experience!",
+              description: "Your account has been created with exclusive access.",
+            });
+          } else {
+            toast({
+              title: "Check your email",
+              description: "We've sent you a link to verify your email address.",
+            });
+          }
         }
       } else {
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
@@ -147,6 +159,13 @@ const Auth = () => {
           });
         } else {
           console.log("Sign-in successful:", signInData);
+          
+          if (isPremiumUser) {
+            celebrateAccess();
+            toast.success("Welcome back to your premium Diagramr experience!");
+          } else {
+            toast.success("Successfully signed in!");
+          }
           
           const returnTo = searchParams.get("returnTo") || "/";
           navigate(returnTo);
@@ -165,132 +184,130 @@ const Auth = () => {
   };
   
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className={`flex flex-col min-h-screen ${isPremiumUser ? "bg-gradient-to-b from-background to-background/95" : "bg-background"}`}>
       <Header />
       
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
-            <div className="flex justify-center mb-4">
+            <div className={`flex justify-center mb-4 ${isPremiumUser ? "relative" : ""}`}>
               <DiagramrLogo size="md" />
+              {isPremiumUser && (
+                <motion.div 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring" }}
+                  className="absolute -top-2 -right-2"
+                >
+                  <Crown className="h-6 w-6 text-amber-400" />
+                </motion.div>
+              )}
             </div>
-            <h1 className="text-2xl font-bold">{showSignUp ? "Create an Account" : "Sign In to Diagramr"}</h1>
+            <h1 className={`text-2xl font-bold ${isPremiumUser ? "bg-clip-text text-transparent bg-gradient-to-r from-amber-400 via-purple-500 to-amber-400" : ""}`}>
+              {showSignUp ? "Create an Account" : "Sign In to Diagramr"}
+              {isPremiumUser && <Sparkles className="ml-2 inline-block h-5 w-5 text-amber-400" />}
+            </h1>
             <p className="text-muted-foreground mt-2">
               {showSignUp 
                 ? "Create an account to save your favorite diagrams" 
                 : "Sign in to access your saved diagrams and preferences"}
             </p>
+            {isPremiumUser && (
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mt-2 text-sm font-medium text-purple-400"
+              >
+                You have exclusive beta access
+              </motion.div>
+            )}
           </div>
           
-          {showAccessCodeSection && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="bg-muted/40 p-6 rounded-lg border shadow-sm"
-            >
-              <form onSubmit={handleAccessCodeSubmit}>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Key className="h-4 w-4 text-primary" />
-                      <Label htmlFor="access-code">Beta Access Code</Label>
-                    </div>
-                    <div className="text-sm text-muted-foreground mb-2">
-                      Diagramr is currently in private beta (due to API limitations). Enter your access code to continue.
-                    </div>
-                    <Input
-                      id="access-code"
-                      placeholder="Enter your access code"
-                      value={accessCode}
-                      onChange={(e) => setAccessCode(e.target.value)}
-                      className="tracking-wider text-center"
-                    />
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Need an access code? Contact <a href="https://wa.link/g46cv1" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">@Anish</a> to request access.
-                    </div>
-                  </div>
-                  
-                  <Button type="submit" className="w-full" disabled={isValidatingCode}>
-                    {isValidatingCode ? "Validating..." : "Verify Access Code"}
-                  </Button>
-                </div>
-              </form>
-            </motion.div>
-          )}
-          
-          {(!showAccessCodeSection || hasValidAccessCode) && (
-            <Card className="border">
-              <CardHeader className="space-y-1">
-                <CardTitle>{showSignUp ? "Create an account" : "Sign in"}</CardTitle>
-                <CardDescription>
-                  {showSignUp
-                    ? "Enter your email and password to create an account"
-                    : "Enter your email and password to sign in"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input placeholder="mail@example.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? (
+          <Card className={`border ${isPremiumUser ? "border-purple-800/20 bg-card/80 backdrop-blur-sm" : ""}`}>
+            <CardHeader className="space-y-1">
+              <CardTitle>{showSignUp ? "Create an account" : "Sign in"}</CardTitle>
+              <CardDescription>
+                {showSignUp
+                  ? "Enter your email and password to create an account"
+                  : "Enter your email and password to sign in"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="mail@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button 
+                    type="submit" 
+                    className={`w-full ${isPremiumUser ? "bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600" : ""}`} 
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                        Please wait
+                      </>
+                    ) : (
+                      showSignUp ? (
                         <>
-                          <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                          Please wait
+                          Create Account
+                          {isPremiumUser && <Sparkles className="ml-2 h-4 w-4" />}
                         </>
                       ) : (
-                        showSignUp ? "Create Account" : "Sign In"
-                      )}
-                    </Button>
-                  </form>
-                </Form>
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                      Or continue with
-                    </span>
-                  </div>
+                        "Sign In"
+                      )
+                    )}
+                  </Button>
+                </form>
+              </Form>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
                 </div>
-                <OAuthSignIn />
-              </CardContent>
-              <CardFooter className="flex justify-center">
-                <Button variant="link" onClick={() => setShowSignUp(!showSignUp)}>
-                  {showSignUp
-                    ? "Already have an account? Sign in"
-                    : "Don't have an account? Sign up"}
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
+              <OAuthSignIn isPremium={isPremiumUser} />
+            </CardContent>
+            <CardFooter className="flex flex-col space-y-2">
+              <Button variant="link" onClick={() => setShowSignUp(!showSignUp)}>
+                {showSignUp
+                  ? "Already have an account? Sign in"
+                  : "Don't have an account? Sign up"}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={continueAsGuest}>
+                Continue as guest (3 free searches)
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
       </main>
       

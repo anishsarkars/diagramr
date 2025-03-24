@@ -5,7 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { Icons } from "@/components/icons";
 
-export function OAuthSignIn() {
+interface OAuthSignInProps {
+  isPremium?: boolean;
+}
+
+export function OAuthSignIn({ isPremium = false }: OAuthSignInProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleGithubSignIn = async () => {
@@ -31,7 +35,7 @@ export function OAuthSignIn() {
         type="button" 
         disabled={isLoading} 
         onClick={handleGithubSignIn}
-        className="w-full"
+        className={`w-full ${isPremium ? "border-purple-500/20 hover:border-purple-500/30 hover:bg-purple-500/10" : ""}`}
       >
         {isLoading ? (
           <Icons.spinner className="mr-2 h-4 w-4" />

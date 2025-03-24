@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccess } from './access-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,12 +7,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
-import { ArrowRight, Key, Lock, User, Phone } from 'lucide-react';
+import { ArrowRight, Key, Lock, User, Phone, Crown, Sparkles } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/auth-context';
+import { motion } from 'framer-motion';
 
 export function AccessCodeModal() {
-  const { showAccessForm, setShowAccessForm, validateAccessCode } = useAccess();
+  const { showAccessForm, setShowAccessForm, validateAccessCode, hasValidAccessCode, isPremiumUser } = useAccess();
+  const { user } = useAuth();
   const [accessCode, setAccessCode] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const [activeTab, setActiveTab] = useState('access-code');
@@ -21,6 +24,13 @@ export function AccessCodeModal() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Don't show the modal for already signed-in users unless they have no valid access code
+  useEffect(() => {
+    if (user && hasValidAccessCode) {
+      setShowAccessForm(false);
+    }
+  }, [user, hasValidAccessCode, setShowAccessForm]);
 
   const handleSubmitAccessCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,10 +46,15 @@ export function AccessCodeModal() {
       const isValid = await validateAccessCode(accessCode);
       
       if (isValid) {
-        // Trigger confetti effect
-        triggerConfetti();
+        // Special premium code celebration happens in context
+        if (accessCode.toUpperCase() === "DIA2025") {
+          toast.success('🎉 Exclusive beta access granted! Welcome to the premium experience.');
+        } else {
+          // Trigger regular confetti effect
+          triggerConfetti();
+          toast.success('Access granted! Welcome to Diagramr.');
+        }
         
-        toast.success('Access granted! Welcome to Diagramr.');
         setShowAccessForm(false);
       } else {
         toast.error('Invalid access code. Please try again or join the waitlist.');
@@ -91,11 +106,22 @@ export function AccessCodeModal() {
 
   return (
     <Dialog open={showAccessForm} onOpenChange={setShowAccessForm}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={`sm:max-w-md ${isPremiumUser ? 'bg-gradient-to-b from-background to-background/90 border-purple-300/20' : ''}`}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Lock className="h-5 w-5 text-primary" />
-            Diagramr Beta Access
+            {isPremiumUser ? (
+              <>
+                <Crown className="h-5 w-5 text-amber-400" />
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-purple-400">
+                  Diagramr Exclusive Beta
+                </span>
+              </>
+            ) : (
+              <>
+                <Lock className="h-5 w-5 text-primary" />
+                Diagramr Beta Access
+              </>
+            )}
           </DialogTitle>
           <DialogDescription>
             Due to API limitations, Diagramr is currently in private beta. Enter your access code or join the waitlist to get notified when we have availability.
@@ -175,6 +201,17 @@ export function AccessCodeModal() {
             </form>
           </TabsContent>
         </Tabs>
+        
+        {isPremiumUser && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="absolute bottom-2 right-2"
+          >
+            <Sparkles className="h-5 w-5 text-amber-400 opacity-70" />
+          </motion.div>
+        )}
       </DialogContent>
     </Dialog>
   );

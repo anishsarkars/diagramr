@@ -1,3 +1,4 @@
+
 import { DiagramResult } from "@/hooks/use-infinite-search";
 import { searchGoogleImages } from "@/utils/googleSearch";
 import { toast } from "sonner";
@@ -50,7 +51,7 @@ export async function searchDiagrams(
   console.log(`[SearchService] Searching for "${query}" (page ${page})`);
   
   try {
-    // Direct search without filtering
+    // Direct search without filtering or modifying the query
     console.log(`[SearchService] Fetching results for "${query}" page ${page}`);
     let results = await searchGoogleImages(query);
     
@@ -62,7 +63,7 @@ export async function searchDiagrams(
     
     if (results.length === 0) {
       console.warn(`[SearchService] No results found for "${query}"`);
-      toast.warning("No diagrams found. Try a different search term.");
+      toast.warning("No results found. Try a different search term.");
       return [];
     }
     
@@ -72,7 +73,7 @@ export async function searchDiagrams(
   } catch (error) {
     console.error(`[SearchService] Error searching for "${query}":`, error);
     
-    if (error.message === 'API quota exceeded') {
+    if (error.message.includes('quota exceeded')) {
       throw error; // Rethrow quota errors to handle specifically
     }
     
@@ -89,8 +90,8 @@ export function getSearchSuggestions(query: string): string[] {
   
   const lowercaseQuery = query.toLowerCase();
   
-  // Comprehensive diagram types across various domains
-  const diagramTypes = [
+  // Comprehensive content types across various domains
+  const contentTypes = [
     // Technical & Engineering
     "circuit diagram", "network topology", "UML class diagram", "system architecture",
     "database schema", "entity relationship diagram", "state machine diagram", 
@@ -113,11 +114,15 @@ export function getSearchSuggestions(query: string): string[] {
     "network diagram", "infrastructure architecture", "plant layout", "floor plan",
     "city map", "subway map", "user flow", "information architecture",
     "genealogy tree", "timeline diagram", "sankey diagram", "voronoi diagram",
-    "treemap", "heat map", "choropleth map", "venn diagram"
+    "treemap", "heat map", "choropleth map", "venn diagram",
+    
+    // Common content searches
+    "infographic", "chart", "graph", "illustration", "tutorial", "cheatsheet",
+    "reference guide", "comparison chart", "roadmap", "timeline", "workflow"
   ];
   
   // Find matching suggestions
-  let matchingSuggestions = diagramTypes.filter(term => 
+  let matchingSuggestions = contentTypes.filter(term => 
     term.includes(lowercaseQuery) || 
     lowercaseQuery.includes(term.substring(0, Math.min(term.length, 5)))
   );
@@ -127,7 +132,7 @@ export function getSearchSuggestions(query: string): string[] {
     const queryWords = lowercaseQuery.split(/\s+/);
     
     // Add related suggestions based on individual words in query
-    const relatedSuggestions = diagramTypes.filter(term => {
+    const relatedSuggestions = contentTypes.filter(term => {
       return queryWords.some(word => 
         word.length >= 3 && term.includes(word) && !matchingSuggestions.includes(term)
       );

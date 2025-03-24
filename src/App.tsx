@@ -35,7 +35,7 @@ function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { accessStatus, setShowAccessForm, hasValidAccessCode } = useAccess();
+  const { accessStatus, setShowAccessForm, hasValidAccessCode, isPremiumUser } = useAccess();
   
   // Enhanced loading timeout for better UX
   useEffect(() => {
@@ -63,11 +63,19 @@ function AppContent() {
       return;
     }
     
-    // If not on auth page and no valid access code, show access form
-    if (accessStatus === 'unauthorized' && location.pathname !== '/auth' && !hasValidAccessCode) {
+    // Only show access code modal for signup attempt on the auth page
+    // or if the user is trying to explicitly access restricted content without a valid code
+    const isAuthPage = location.pathname === '/auth';
+    const isSignupAttempt = isAuthPage && location.search.includes('signup=true');
+    const needsAccessForProtectedContent = !hasValidAccessCode && 
+      (location.pathname === '/pricing' || 
+       location.pathname === '/account' || 
+       location.pathname === '/liked');
+    
+    if ((isSignupAttempt || needsAccessForProtectedContent) && accessStatus === 'unauthorized') {
       setShowAccessForm(true);
     }
-  }, [location.pathname, user, navigate, accessStatus, setShowAccessForm, hasValidAccessCode]);
+  }, [location.pathname, location.search, user, navigate, accessStatus, setShowAccessForm, hasValidAccessCode]);
 
   const handleLoginClick = () => {
     navigate('/auth', { 
