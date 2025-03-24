@@ -86,7 +86,6 @@ const Auth = () => {
       const isValid = await validateAccessCode(accessCode);
       
       if (isValid) {
-        // Trigger confetti effect
         confetti({
           particleCount: 100,
           spread: 70,
@@ -111,7 +110,6 @@ const Auth = () => {
     
     try {
       if (showSignUp) {
-        // Sign up
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: values.email,
           password: values.password,
@@ -135,7 +133,6 @@ const Auth = () => {
           });
         }
       } else {
-        // Sign in
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: values.email,
           password: values.password,
@@ -151,7 +148,6 @@ const Auth = () => {
         } else {
           console.log("Sign-in successful:", signInData);
           
-          // Redirect to the original page or the home page
           const returnTo = searchParams.get("returnTo") || "/";
           navigate(returnTo);
         }
@@ -186,7 +182,6 @@ const Auth = () => {
             </p>
           </div>
           
-          {/* Access Code Section */}
           {showAccessCodeSection && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -224,7 +219,6 @@ const Auth = () => {
             </motion.div>
           )}
           
-          {/* Regular Auth Form */}
           {(!showAccessCodeSection || hasValidAccessCode) && (
             <Card className="border">
               <CardHeader className="space-y-1">

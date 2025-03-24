@@ -30,24 +30,14 @@ export function AccessProvider({ children }: AccessProviderProps) {
       
       const storedCode = localStorage.getItem('diagramr-access-code');
       if (storedCode) {
-        // Validate the stored code
-        try {
-          const { data, error } = await supabase
-            .from('access_codes')
-            .select('*')
-            .eq('code', storedCode)
-            .single();
-            
-          if (data && !error) {
-            setAccessStatus('authorized');
-            setHasValidAccessCode(true);
-          } else {
-            setAccessStatus('unauthorized');
-            localStorage.removeItem('diagramr-access-code');
-          }
-        } catch (error) {
-          console.error('Error checking access code:', error);
+        // Validate the stored code against hard-coded valid codes
+        const validCodes = ["DIAGRAMR2023"];
+        if (validCodes.includes(storedCode)) {
+          setAccessStatus('authorized');
+          setHasValidAccessCode(true);
+        } else {
           setAccessStatus('unauthorized');
+          localStorage.removeItem('diagramr-access-code');
         }
       } else {
         setAccessStatus('unauthorized');
@@ -60,11 +50,11 @@ export function AccessProvider({ children }: AccessProviderProps) {
   const validateAccessCode = async (code: string): Promise<boolean> => {
     try {
       // In a real app, this would validate against a database
-      // For now, we'll use a hardcoded valid code: "DIAGRAMR2023"
-      const validCode = "DIAGRAMR2023";
+      // For now, we'll use hardcoded valid codes
+      const validCodes = ["DIAGRAMR2023"];
       
       // Check if the code is valid
-      if (code === validCode) {
+      if (validCodes.includes(code)) {
         // Store the valid code
         localStorage.setItem('diagramr-access-code', code);
         setAccessStatus('authorized');

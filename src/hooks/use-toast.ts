@@ -1,9 +1,6 @@
-import * as React from "react"
 
-import type {
-  ToastActionElement,
-  ToastProps,
-} from "@/components/ui/toast"
+import * as React from "react"
+import type { ToastActionElement, ToastProps } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
@@ -166,6 +163,22 @@ function toast({ ...props }: Toast) {
     dismiss,
     update,
   }
+}
+
+// Add helper methods for common toast types
+toast.error = (message: string) => {
+  return toast({
+    variant: "destructive",
+    title: "Error",
+    description: message,
+  })
+}
+
+toast.success = (message: string) => {
+  return toast({
+    title: "Success",
+    description: message,
+  })
 }
 
 function useToast() {
