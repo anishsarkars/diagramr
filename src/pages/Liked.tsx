@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
@@ -33,7 +32,7 @@ interface LikedDiagram {
   diagram_id: string;
   diagram_data: DiagramData;
   created_at: string;
-  folder?: string;
+  folder?: string | null;
 }
 
 interface Folder {
@@ -63,7 +62,6 @@ export default function Liked() {
   
   const navigate = useNavigate();
 
-  // Redirect if not logged in
   useEffect(() => {
     if (!user) {
       navigate('/auth');
@@ -71,7 +69,6 @@ export default function Liked() {
     }
   }, [user, navigate]);
 
-  // Fetch user's liked diagrams
   useEffect(() => {
     const fetchLikedDiagrams = async () => {
       if (!user) return;
@@ -88,14 +85,13 @@ export default function Liked() {
         if (error) throw error;
         
         if (data) {
-          // Fix the type conversion issue by properly mapping the JSON data
           const formattedData = data.map(item => ({
             id: item.id,
             user_id: item.user_id,
             diagram_id: item.diagram_id,
             created_at: item.created_at,
             diagram_data: item.diagram_data as unknown as DiagramData,
-            folder: item.folder || null
+            folder: item.folder
           }));
           
           setLikedDiagrams(formattedData);
@@ -132,7 +128,6 @@ export default function Liked() {
       return;
     }
 
-    // Generate a random color
     const colors = ["bg-blue-500", "bg-green-500", "bg-purple-500", "bg-amber-500", "bg-cyan-500", "bg-pink-500"];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
@@ -150,13 +145,11 @@ export default function Liked() {
 
   const handleAssignFolder = async (diagramId: string, folderId: string | null) => {
     try {
-      // Update in Supabase
       await supabase
         .from('saved_diagrams')
         .update({ folder: folderId })
         .eq('id', diagramId);
       
-      // Update local state
       setLikedDiagrams(prev => 
         prev.map(diagram => 
           diagram.id === diagramId 
@@ -519,7 +512,6 @@ export default function Liked() {
         </Tabs>
       </main>
       
-      {/* Create New Folder Dialog */}
       <Dialog open={showNewFolderModal} onOpenChange={setShowNewFolderModal}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -551,7 +543,6 @@ export default function Liked() {
         </DialogContent>
       </Dialog>
       
-      {/* Image Preview Dialog */}
       <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>

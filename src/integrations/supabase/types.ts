@@ -41,6 +41,7 @@ export type Database = {
           created_at: string
           diagram_data: Json
           diagram_id: string
+          folder: string | null
           id: string
           user_id: string
         }
@@ -48,6 +49,7 @@ export type Database = {
           created_at?: string
           diagram_data: Json
           diagram_id: string
+          folder?: string | null
           id?: string
           user_id: string
         }
@@ -55,6 +57,7 @@ export type Database = {
           created_at?: string
           diagram_data?: Json
           diagram_id?: string
+          folder?: string | null
           id?: string
           user_id?: string
         }
