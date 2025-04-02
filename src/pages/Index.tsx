@@ -38,7 +38,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     error,
     resetSearch
   } = useInfiniteSearch({
-    pageSize: 12 // Show 12 results per page
+    pageSize: 20 // Increased to show more results initially
   });
 
   const observer = useRef<IntersectionObserver | null>(null);

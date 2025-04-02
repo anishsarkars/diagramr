@@ -97,13 +97,13 @@ export function ResultsSection({
 
   return (
     <motion.div
-      className="container py-6 flex flex-col"
+      className="container py-4 flex flex-col"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.3 }}
     >
       {/* Search bar and controls */}
-      <div className="flex flex-col md:flex-row items-center gap-4 mb-6 sticky top-16 pt-4 pb-4 bg-background/80 backdrop-blur-md z-30">
+      <div className="flex flex-col md:flex-row items-center gap-3 mb-4 sticky top-16 pt-3 pb-3 bg-background/90 backdrop-blur-sm z-30">
         <div className="w-full">
           {onSearch ? (
             <SimpleSearchBar 
@@ -160,7 +160,7 @@ export function ResultsSection({
       {/* Tags filter row */}
       {tags.length > 0 && (
         <ScrollArea 
-          className="mb-5 w-full whitespace-nowrap pb-2"
+          className="mb-4 w-full whitespace-nowrap pb-2"
         >
           <div className="flex gap-2">
             <Button
@@ -187,7 +187,7 @@ export function ResultsSection({
       )}
 
       {/* Results counter */}
-      <div className="text-sm text-muted-foreground mb-6">{renderResultsCount()}</div>
+      <div className="text-sm text-muted-foreground mb-4">{renderResultsCount()}</div>
 
       {isLoading ? (
         <div className="flex flex-col items-center justify-center pt-12 pb-20">
@@ -206,11 +206,11 @@ export function ResultsSection({
           <Button onClick={onNewSearch}>New Search</Button>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6">
           <AnimatePresence>
             <div
               className={cn({
-                "grid gap-4 sm:gap-6": true,
+                "grid gap-4 sm:gap-5": true,
                 "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4": viewMode === "grid",
                 "grid-cols-1": viewMode === "list",
               })}
@@ -221,9 +221,9 @@ export function ResultsSection({
                 return (
                   <motion.div
                     key={`${result.id}-${index}`}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index % 12 * 0.05 }}
+                    transition={{ duration: 0.2, delay: Math.min(index % 8 * 0.05, 0.4) }}
                     className={cn({
                       "col-span-1": true,
                       "h-full": viewMode === "grid",

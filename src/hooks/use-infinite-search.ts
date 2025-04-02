@@ -74,7 +74,7 @@ export function useInfiniteSearch({
     try {
       console.log("Searching for images with query:", query);
       
-      const initialBatchPages = 5; // Increased from 3 to 5
+      const initialBatchPages = 5; // Fetch 5 pages initially for more results
       let batchedResults: DiagramResult[] = [];
       
       const firstPageResults = await searchDiagrams(query, 1);
@@ -171,7 +171,7 @@ export function useInfiniteSearch({
   }, [pageSize]);
   
   const fetchAdditionalPages = async (query: string, startPage: number) => {
-    const maxAdditionalPages = 8; // Increased from 5 to 8
+    const maxAdditionalPages = 10; // Increased from 8 to 10 to get more results
     if (startPage > maxAdditionalPages) return;
     
     try {
@@ -231,7 +231,7 @@ export function useInfiniteSearch({
             setHasMore(uniqueNewResults.length >= 5);
             setCurrentSearchPage(nextSearchPage);
           } else {
-            // Fix type error: Converting nextSearchPage (number) to string
+            // Convert nextSearchPage (number) to string for second parameter
             const fallbackResults = await searchGoogleImages(`${searchTerm} diagram`, String(nextSearchPage));
             const uniqueFallbackResults = fallbackResults.filter(r => !existingUrls.has(r.imageSrc));
             
@@ -253,7 +253,7 @@ export function useInfiniteSearch({
           }
           
           try {
-            // Fix type error: Converting nextSearchPage (number) to string
+            // Convert nextSearchPage (number) to string for second parameter
             const fallbackResults = await searchGoogleImages(`${searchTerm} diagram`, String(nextSearchPage));
             const existingUrls = new Set(results.map(r => r.imageSrc));
             const uniqueFallbackResults = fallbackResults.filter(r => !existingUrls.has(r.imageSrc));

@@ -4,26 +4,23 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SimpleSearchBar } from "@/components/simple-search-bar";
 import { useInfiniteSearch } from "@/hooks/use-infinite-search";
-import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { useSearchLimit } from "@/hooks/use-search-limit";
 import { ResultsSection } from "@/components/results-section";
 import { useAuth } from "@/components/auth-context";
 import { useNavigate } from "react-router-dom";
 import { DiagramrLogo } from "@/components/diagramr-logo";
-import { Search, ArrowRight, Sparkles, Book, Image } from "lucide-react";
+import { Search, ArrowRight, Plus, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 export default function ChatDashboard() {
   const [query, setQuery] = useState("");
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
   const [likedDiagrams, setLikedDiagrams] = useState<Set<string>>(new Set());
-  const [animateSearchBar, setAnimateSearchBar] = useState(false);
   
-  const searchBarRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { incrementCount, hasReachedLimit, remainingSearches } = useSearchLimit();
@@ -35,10 +32,9 @@ export default function ChatDashboard() {
     loadMore,
     searchTerm,
     searchFor,
-    error,
     resetSearch
   } = useInfiniteSearch({
-    pageSize: 16
+    pageSize: 20 // Increased to show more results initially
   });
   
   useEffect(() => {
@@ -58,9 +54,11 @@ export default function ChatDashboard() {
       fetchLikedDiagrams();
     }
     
-    // Animate search bar after a delay
+    // Focus the input field when the page loads
     setTimeout(() => {
-      setAnimateSearchBar(true);
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
     }, 500);
   }, [user]);
   
@@ -101,7 +99,7 @@ export default function ChatDashboard() {
     const success = await incrementCount();
     if (!success) return;
     
-    setQuery(searchQuery);
+    setQuery("");
     
     try {
       await searchFor(searchQuery);
@@ -110,13 +108,6 @@ export default function ChatDashboard() {
       const newHistory = [searchQuery, ...searchHistory.filter(item => item !== searchQuery)].slice(0, 10);
       setSearchHistory(newHistory);
       localStorage.setItem('diagramr-search-history', JSON.stringify(newHistory));
-      
-      // Scroll to results
-      setTimeout(() => {
-        if (searchBarRef.current) {
-          searchBarRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
       
     } catch (error) {
       console.error("Search error:", error);
@@ -188,12 +179,12 @@ export default function ChatDashboard() {
     }
   };
   
-  const exampleSearchQueries = [
-    "human anatomy diagrams",
-    "molecular structure visualization",
-    "physics force diagrams",
-    "data structures and algorithms",
-    "circuit design diagrams"
+  const exampleSearches = [
+    "Human anatomy diagrams",
+    "Molecular structure visualization",
+    "Physics force diagrams", 
+    "Data flow architecture",
+    "Circuit design diagrams"
   ];
 
   return (
@@ -201,141 +192,30 @@ export default function ChatDashboard() {
       <Header />
       
       <main className="flex-1 flex flex-col">
-        <div className="container max-w-5xl mx-auto px-4 pt-8 pb-20 flex-1 flex flex-col">
+        <div className="container max-w-4xl mx-auto px-4 pt-6 pb-20 flex-1 flex flex-col">
           {!searchTerm ? (
-            // Chat-like UI dashboard
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex-1 flex flex-col items-center justify-center"
-            >
-              <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="mb-6"
-              >
-                <DiagramrLogo size="lg" showBeta />
-              </motion.div>
-              
-              <motion.h1
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-                className="text-3xl md:text-4xl font-bold text-center mb-4"
-              >
-                Find the Perfect Diagrams
-              </motion.h1>
-              
-              <motion.p
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4, duration: 0.5 }}
-                className="text-muted-foreground text-center mb-8 max-w-2xl"
-              >
-                Search for educational diagrams, charts, and visualizations to enhance your studies and research.
-              </motion.p>
-              
-              <motion.div
-                ref={searchBarRef}
-                initial={{ y: 20, opacity: 0, width: "100%" }}
-                animate={{ 
-                  y: 0, 
-                  opacity: 1,
-                  width: "100%",
-                  scale: animateSearchBar ? [1, 1.02, 1] : 1
-                }}
-                transition={{ 
-                  delay: 0.5, 
-                  duration: 0.5,
-                  scale: {
-                    duration: 1,
-                    repeat: 3,
-                    repeatType: "reverse"
-                  }
-                }}
-                className="w-full max-w-2xl mx-auto mb-8"
-              >
-                <div className="relative">
-                  <Input
-                    type="text"
-                    placeholder="What diagrams are you looking for?"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    className="w-full pl-10 pr-20 py-6 text-lg rounded-full border-primary/20 focus:border-primary shadow-lg focus:ring-primary/30"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && query.trim()) {
-                        handleSearch(query);
-                      }
-                    }}
-                  />
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-                  <Button
-                    onClick={() => handleSearch(query)}
-                    disabled={!query.trim()}
-                    className="absolute right-1.5 top-1/2 transform -translate-y-1/2 rounded-full px-4"
-                  >
-                    <ArrowRight className="h-5 w-5" />
-                  </Button>
-                </div>
-              </motion.div>
-              
-              {/* Recent searches */}
-              {searchHistory.length > 0 && (
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.6, duration: 0.5 }}
-                  className="w-full max-w-2xl mx-auto mb-8"
-                >
-                  <h3 className="text-sm text-muted-foreground mb-2">Recent searches</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {searchHistory.slice(0, 5).map((item, index) => (
-                      <Button
-                        key={index}
-                        variant="outline"
-                        size="sm"
-                        className="rounded-full text-sm"
-                        onClick={() => handleSearch(item)}
-                      >
-                        <Search className="mr-1 h-3 w-3" />
-                        {item}
-                      </Button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-              
-              {/* Example queries */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.7, duration: 0.5 }}
-                className="w-full max-w-3xl mx-auto"
-              >
-                <h3 className="text-sm text-muted-foreground mb-2 text-center">Try these examples</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {exampleSearchQueries.map((example, index) => (
-                    <motion.div
+            // Empty state with chat-like interface
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="w-full max-w-2xl mx-auto text-center">
+                <h1 className="text-3xl font-bold mb-3">What diagrams are you looking for?</h1>
+                <p className="text-muted-foreground mb-10">
+                  Search for educational diagrams, charts, and visualizations
+                </p>
+                
+                <div className="rounded-xl border border-border/60 p-6 mb-6 bg-card/40">
+                  {exampleSearches.map((search, index) => (
+                    <Button
                       key={index}
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      whileTap={{ scale: 0.98 }}
+                      variant="outline"
+                      className="m-1 text-sm rounded-full border-primary/20 hover:bg-primary/5"
+                      onClick={() => handleSearch(search)}
                     >
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left p-4 rounded-xl border-primary/10 hover:border-primary/30 hover:bg-primary/5"
-                        onClick={() => handleSearch(example)}
-                      >
-                        {index % 2 === 0 ? 
-                          <Book className="h-4 w-4 mr-2 text-primary/70" /> : 
-                          <Image className="h-4 w-4 mr-2 text-primary/70" />}
-                        {example}
-                      </Button>
-                    </motion.div>
+                      {search}
+                    </Button>
                   ))}
                 </div>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
           ) : (
             // Results section
             <ResultsSection 
@@ -356,35 +236,34 @@ export default function ChatDashboard() {
         </div>
         
         {/* Input box at bottom for chat-like interface */}
-        {searchTerm && (
-          <div className="sticky bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t z-40">
-            <div className="container max-w-5xl mx-auto">
-              <div className="relative">
-                <Input
-                  type="text"
-                  placeholder="Search for more diagrams or try a new query..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="w-full pl-10 pr-16 py-3 rounded-full border-primary/20 focus:border-primary"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && query.trim()) {
-                      handleSearch(query);
-                    }
-                  }}
-                />
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Button
-                  onClick={() => handleSearch(query)}
-                  disabled={!query.trim()}
-                  size="sm"
-                  className="absolute right-1.5 top-1/2 transform -translate-y-1/2 rounded-full h-8 px-3"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
+        <div className="sticky bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t z-40">
+          <div className="container max-w-2xl mx-auto">
+            <div className="relative">
+              <Input
+                ref={inputRef}
+                type="text"
+                placeholder="Search for diagrams..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full pl-10 pr-16 py-3 rounded-full border-border focus:border-primary focus:ring-1 focus:ring-primary"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && query.trim()) {
+                    handleSearch(query);
+                  }
+                }}
+              />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Button
+                onClick={() => handleSearch(query)}
+                disabled={!query.trim()}
+                size="sm"
+                className="absolute right-1.5 top-1/2 transform -translate-y-1/2 rounded-full h-8 w-8 p-0"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-        )}
+        </div>
       </main>
       
       <Footer />

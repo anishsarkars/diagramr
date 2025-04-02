@@ -30,7 +30,7 @@ export default function Auth() {
   const location = useLocation();
   const { user } = useAuth();
   
-  const returnTo = location.state?.returnTo || "/";
+  const returnTo = location.state?.returnTo || "/dashboard";
 
   useEffect(() => {
     if (user) {
@@ -39,7 +39,7 @@ export default function Auth() {
       // Wait for confetti to finish before redirecting
       const timer = setTimeout(() => {
         navigate(returnTo);
-      }, 2000);
+      }, 1500);
       
       return () => clearTimeout(timer);
     }
@@ -112,10 +112,11 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background via-background/95 to-background">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       {showCelebration && (
         <ConfettiCelebration 
-          duration={3000}
+          duration={1500}
+          particleCount={50}
           onComplete={() => {
             // Redirect after celebration is complete
             navigate(returnTo);
@@ -124,15 +125,15 @@ export default function Auth() {
       )}
       
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.3 }}
         className="w-full max-w-md"
       >
-        <Card className="border-border/30 shadow-lg overflow-hidden">
+        <Card className="border-border/30 shadow-md">
           <CardHeader className="space-y-1 flex flex-col items-center">
             <DiagramrLogo size="md" className="mb-2" />
-            <CardTitle className="text-2xl font-bold text-center">
+            <CardTitle className="text-2xl font-semibold text-center">
               {isSignUp ? "Create an Account" : "Welcome Back"}
             </CardTitle>
             <CardDescription className="text-center">

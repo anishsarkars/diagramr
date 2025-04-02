@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 
 interface OAuthSignInProps {
   isPremium?: boolean;
-  className?: string; // Added className prop
+  className?: string;
 }
 
 export function OAuthSignIn({ isPremium = false, className = "" }: OAuthSignInProps) {
