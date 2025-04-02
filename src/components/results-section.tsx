@@ -1,623 +1,282 @@
 
-import { DiagramResult } from "@/hooks/use-infinite-search";
-import { Button } from "@/components/ui/button";
-import { DiagramCard } from "@/components/diagram-card";
-import { 
-  SearchIcon, 
-  Loader2Icon, 
-  HomeIcon,
-  AlertCircleIcon,
-  GraduationCapIcon,
-  YoutubeIcon,
-  BookOpenIcon,
-  LinkIcon
-} from "lucide-react";
-import { SimpleSearchBar } from "@/components/simple-search-bar";
 import { useState, useEffect } from "react";
+import { DiagramCard } from "@/components/diagram-card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import { DiagramResult } from "@/hooks/use-infinite-search";
+import { SimpleSearchBar } from "@/components/simple-search-bar";
 import { motion, AnimatePresence } from "framer-motion";
-import { AnimatedContainer } from "@/components/animated-container";
-import { useInView } from "react-intersection-observer";
-import { DiagramPreviewModal } from "@/components/diagram-preview-modal";
-import { useTheme } from "@/components/theme-provider";
-import { useNavigate } from "react-router-dom";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card";
+import { Loader2, Search, Grid3X3, List, RefreshCw, ChevronDown } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ResultsSectionProps {
   results: DiagramResult[];
   searchTerm: string;
   onNewSearch: () => void;
-  isLoading: boolean;
-  lastAction: "search" | "generate";
-  onLike?: (id: string | number) => void;
+  onSearch?: (query: string) => void;
+  isLoading?: boolean;
+  lastAction?: "search" | "like";
+  selectedTagFilter?: string;
+  onSelectTagFilter?: (tag: string | null) => void;
+  onLike?: (imageId: string | number) => void;
   likedDiagrams?: Set<string>;
-  lastResultRef?: (node: HTMLDivElement) => void;
-  hasMore: boolean;
+  lastResultRef?: (node: HTMLDivElement | null) => void;
+  hasMore?: boolean;
+  loadMore?: () => void;
 }
 
-interface EducationalResource {
-  id: string;
-  title: string;
-  type: "video" | "article" | "tutorial" | "course";
-  url: string;
-  platform: string;
-  thumbnail?: string;
-  description?: string;
-}
-
-export function ResultsSection({ 
-  results, 
-  searchTerm, 
-  onNewSearch, 
+export function ResultsSection({
+  results,
+  searchTerm,
+  onNewSearch,
+  onSearch,
   isLoading,
-  lastAction,
+  lastAction = "search",
+  selectedTagFilter,
+  onSelectTagFilter,
   onLike,
   likedDiagrams = new Set(),
   lastResultRef,
-  hasMore
+  hasMore = false,
+  loadMore,
 }: ResultsSectionProps) {
-  const [selectedDiagram, setSelectedDiagram] = useState<DiagramResult | null>(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [educationalResources, setEducationalResources] = useState<EducationalResource[]>([]);
-  const [showResources, setShowResources] = useState(false);
-  const { ref: titleRef, inView: titleInView } = useInView({ triggerOnce: true });
-  const { isDarkMode } = useTheme();
-  const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [tags, setTags] = useState<string[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const isMobile = useIsMobile();
   
-  const isLiked = (id: string | number) => likedDiagrams.has(String(id));
+  // Extract unique tags from results
+  useEffect(() => {
+    const allTags = results
+      .flatMap((result) => result.tags || [])
+      .filter(Boolean);
+    
+    const uniqueTags = Array.from(new Set(allTags))
+      .sort((a, b) => a.localeCompare(b))
+      .slice(0, 12); // Limit to 12 tags
+    
+    setTags(uniqueTags);
+  }, [results]);
+  
+  const filteredResults = selectedTagFilter
+    ? results.filter(
+        (result) => result.tags && result.tags.includes(selectedTagFilter)
+      )
+    : results;
 
-  const handleLike = (id: string | number) => {
-    if (onLike) {
-      onLike(id);
+  const handleLoadMore = () => {
+    if (isLoading || isLoadingMore || !loadMore) return;
+    
+    setIsLoadingMore(true);
+    try {
+      loadMore();
+    } finally {
+      setTimeout(() => setIsLoadingMore(false), 1000);
     }
   };
-  
-  const openDiagramPreview = (diagram: DiagramResult) => {
-    setSelectedDiagram(diagram);
-    setPreviewOpen(true);
-  };
-  
-  const closeDiagramPreview = () => {
-    setPreviewOpen(false);
-  };
-  
-  const goToHome = () => {
-    onNewSearch();
-  };
 
-  useEffect(() => {
-    if (!searchTerm) return;
+  const renderResultsCount = () => {
+    if (isLoading) return "Searching...";
     
-    const generateEducationalResources = (query: string): EducationalResource[] => {
-      const lowerQuery = query.toLowerCase();
-      
-      const resources: { [key: string]: EducationalResource[] } = {
-        "data structures": [
-          {
-            id: "ds-video-1",
-            title: "Data Structures Easy to Advanced Course",
-            type: "video",
-            url: "https://www.youtube.com/watch?v=RBSGKlAvoiM",
-            platform: "YouTube - freeCodeCamp",
-            thumbnail: "https://img.youtube.com/vi/RBSGKlAvoiM/mqdefault.jpg",
-            description: "Complete data structures tutorial with visualizations"
-          },
-          {
-            id: "ds-video-2",
-            title: "Data Structure Visualization",
-            type: "video",
-            url: "https://www.youtube.com/watch?v=Qmt0QwzEmh0",
-            platform: "YouTube",
-            thumbnail: "https://img.youtube.com/vi/Qmt0QwzEmh0/mqdefault.jpg",
-            description: "Visual explanation of common data structures"
-          },
-          {
-            id: "ds-article-1",
-            title: "Data Structures Tutorial with Visualizations",
-            type: "article",
-            url: "https://visualgo.net/en",
-            platform: "VisuAlgo",
-            description: "Interactive visualizations of data structures and algorithms"
-          },
-          {
-            id: "ds-course-1",
-            title: "Data Structures Fundamentals",
-            type: "course",
-            url: "https://www.coursera.org/learn/data-structures",
-            platform: "Coursera",
-            description: "University of California San Diego - Free to audit"
-          }
-        ],
-        "algorithms": [
-          {
-            id: "algo-video-1",
-            title: "Algorithms Course - Graph Theory Tutorial",
-            type: "video",
-            url: "https://www.youtube.com/watch?v=09_LlHjoEiY",
-            platform: "YouTube - freeCodeCamp",
-            thumbnail: "https://img.youtube.com/vi/09_LlHjoEiY/mqdefault.jpg",
-            description: "Comprehensive algorithms tutorial with visualizations"
-          },
-          {
-            id: "algo-article-1",
-            title: "Algorithm Visualizations",
-            type: "article",
-            url: "https://visualgo.net/en/sorting",
-            platform: "VisuAlgo",
-            description: "Interactive algorithm visualizations for learning"
-          }
-        ],
-        
-        "biology": [
-          {
-            id: "biology-video-1",
-            title: "Cell Structure and Function Explained",
-            type: "video",
-            url: "https://www.youtube.com/watch?v=URUJD5NEXC8",
-            platform: "YouTube",
-            thumbnail: "https://img.youtube.com/vi/URUJD5NEXC8/mqdefault.jpg",
-            description: "Comprehensive explanation of cell structures and their functions"
-          },
-          {
-            id: "biology-article-1",
-            title: "Cell Biology: Detailed Guide with Diagrams",
-            type: "article",
-            url: "https://www.khanacademy.org/science/biology/structure-of-a-cell",
-            platform: "Khan Academy",
-            description: "Free educational resource with interactive diagrams"
-          },
-          {
-            id: "biology-course-1",
-            title: "Biology 101: Understanding Cell Structures",
-            type: "course",
-            url: "https://www.coursera.org/learn/cell-biology",
-            platform: "Coursera",
-            description: "Free to audit, university-level course with certificates available"
-          }
-        ],
-        
-        "chemistry": [
-          {
-            id: "chemistry-video-1",
-            title: "Periodic Table Explained: Elements and Trends",
-            type: "video",
-            url: "https://www.youtube.com/watch?v=rz4Dd1I_fX0",
-            platform: "YouTube",
-            thumbnail: "https://img.youtube.com/vi/rz4Dd1I_fX0/mqdefault.jpg",
-            description: "Visual explanation of the periodic table and element properties"
-          },
-          {
-            id: "chemistry-article-1",
-            title: "Interactive Periodic Table with Detailed Information",
-            type: "article",
-            url: "https://ptable.com/",
-            platform: "PTable",
-            description: "Free interactive periodic table with comprehensive element data"
-          }
-        ],
-        
-        "physics": [
-          {
-            id: "physics-video-1",
-            title: "Understanding Force Diagrams and Newton's Laws",
-            type: "video",
-            url: "https://www.youtube.com/watch?v=fo_pmp5rtzo",
-            platform: "YouTube",
-            thumbnail: "https://img.youtube.com/vi/fo_pmp5rtzo/mqdefault.jpg",
-            description: "Clear visual explanations of force diagrams and applications"
-          },
-          {
-            id: "physics-article-1",
-            title: "Force Diagrams and Free Body Diagrams Explained",
-            type: "article",
-            url: "https://www.physicsclassroom.com/class/newtlaws/Lesson-2/Free-Body-Diagrams",
-            platform: "Physics Classroom",
-            description: "Free educational resource with step-by-step explanations"
-          }
-        ],
-        
-        "computer science": [
-          {
-            id: "cs-video-1",
-            title: "UML Class Diagrams Explained with Examples",
-            type: "video",
-            url: "https://www.youtube.com/watch?v=UI6lqHOVHic",
-            platform: "YouTube",
-            thumbnail: "https://img.youtube.com/vi/UI6lqHOVHic/mqdefault.jpg",
-            description: "Comprehensive tutorial on creating and reading UML class diagrams"
-          },
-          {
-            id: "cs-article-1",
-            title: "UML Class Diagram Tutorial with Examples",
-            type: "article",
-            url: "https://www.visual-paradigm.com/guide/uml-unified-modeling-language/uml-class-diagram-tutorial/",
-            platform: "Visual Paradigm",
-            description: "Free guide with downloadable examples and templates"
-          },
-          {
-            id: "cs-tutorial-1",
-            title: "Database Design Tutorial: ER Diagrams",
-            type: "tutorial",
-            url: "https://www.lucidchart.com/pages/er-diagrams",
-            platform: "Lucidchart",
-            description: "Free tutorial with templates and examples"
-          }
-        ],
-        
-        "system architecture": [
-          {
-            id: "sa-video-1",
-            title: "System Architecture Design - Best Practices",
-            type: "video",
-            url: "https://www.youtube.com/watch?v=m8WXZ3k4GXM",
-            platform: "YouTube - Tech Academy",
-            thumbnail: "https://img.youtube.com/vi/m8WXZ3k4GXM/mqdefault.jpg",
-            description: "Comprehensive guide to system architecture design patterns"
-          },
-          {
-            id: "sa-article-1",
-            title: "System Architecture Diagrams - Documentation Guide",
-            type: "article",
-            url: "https://www.lucidchart.com/blog/how-to-make-a-system-architecture-diagram",
-            platform: "Lucidchart",
-            description: "Professional guide to creating system architecture diagrams"
-          },
-          {
-            id: "sa-tutorial-1",
-            title: "Enterprise Architecture Framework Tutorial",
-            type: "tutorial",
-            url: "https://www.visual-paradigm.com/guide/enterprise-architecture/what-is-togaf-framework/",
-            platform: "Visual Paradigm",
-            description: "Learn about TOGAF and other enterprise architecture frameworks"
-          }
-        ],
-        
-        "network topology": [
-          {
-            id: "nt-video-1",
-            title: "Network Topology Diagrams - Comprehensive Guide",
-            type: "video",
-            url: "https://www.youtube.com/watch?v=zbqrNMK-kI0",
-            platform: "YouTube - Networking Academy",
-            thumbnail: "https://img.youtube.com/vi/zbqrNMK-kI0/mqdefault.jpg",
-            description: "Learn how to create and understand network topology diagrams"
-          },
-          {
-            id: "nt-article-1",
-            title: "Network Topology Types and Diagrams Explained",
-            type: "article",
-            url: "https://www.lucidchart.com/pages/network-diagram/network-topology",
-            platform: "Lucidchart",
-            description: "Comprehensive guide to different network topologies"
-          }
-        ],
-        
-        "math": [
-          {
-            id: "math-video-1",
-            title: "Mathematics Visualizations and Graphs Explained",
-            type: "video",
-            url: "https://www.youtube.com/watch?v=WUvTyaaNkzM",
-            platform: "YouTube - 3Blue1Brown",
-            thumbnail: "https://img.youtube.com/vi/WUvTyaaNkzM/mqdefault.jpg",
-            description: "Beautiful visual explanations of mathematical concepts"
-          },
-          {
-            id: "math-article-1",
-            title: "Interactive Math Visualizations and Explanations",
-            type: "article",
-            url: "https://www.desmos.com/calculator",
-            platform: "Desmos",
-            description: "Free graphing calculator with shared examples"
-          }
-        ],
-        
-        "default": [
-          {
-            id: "general-video-1",
-            title: "Professional Diagram Creation Guide",
-            type: "video",
-            url: "https://www.youtube.com/watch?v=PCsQGSL4n2s",
-            platform: "YouTube",
-            thumbnail: "https://img.youtube.com/vi/PCsQGSL4n2s/mqdefault.jpg",
-            description: "Learn to create professional diagrams for any purpose"
-          },
-          {
-            id: "general-article-1",
-            title: "The Ultimate Guide to Professional Diagram Types",
-            type: "article",
-            url: "https://www.lucidchart.com/blog/types-of-diagrams",
-            platform: "Lucidchart",
-            description: "Free guide to different diagram types for professionals"
-          },
-          {
-            id: "general-tutorial-1",
-            title: "How to Create Effective Technical Diagrams",
-            type: "tutorial",
-            url: "https://www.goconqr.com/en/mind-maps/",
-            platform: "GoConqr",
-            description: "Free diagram and mind mapping tools for professionals"
-          }
-        ]
-      };
-      
-      let category = "default";
-      
-      // Check for system architecture queries
-      if (lowerQuery.includes("system architecture") || 
-          lowerQuery.includes("system design") ||
-          lowerQuery.includes("enterprise architecture")) {
-        category = "system architecture";
-      }
-      // Check for network topology queries
-      else if (lowerQuery.includes("network") && 
-              (lowerQuery.includes("topology") || lowerQuery.includes("diagram") || 
-              lowerQuery.includes("infrastructure"))) {
-        category = "network topology";
-      }
-      // Check for data structure/algorithm queries 
-      else if (lowerQuery.includes("data structure") || 
-          lowerQuery.includes("array") || 
-          lowerQuery.includes("linked list") ||
-          lowerQuery.includes("stack") ||
-          lowerQuery.includes("queue") ||
-          lowerQuery.includes("tree") ||
-          lowerQuery.includes("graph") ||
-          lowerQuery.includes("hash table")) {
-        category = "data structures";
-      } else if (lowerQuery.includes("algorithm") ||
-                lowerQuery.includes("sorting") ||
-                lowerQuery.includes("searching")) {
-        category = "algorithms";
-      } else if (lowerQuery.includes("biology") || 
-                lowerQuery.includes("cell") || 
-                lowerQuery.includes("organism") ||
-                lowerQuery.includes("anatomy")) {
-        category = "biology";
-      } else if (lowerQuery.includes("chemistry") || 
-                lowerQuery.includes("periodic") || 
-                lowerQuery.includes("molecular") ||
-                lowerQuery.includes("chemical")) {
-        category = "chemistry";
-      } else if (lowerQuery.includes("physics") || 
-                lowerQuery.includes("force") || 
-                lowerQuery.includes("motion") ||
-                lowerQuery.includes("energy")) {
-        category = "physics";
-      } else if (lowerQuery.includes("computer") || 
-                lowerQuery.includes("uml") ||
-                lowerQuery.includes("programming") ||
-                lowerQuery.includes("database")) {
-        category = "computer science";
-      } else if (lowerQuery.includes("math") ||
-                lowerQuery.includes("graph") ||
-                lowerQuery.includes("function") ||
-                lowerQuery.includes("geometry")) {
-        category = "math";
-      }
-      
-      return resources[category] || resources.default;
-    };
+    const count = filteredResults.length;
+    let resultsText = `${count} `;
     
-    const newResources = generateEducationalResources(searchTerm);
-    setEducationalResources(newResources);
-    setShowResources(results.length > 0);
-  }, [searchTerm, results.length]);
+    if (lastAction === "search") {
+      resultsText += `result${count !== 1 ? "s" : ""} for "${searchTerm}"`;
+    } else if (lastAction === "like") {
+      resultsText += `liked diagram${count !== 1 ? "s" : ""}`;
+    }
+    
+    if (selectedTagFilter) {
+      resultsText += ` • Filtered by: ${selectedTagFilter}`;
+    }
+    
+    return resultsText;
+  };
 
   return (
-    <div className="container py-6 md:py-8 pb-16">
-      <div className="mb-6 md:mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={goToHome}
-            className="mr-2 hidden md:flex"
-          >
-            <HomeIcon className="h-5 w-5" />
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={goToHome}
-            className="mr-2 md:hidden"
-          >
-            <HomeIcon className="h-4 w-4 mr-1.5" />
-            <span>Home</span>
-          </Button>
-          
-          <motion.div
-            ref={titleRef}
-            initial={{ opacity: 0, y: 20 }}
-            animate={titleInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="text-xl md:text-2xl font-bold">{searchTerm}</h1>
-            <p className="text-muted-foreground mt-1 text-xs md:text-sm">
-              {isLoading ? (
-                "Finding the best professional diagrams..."
-              ) : results.length > 0 ? (
-                `Found ${results.length} professional diagram${results.length > 1 ? "s" : ""}`
-              ) : (
-                "No diagrams found. Try a different search term."
-              )}
-            </p>
-          </motion.div>
+    <motion.div
+      className="container py-6 flex flex-col"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Search bar and controls */}
+      <div className="flex flex-col md:flex-row items-center gap-4 mb-6 sticky top-16 pt-4 pb-4 bg-background/80 backdrop-blur-md z-30">
+        <div className="w-full">
+          {onSearch ? (
+            <SimpleSearchBar 
+              onSearch={onSearch} 
+              defaultQuery={searchTerm} 
+              className="w-full max-w-none"
+            />
+          ) : (
+            <div className="flex items-center">
+              <div className="text-lg font-medium flex items-center">
+                {lastAction === "search" ? (
+                  <Search className="mr-2 h-5 w-5 text-primary" />
+                ) : (
+                  <Search className="mr-2 h-5 w-5 text-primary" />
+                )}
+                <span className="truncate max-w-[300px]">{searchTerm}</span>
+              </div>
+              <div className="ml-auto">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={onNewSearch}
+                  className="text-sm ml-4"
+                >
+                  New Search
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
-
-        <div className="flex items-center gap-2">
-          <SimpleSearchBar onSearch={onNewSearch} />
+        
+        <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">
+          <Button
+            variant={viewMode === "grid" ? "default" : "outline"}
+            size="icon"
+            className="h-9 w-9"
+            onClick={() => setViewMode("grid")}
+            title="Grid view"
+          >
+            <Grid3X3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            size="icon"
+            className="h-9 w-9"
+            onClick={() => setViewMode("list")}
+            title="List view"
+          >
+            <List className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
-      <AnimatePresence>
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 md:py-20">
-            <AnimatedContainer className="flex flex-col items-center justify-center">
-              <SearchIcon className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mb-4 animate-pulse" />
-              <h3 className="text-lg md:text-xl font-medium mb-2">
-                Searching for professional diagrams...
-              </h3>
-              <p className="text-muted-foreground max-w-md text-center text-sm md:text-base">
-                We're finding the most relevant professional diagrams for your search.
-              </p>
-              <div className="mt-4 flex items-center gap-2">
-                <Loader2Icon className="h-4 w-4 animate-spin" />
-                <span className="text-xs md:text-sm text-muted-foreground">This may take a moment</span>
-              </div>
-            </AnimatedContainer>
+      {/* Tags filter row */}
+      {tags.length > 0 && (
+        <ScrollArea 
+          className="mb-5 w-full whitespace-nowrap pb-2"
+          orientation="horizontal"
+        >
+          <div className="flex gap-2">
+            <Button
+              variant={selectedTagFilter ? "outline" : "default"}
+              size="sm"
+              className="rounded-full text-xs"
+              onClick={() => onSelectTagFilter && onSelectTagFilter(null)}
+            >
+              All Results
+            </Button>
+            {tags.map((tag) => (
+              <Button
+                key={tag}
+                variant={selectedTagFilter === tag ? "default" : "outline"}
+                size="sm"
+                className="rounded-full text-xs"
+                onClick={() => onSelectTagFilter && onSelectTagFilter(tag)}
+              >
+                {tag}
+              </Button>
+            ))}
           </div>
-        ) : results.length === 0 ? (
-          <div className="text-center py-12 md:py-16">
-            <AnimatedContainer className="flex flex-col items-center">
-              <AlertCircleIcon className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg md:text-xl font-medium mb-2">No professional diagrams found</h3>
-              <p className="text-muted-foreground max-w-md mx-auto text-sm px-4">
-                We couldn't find any professional diagrams matching your search. Try using different keywords.
-              </p>
-              <Button onClick={onNewSearch} className="mt-6">Try a different search</Button>
-            </AnimatedContainer>
+        </ScrollArea>
+      )}
+
+      {/* Results counter */}
+      <div className="text-sm text-muted-foreground mb-6">{renderResultsCount()}</div>
+
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center pt-12 pb-20">
+          <Loader2 className="h-10 w-10 animate-spin text-primary/70 mb-4" />
+          <p className="text-lg text-muted-foreground">Searching for diagrams...</p>
+        </div>
+      ) : filteredResults.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="bg-muted/30 rounded-full p-4 mb-4">
+            <Search className="h-10 w-10 text-muted-foreground" />
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {results.map((result, index) => {
-              if (results.length === index + 1) {
+          <h3 className="text-xl font-medium mb-2">No results found</h3>
+          <p className="text-muted-foreground mb-6 text-center max-w-md">
+            We couldn't find any diagrams for "{searchTerm}". Try a different search term or browse popular searches.
+          </p>
+          <Button onClick={onNewSearch}>New Search</Button>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          <AnimatePresence>
+            <div
+              className={cn({
+                "grid gap-4 sm:gap-6": true,
+                "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4": viewMode === "grid",
+                "grid-cols-1": viewMode === "list",
+              })}
+            >
+              {filteredResults.map((result, index) => {
+                const isLastItem = index === filteredResults.length - 1;
+                
                 return (
-                  <div ref={lastResultRef} key={result.id}>
+                  <motion.div
+                    key={`${result.id}-${index}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    className={cn({
+                      "col-span-1": true,
+                      "h-full": viewMode === "grid",
+                    })}
+                    ref={isLastItem ? lastResultRef : null}
+                  >
                     <DiagramCard
+                      id={result.id}
                       title={result.title}
                       imageSrc={result.imageSrc}
                       author={result.author}
                       authorUsername={result.authorUsername}
-                      sourceUrl={result.sourceUrl}
                       tags={result.tags}
-                      isGenerated={result.isGenerated}
-                      isLiked={isLiked(result.id)}
-                      onLike={() => handleLike(result.id)}
-                      onClick={() => openDiagramPreview(result)}
+                      sourceUrl={result.sourceUrl}
+                      isLiked={result.id ? likedDiagrams.has(String(result.id)) : false}
+                      onLike={onLike}
+                      mode={viewMode}
+                      onTagClick={(tag) => onSelectTagFilter && onSelectTagFilter(tag)}
                     />
-                  </div>
+                  </motion.div>
                 );
-              } else {
-                return (
-                  <DiagramCard
-                    key={result.id}
-                    title={result.title}
-                    imageSrc={result.imageSrc}
-                    author={result.author}
-                    authorUsername={result.authorUsername}
-                    sourceUrl={result.sourceUrl}
-                    tags={result.tags}
-                    isGenerated={result.isGenerated}
-                    isLiked={isLiked(result.id)}
-                    onLike={() => handleLike(result.id)}
-                    onClick={() => openDiagramPreview(result)}
-                  />
-                );
-              }
-            })}
-          </div>
-        )}
-      </AnimatePresence>
-      
-      {!isLoading && results.length > 0 && hasMore && (
-        <div className="flex justify-center mt-6 md:mt-8">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2Icon className="h-4 w-4 animate-spin" />
-            <span className="text-xs md:text-sm">Loading more professional diagrams...</span>
-          </div>
-        </div>
-      )}
-      
-      {!isLoading && results.length > 0 && !hasMore && (
-        <div className="text-center mt-6 md:mt-8 py-4">
-          <p className="text-muted-foreground text-xs md:text-sm">You've reached the end of the professional resources</p>
-          <Button variant="outline" onClick={onNewSearch} className="mt-4">
-            New Search
-          </Button>
-        </div>
-      )}
-
-      {/* Move educational resources section after results */}
-      {showResources && educationalResources.length > 0 && !isLoading && results.length > 0 && (
-        <motion.div 
-          className="mt-12 mb-6 md:mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base md:text-lg font-medium flex items-center">
-              <GraduationCapIcon className="h-4 w-4 md:h-5 md:w-5 mr-2 text-primary" />
-              <span>Additional Resources for "{searchTerm}"</span>
-            </h2>
-          </div>
+              })}
+            </div>
+          </AnimatePresence>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-            {educationalResources.map(resource => (
-              <Card key={resource.id} className="hover:shadow-md transition-all duration-300 h-full">
-                <CardHeader className="pb-2 pt-3 px-3 md:px-4">
-                  <CardTitle className="text-sm md:text-base flex items-center gap-2">
-                    {resource.type === "video" && <YoutubeIcon className="h-3.5 w-3.5 md:h-4 md:w-4 text-red-500" />}
-                    {resource.type === "article" && <BookOpenIcon className="h-3.5 w-3.5 md:h-4 md:w-4 text-blue-500" />}
-                    {resource.type === "tutorial" && <GraduationCapIcon className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-500" />}
-                    {resource.type === "course" && <GraduationCapIcon className="h-3.5 w-3.5 md:h-4 md:w-4 text-purple-500" />}
-                    <span className="line-clamp-1">{resource.title}</span>
-                  </CardTitle>
-                  <CardDescription className="text-xs md:text-sm">{resource.platform}</CardDescription>
-                </CardHeader>
-                <CardContent className="pb-1 pt-0 px-3 md:px-4">
-                  {resource.thumbnail && resource.type === "video" && (
-                    <div className="aspect-video rounded-md overflow-hidden bg-muted mb-2">
-                      <img 
-                        src={resource.thumbnail} 
-                        alt={resource.title}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    </div>
-                  )}
-                  {resource.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                      {resource.description}
-                    </p>
-                  )}
-                </CardContent>
-                <CardFooter className="pb-3 pt-1 px-3 md:px-4">
-                  <a 
-                    href={resource.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="w-full"
-                  >
-                    <Button variant="outline" className="w-full h-8 text-xs" size="sm">
-                      <LinkIcon className="h-3 w-3 mr-1.5" />
-                      Access {resource.type === "video" ? "Video" : 
-                            resource.type === "article" ? "Article" : 
-                            resource.type === "course" ? "Course" : "Tutorial"}
-                    </Button>
-                  </a>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        </motion.div>
+          {/* Load more button */}
+          {hasMore && (
+            <div className="flex justify-center pt-4 pb-8">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                onClick={handleLoadMore} 
+                disabled={isLoadingMore}
+                className="min-w-[200px]"
+              >
+                {isLoadingMore ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="mr-2 h-4 w-4" />
+                    Load More Results
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
       )}
-      
-      <DiagramPreviewModal
-        open={previewOpen}
-        onClose={closeDiagramPreview}
-        diagram={selectedDiagram}
-        onLike={selectedDiagram ? () => handleLike(selectedDiagram.id) : undefined}
-        isLiked={selectedDiagram ? isLiked(selectedDiagram.id) : false}
-      />
-    </div>
+    </motion.div>
   );
 }

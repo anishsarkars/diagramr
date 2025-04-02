@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
@@ -14,6 +15,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   const [showSearchField, setShowSearchField] = useState(true);
   const [likedDiagrams, setLikedDiagrams] = useState<Set<string>>(new Set());
   const [searchAttempts, setSearchAttempts] = useState(0);
+  const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
   
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -28,7 +30,9 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     searchFor,
     error,
     resetSearch
-  } = useInfiniteSearch();
+  } = useInfiniteSearch({
+    pageSize: 12 // Show 12 results per page
+  });
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastResultRef = useCallback((node: HTMLDivElement | null) => {
@@ -83,10 +87,27 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     });
     
     setShowSearchField(false);
+    setSelectedTagFilter(null);
+    
     try {
       console.log(`Starting search for query: "${prompt}"`);
       await searchFor(prompt);
       setSearchAttempts(0);
+      
+      // Save to search history
+      const savedHistory = localStorage.getItem('diagramr-search-history');
+      let history: string[] = [];
+      
+      if (savedHistory) {
+        try {
+          history = JSON.parse(savedHistory);
+        } catch (e) {
+          console.error('Error parsing search history:', e);
+        }
+      }
+      
+      const newHistory = [prompt, ...history.filter(item => item !== prompt)].slice(0, 10);
+      localStorage.setItem('diagramr-search-history', JSON.stringify(newHistory));
       
       if (remainingSearches <= 5 && remainingSearches > 0) {
         toast.info(`${remainingSearches} searches remaining today`, {
@@ -111,9 +132,8 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
       setSearchAttempts(prev => prev + 1);
       
       if (error.message === 'API quota exceeded') {
-        toast.error("API quota exceeded", {
-          description: "Sorry for the inconvenience! Our API quota has been reached. We're working on increasing our limits to serve you better.",
-          duration: 8000
+        toast.error("API quota issue. Trying with alternate sources...", {
+          duration: 3000
         });
       } else {
         if (searchAttempts >= 1) {
@@ -142,6 +162,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     setShowSearchField(true);
     resetSearch();
     setSearchAttempts(0);
+    setSelectedTagFilter(null);
   };
 
   const handleLikeDiagram = async (diagramId: string | number) => {
@@ -261,12 +282,16 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
             results={results} 
             searchTerm={searchTerm} 
             onNewSearch={handleNewSearch} 
+            onSearch={handleSearch}
             isLoading={isLoading}
             lastAction="search"
             onLike={handleLikeDiagram}
             likedDiagrams={likedDiagrams}
             lastResultRef={lastResultRef}
             hasMore={hasMore}
+            loadMore={loadMore}
+            selectedTagFilter={selectedTagFilter}
+            onSelectTagFilter={setSelectedTagFilter}
           />
         )}
       </main>

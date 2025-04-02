@@ -19,7 +19,7 @@ export interface DiagramResult {
 
 export function useInfiniteSearch({
   initialQuery = '',
-  pageSize = 20
+  pageSize = 12
 }: {
   initialQuery?: string;
   pageSize?: number;
@@ -74,25 +74,70 @@ export function useInfiniteSearch({
     try {
       console.log("Searching for images with query:", query);
       
-      // Use the searchDiagrams function that handles API rotation internally
-      const searchResults = await searchDiagrams(query);
+      // Pre-fetch multiple pages at once to get more results upfront
+      const initialBatchPages = 3;
+      let batchedResults: DiagramResult[] = [];
       
-      console.log(`Got ${searchResults.length} search results`);
+      // Get first page
+      const firstPageResults = await searchDiagrams(query, 1);
+      console.log(`Got ${firstPageResults.length} search results from first page`);
+      batchedResults = [...firstPageResults];
       
-      allResults.current = searchResults;
-      setResults(searchResults.slice(0, pageSize));
-      setHasMore(searchResults.length > pageSize || currentSearchPage < 5);
+      // Start preloading additional pages in parallel
+      const additionalPagesPromises = [];
+      for (let p = 2; p <= initialBatchPages; p++) {
+        additionalPagesPromises.push(searchDiagrams(query, p));
+      }
       
-      if (searchResults.length > 0) {
-        toast.success(`Found ${searchResults.length} images for "${query}"`);
+      // Wait for all additional page requests to complete
+      const additionalPagesResults = await Promise.allSettled(additionalPagesPromises);
+      
+      // Process resolved promises and add to results
+      additionalPagesResults.forEach((result, index) => {
+        if (result.status === 'fulfilled' && result.value.length > 0) {
+          console.log(`Got ${result.value.length} search results from page ${index + 2}`);
+          batchedResults = [...batchedResults, ...result.value];
+        }
+      });
+      
+      // Filter out duplicates by URL
+      const uniqueUrls = new Set();
+      const uniqueResults = batchedResults.filter(item => {
+        if (!uniqueUrls.has(item.imageSrc)) {
+          uniqueUrls.add(item.imageSrc);
+          return true;
+        }
+        return false;
+      });
+      
+      // Combine and sort results by relevance
+      allResults.current = uniqueResults.sort((a, b) => {
+        const scoreA = a.relevanceScore || 0;
+        const scoreB = b.relevanceScore || 0;
+        return scoreB - scoreA;
+      });
+      
+      setResults(allResults.current.slice(0, pageSize));
+      setHasMore(allResults.current.length > pageSize);
+      
+      if (allResults.current.length > 0) {
+        toast.success(`Found ${allResults.current.length} diagrams for "${query}"`);
       } else {
-        // If no results, the searchDiagrams function already handles the fallback search
-        toast.info("No results found. Try a different search term.");
+        // If no results, try with fallback search
+        const fallbackResults = await searchGoogleImages(query);
+        if (fallbackResults.length > 0) {
+          allResults.current = fallbackResults;
+          setResults(fallbackResults.slice(0, pageSize));
+          setHasMore(fallbackResults.length > pageSize);
+          toast.success(`Found ${fallbackResults.length} images for "${query}"`);
+        } else {
+          toast.info("No results found. Try a different search term.");
+        }
       }
       
       // Try to fetch additional pages in the background
       if (allResults.current.length > 0) {
-        fetchAdditionalPages(query, 2);
+        fetchAdditionalPages(query, initialBatchPages + 1);
       }
       
     } catch (err: any) {
@@ -138,8 +183,8 @@ export function useInfiniteSearch({
   }, [pageSize]);
   
   const fetchAdditionalPages = async (query: string, startPage: number) => {
-    const maxInitialPages = 5;
-    if (startPage > maxInitialPages) return;
+    const maxAdditionalPages = 5;
+    if (startPage > maxAdditionalPages) return;
     
     try {
       // Get more results from next page

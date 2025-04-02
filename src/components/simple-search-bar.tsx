@@ -2,10 +2,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X, ArrowRight, Loader2 } from "lucide-react";
+import { Search, X, ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { SearchSuggestions } from "@/components/search-suggestions";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SimpleSearchBarProps {
   onSearch: (query: string) => void;
@@ -27,6 +28,7 @@ export function SimpleSearchBar({
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -75,11 +77,18 @@ export function SimpleSearchBar({
     };
   }, []);
 
+  // Auto-focus on desktop
+  useEffect(() => {
+    if (!isMobile && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isMobile]);
+
   return (
     <div ref={wrapperRef} className={cn("relative", className)}>
       <form onSubmit={handleSubmit} className="flex items-center gap-2 w-full">
         <div className="relative flex-1">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-primary">
             <Search className="h-4 w-4" />
           </div>
           <Input
@@ -97,7 +106,11 @@ export function SimpleSearchBar({
             }}
             onBlur={() => setIsFocused(false)}
             placeholder={placeholder || "Search for educational diagrams..."}
-            className="pl-9 pr-10 py-6 h-11 bg-background/80 backdrop-blur-sm border-border/50"
+            className={cn(
+              "pl-9 pr-10 py-6 h-12 bg-background/80 backdrop-blur-sm border-border/50 transition-all rounded-lg",
+              isFocused ? "shadow-md ring-2 ring-primary/20" : "shadow-sm",
+              "focus-visible:ring-primary/30 focus-visible:ring-2"
+            )}
             disabled={isLoading}
           />
           {query && (
@@ -123,13 +136,16 @@ export function SimpleSearchBar({
               <Button 
                 type="submit" 
                 size="icon" 
-                className="h-11 w-11"
+                className={cn(
+                  "h-12 px-4 rounded-lg transition-all",
+                  "bg-primary hover:bg-primary/90"
+                )}
                 disabled={!query.trim() || isLoading}
               >
                 {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-5 w-5" />
                 )}
               </Button>
             </motion.div>
@@ -137,6 +153,7 @@ export function SimpleSearchBar({
         </AnimatePresence>
       </form>
       
+      {/* Enhanced Search suggestions dropdown */}
       <SearchSuggestions
         isVisible={showSuggestions && !isLoading}
         query={query}
