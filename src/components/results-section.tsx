@@ -162,7 +162,6 @@ export function ResultsSection({
       {tags.length > 0 && (
         <ScrollArea 
           className="mb-5 w-full whitespace-nowrap pb-2"
-          orientation="horizontal"
         >
           <div className="flex gap-2">
             <Button
@@ -241,7 +240,7 @@ export function ResultsSection({
                       tags={result.tags}
                       sourceUrl={result.sourceUrl}
                       isLiked={result.id ? likedDiagrams.has(String(result.id)) : false}
-                      onLike={onLike}
+                      onLike={onLike ? () => onLike(result.id) : undefined}
                       mode={viewMode}
                       onTagClick={(tag) => onSelectTagFilter && onSelectTagFilter(tag)}
                     />

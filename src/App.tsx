@@ -15,7 +15,6 @@ import Account from "./pages/Account";
 import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import { SiteLoader } from "./components/site-loader";
-import { AccessCodeModal } from "./components/access-code-modal";
 import { FeedbackButton } from "./components/feedback-button";
 
 // Create a query client with better retry settings for failed API requests
@@ -36,7 +35,7 @@ function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { accessStatus, setShowAccessForm, hasValidAccessCode, isPremiumUser } = useAccess();
+  const { isPremiumUser } = useAccess();
   
   // Enhanced loading timeout for better UX
   useEffect(() => {
@@ -63,20 +62,7 @@ function AppContent() {
       navigate('/auth', { state: { returnTo: location.pathname } });
       return;
     }
-    
-    // Only show access code modal for signup attempt on the auth page
-    // or if the user is trying to explicitly access restricted content without a valid code
-    const isAuthPage = location.pathname === '/auth';
-    const isSignupAttempt = isAuthPage && location.search.includes('signup=true');
-    const needsAccessForProtectedContent = !hasValidAccessCode && 
-      (location.pathname === '/pricing' || 
-       location.pathname === '/account' || 
-       location.pathname === '/liked');
-    
-    if ((isSignupAttempt || needsAccessForProtectedContent) && accessStatus === 'unauthorized') {
-      setShowAccessForm(true);
-    }
-  }, [location.pathname, location.search, user, navigate, accessStatus, setShowAccessForm, hasValidAccessCode]);
+  }, [location.pathname, user, navigate]);
 
   const handleLoginClick = () => {
     navigate('/auth', { 
@@ -92,7 +78,6 @@ function AppContent() {
         <>
           <Toaster />
           <Sonner closeButton position="top-right" />
-          <AccessCodeModal />
           <Routes>
             <Route path="/" element={<Index onLoginClick={handleLoginClick} />} />
             <Route path="/auth" element={<Auth />} />

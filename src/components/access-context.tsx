@@ -1,6 +1,5 @@
 
 import React, { createContext, useState, useContext, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 interface AccessContextType {
   isPremiumUser: boolean;

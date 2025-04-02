@@ -46,15 +46,7 @@ const Auth = () => {
   const location = useLocation();
   const { signOut, user } = useAuth();
   
-  const { 
-    accessStatus, 
-    validateAccessCode, 
-    hasValidAccessCode, 
-    setShowAccessForm,
-    isPremiumUser, 
-    isAnishInvite,
-    celebrateAccess 
-  } = useAccess();
+  const { isPremiumUser, setPremiumUser } = useAccess();
   
   // Initialize sign-up state from query params
   useEffect(() => {
@@ -99,22 +91,11 @@ const Auth = () => {
     toast.success("Continuing as guest. You have 3 free searches.");
   };
   
-  const handleAccessCodeClick = () => {
-    setShowAccessForm(true);
-  };
-  
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     
     try {
       if (showSignUp) {
-        // Need valid access code to create an account
-        if (!hasValidAccessCode) {
-          setShowAccessForm(true);
-          setIsLoading(false);
-          return;
-        }
-        
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: values.email,
           password: values.password,
@@ -134,7 +115,6 @@ const Auth = () => {
           console.log("Sign-up successful:", signUpData);
           
           if (isPremiumUser) {
-            celebrateAccess();
             toast({
               title: "🎉 Welcome to the premium Diagramr experience!",
               description: "Your account has been created with exclusive access.",
@@ -163,7 +143,6 @@ const Auth = () => {
           console.log("Sign-in successful:", signInData);
           
           if (isPremiumUser) {
-            celebrateAccess();
             toast.success("Welcome back to your premium Diagramr experience!");
           } else {
             toast.success("Successfully signed in!");
@@ -221,9 +200,7 @@ const Auth = () => {
                 transition={{ delay: 0.3 }}
                 className="mt-2 text-sm font-medium text-purple-400"
               >
-                {isAnishInvite 
-                  ? "You have @Anish's personal invite" 
-                  : "You have exclusive beta access"}
+                You have exclusive beta access
               </motion.div>
             )}
           </div>
@@ -310,15 +287,6 @@ const Auth = () => {
               <div className="flex gap-2 flex-wrap justify-center">
                 <Button variant="ghost" size="sm" onClick={continueAsGuest}>
                   Continue as guest
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleAccessCodeClick}
-                  className={`flex items-center gap-1 ${isPremiumUser ? "border-purple-500/30 bg-purple-500/5" : ""}`}
-                >
-                  <Key className="h-3.5 w-3.5" />
-                  {isPremiumUser ? "View Access Status" : "Enter Access Code"}
                 </Button>
               </div>
             </CardFooter>
