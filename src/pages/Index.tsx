@@ -21,6 +21,13 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   const navigate = useNavigate();
   const { incrementCount, hasReachedLimit, requiresLogin, remainingSearches } = useSearchLimit();
   
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
+  
   const { 
     results,
     isLoading,

@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { DiagramrLogo } from "@/components/diagramr-logo";
 import { SearchLimitIndicator } from "./search-limit-indicator";
 import { useState, useEffect } from "react";
-import { Book, BookOpen, Network, Database, Sparkles } from "lucide-react";
+import { Book, BookOpen, Network, Database, Sparkles, ArrowRight, Search } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { EnhancedSearchBar } from "./enhanced-search-bar";
+import { Input } from "./ui/input";
 
 interface HeroSectionProps {
   onSearch: (query: string) => void;
@@ -19,6 +20,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const [searchQuery, setSearchQuery] = useState("");
   
   const exampleSearches = [
     "human anatomy diagrams",
@@ -42,6 +44,13 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
     
     return () => clearInterval(interval);
   }, [features.length]);
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (searchQuery.trim()) {
+      onSearch(searchQuery);
+    }
+  };
 
   return (
     <motion.div 
@@ -139,19 +148,50 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           </AnimatePresence>
         </motion.div>
         
-        {/* Enhanced search bar */}
+        {/* Enhanced search input */}
         <motion.div 
           className="w-full max-w-3xl mx-auto mb-8"
           initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
+          animate={{ 
+            y: 0, 
+            opacity: 1,
+            scale: [1, 1.02, 1],
+          }}
+          transition={{ 
+            duration: 0.5, 
+            delay: 0.6,
+            scale: {
+              delay: 1.5,
+              duration: 1,
+              repeat: 2,
+              repeatType: "reverse"
+            }
+          }}
         >
-          <EnhancedSearchBar 
-            onSearch={(query) => onSearch(query)} 
-            isLoading={isLoading}
-            className="shadow-xl ring-1 ring-primary/20 bg-background/95 backdrop-blur-md"
-            placeholder="What diagrams are you looking for?"
-          />
+          <form onSubmit={handleSubmit} className="relative">
+            <Input
+              type="text"
+              placeholder="What diagrams are you looking for?"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-20 py-7 text-lg rounded-full border-primary/20 focus:border-primary shadow-lg focus:ring-primary/30"
+            />
+            <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+            <Button
+              type="submit"
+              disabled={!searchQuery.trim() || isLoading}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full px-5 py-6"
+            >
+              {isLoading ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-background border-t-transparent" />
+              ) : (
+                <>
+                  <span className="mr-1">Search</span>
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </form>
         </motion.div>
         
         {/* Example searches */}
@@ -183,46 +223,23 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         
         <SearchLimitIndicator />
         
-        {/* Feature cards */}
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto mt-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.8 }}
-        >
-          <motion.div 
-            className="bg-background/50 backdrop-blur-sm p-4 rounded-xl border border-border/30 shadow-sm"
-            whileHover={{ y: -5, transition: { duration: 0.2 } }}
+        {/* Call to action buttons */}
+        {!user && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+            className="mt-8"
           >
-            <div className="text-primary mb-2">
-              <BookOpen className="h-6 w-6" />
-            </div>
-            <h3 className="font-medium mb-1">For Students</h3>
-            <p className="text-sm text-muted-foreground">Find educational diagrams to understand complex academic concepts</p>
+            <Button 
+              size="lg"
+              className="rounded-full px-8"
+              onClick={() => navigate('/auth')}
+            >
+              Get Started for Free
+            </Button>
           </motion.div>
-          
-          <motion.div 
-            className="bg-background/50 backdrop-blur-sm p-4 rounded-xl border border-border/30 shadow-sm"
-            whileHover={{ y: -5, transition: { duration: 0.2 } }}
-          >
-            <div className="text-primary mb-2">
-              <Network className="h-6 w-6" />
-            </div>
-            <h3 className="font-medium mb-1">For Researchers</h3>
-            <p className="text-sm text-muted-foreground">Discover scientific visualizations for papers and presentations</p>
-          </motion.div>
-          
-          <motion.div 
-            className="bg-background/50 backdrop-blur-sm p-4 rounded-xl border border-border/30 shadow-sm"
-            whileHover={{ y: -5, transition: { duration: 0.2 } }}
-          >
-            <div className="text-primary mb-2">
-              <Book className="h-6 w-6" />
-            </div>
-            <h3 className="font-medium mb-1">For Educators</h3>
-            <p className="text-sm text-muted-foreground">Access visual resources for lectures and coursework</p>
-          </motion.div>
-        </motion.div>
+        )}
       </div>
     </motion.div>
   );

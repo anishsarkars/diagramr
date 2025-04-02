@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -11,292 +12,220 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Icons } from "@/components/icons";
-import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { OAuthSignIn } from "@/components/oauth-sign-in";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
 import { DiagramrLogo } from "@/components/diagramr-logo";
-import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/components/auth-context";
-import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { useAccess } from '@/components/access-context';
-import { Key, Sparkles, Crown } from "lucide-react";
-import { toast } from "sonner";
+import { OAuthSignIn } from "@/components/oauth-sign-in";
+import { useAuth } from "@/components/auth-context";
+import { ConfettiCelebration } from "@/components/confetti-celebration";
 
-const Auth = () => {
+export default function Auth() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showSignUp, setShowSignUp] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
   
-  const { isPremiumUser, setPremiumUser } = useAccess();
-  
-  // Initialize sign-up state from query params
-  useEffect(() => {
-    if (searchParams.get('signup') === 'true') {
-      setShowSignUp(true);
-    }
-  }, [searchParams]);
-  
-  // Redirect if already logged in
+  const returnTo = location.state?.returnTo || "/";
+
   useEffect(() => {
     if (user) {
-      const returnTo = searchParams.get("returnTo") || "/";
-      // Small delay to ensure any toast messages are seen
+      // If user is already logged in, show celebration and redirect
+      setShowCelebration(true);
+      // Wait for confetti to finish before redirecting
       const timer = setTimeout(() => {
         navigate(returnTo);
-      }, 500);
+      }, 2000);
       
       return () => clearTimeout(timer);
     }
-  }, [user, navigate, searchParams]);
-  
-  const formSchema = z.object({
-    email: z.string().email({
-      message: "Please enter a valid email address.",
-    }),
-    password: z.string().min(8, {
-      message: "Password must be at least 8 characters.",
-    }),
-  });
-  
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
-  
-  const continueAsGuest = async () => {
-    await signOut();
-    navigate("/");
-    toast.success("Continuing as guest. You have 3 free searches.");
-  };
-  
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  }, [user, navigate, returnTo]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
-    
+
     try {
-      if (showSignUp) {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: values.email,
-          password: values.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth`,
-          },
+      let result;
+
+      if (isSignUp) {
+        // Sign up
+        result = await supabase.auth.signUp({
+          email,
+          password,
         });
-        
-        if (signUpError) {
-          console.error("Sign-up error:", signUpError.message);
-          toast({
-            variant: "destructive",
-            title: "Sign-up failed",
-            description: signUpError.message,
-          });
-        } else {
-          console.log("Sign-up successful:", signUpData);
-          
-          if (isPremiumUser) {
-            toast({
-              title: "🎉 Welcome to the premium Diagramr experience!",
-              description: "Your account has been created with exclusive access.",
-            });
-          } else {
-            toast({
-              title: "Check your email",
-              description: "We've sent you a link to verify your email address.",
-            });
-          }
-        }
+
+        if (result.error) throw result.error;
+
+        toast({
+          title: "Account created!",
+          description: "Check your email to verify your account.",
+        });
       } else {
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email: values.email,
-          password: values.password,
+        // Sign in
+        result = await supabase.auth.signInWithPassword({
+          email,
+          password,
         });
-        
-        if (signInError) {
-          console.error("Sign-in error:", signInError.message);
-          toast({
-            variant: "destructive",
-            title: "Sign-in failed",
-            description: signInError.message,
-          });
+
+        if (result.error) throw result.error;
+
+        toast({
+          title: "Welcome back!",
+          description: "You've successfully signed in.",
+        });
+
+        // Show the celebration effect
+        setShowCelebration(true);
+      }
+
+    } catch (error: any) {
+      console.error("Authentication error:", error);
+      
+      let errorMessage = "An unexpected error occurred";
+      
+      if (error.message) {
+        if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Please check your email to confirm your account";
+        } else if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "Invalid email or password";
+        } else if (error.message.includes("User already registered")) {
+          errorMessage = "Email already in use. Try signing in instead";
         } else {
-          console.log("Sign-in successful:", signInData);
-          
-          if (isPremiumUser) {
-            toast.success("Welcome back to your premium Diagramr experience!");
-          } else {
-            toast.success("Successfully signed in!");
-          }
-          
-          const returnTo = searchParams.get("returnTo") || "/";
-          navigate(returnTo);
+          errorMessage = error.message;
         }
       }
-    } catch (error) {
-      console.error("Authentication error:", error);
+      
       toast({
-        variant: "destructive",
         title: "Authentication failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: errorMessage,
+        variant: "destructive",
       });
+      
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   return (
-    <div className={`flex flex-col min-h-screen ${isPremiumUser ? "bg-gradient-to-b from-background to-background/95" : "bg-background"}`}>
-      <Header />
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background via-background/95 to-background">
+      {showCelebration && (
+        <ConfettiCelebration 
+          duration={3000}
+          onComplete={() => {
+            // Redirect after celebration is complete
+            navigate(returnTo);
+          }}
+        />
+      )}
       
-      <main className="flex-1 flex items-center justify-center p-4">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <div className={`flex justify-center mb-4 ${isPremiumUser ? "relative" : ""}`}>
-              <DiagramrLogo size="md" />
-              {isPremiumUser && (
-                <motion.div 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.2, type: "spring" }}
-                  className="absolute -top-2 -right-2"
-                >
-                  <Crown className="h-6 w-6 text-amber-400" />
-                </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md"
+      >
+        <Card className="border-border/30 shadow-lg overflow-hidden">
+          <CardHeader className="space-y-1 flex flex-col items-center">
+            <DiagramrLogo size="md" className="mb-2" />
+            <CardTitle className="text-2xl font-bold text-center">
+              {isSignUp ? "Create an Account" : "Welcome Back"}
+            </CardTitle>
+            <CardDescription className="text-center">
+              {isSignUp
+                ? "Sign up to save and access your favorite diagrams"
+                : "Sign in to your account to continue"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <OAuthSignIn className="mb-4" />
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  or continue with email
+                </span>
+              </div>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  className="bg-background"
+                />
+              </div>
+              <div className="space-y-2">
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  className="bg-background"
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
+                aria-busy={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                    <span>{isSignUp ? "Creating Account..." : "Signing In..."}</span>
+                  </div>
+                ) : (
+                  <span>{isSignUp ? "Create Account" : "Sign In"}</span>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4">
+            <div className="text-center text-sm">
+              {isSignUp ? (
+                <div>
+                  Already have an account?{" "}
+                  <button
+                    onClick={() => setIsSignUp(false)}
+                    className="underline text-primary hover:text-primary/90 font-medium transition-colors"
+                    type="button"
+                  >
+                    Sign In
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  Don't have an account?{" "}
+                  <button
+                    onClick={() => setIsSignUp(true)}
+                    className="underline text-primary hover:text-primary/90 font-medium transition-colors"
+                    type="button"
+                  >
+                    Sign Up
+                  </button>
+                </div>
               )}
             </div>
-            <h1 className={`text-2xl font-bold ${isPremiumUser ? "bg-clip-text text-transparent bg-gradient-to-r from-amber-400 via-purple-500 to-amber-400" : ""}`}>
-              {showSignUp ? "Create an Account" : "Sign In to Diagramr"}
-              {isPremiumUser && <Sparkles className="ml-2 inline-block h-5 w-5 text-amber-400" />}
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              {showSignUp 
-                ? "Create an account to save your favorite diagrams" 
-                : "Sign in to access your saved diagrams and preferences"}
-            </p>
-            {isPremiumUser && (
-              <motion.div
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="mt-2 text-sm font-medium text-purple-400"
-              >
-                You have exclusive beta access
-              </motion.div>
-            )}
-          </div>
-          
-          <Card className={`border ${isPremiumUser ? "border-purple-800/20 bg-card/80 backdrop-blur-sm" : ""}`}>
-            <CardHeader className="space-y-1">
-              <CardTitle>{showSignUp ? "Create an account" : "Sign in"}</CardTitle>
-              <CardDescription>
-                {showSignUp
-                  ? "Enter your email and password to create an account"
-                  : "Enter your email and password to sign in"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="mail@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button 
-                    type="submit" 
-                    className={`w-full ${isPremiumUser ? "bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600" : ""}`} 
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                        Please wait
-                      </>
-                    ) : (
-                      showSignUp ? (
-                        <>
-                          Create Account
-                          {isPremiumUser && <Sparkles className="ml-2 h-4 w-4" />}
-                        </>
-                      ) : (
-                        "Sign In"
-                      )
-                    )}
-                  </Button>
-                </form>
-              </Form>
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Or continue with
-                  </span>
-                </div>
-              </div>
-              <OAuthSignIn isPremium={isPremiumUser} />
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-2">
-              <Button variant="link" onClick={() => setShowSignUp(!showSignUp)}>
-                {showSignUp
-                  ? "Already have an account? Sign in"
-                  : "Don't have an account? Sign up"}
-              </Button>
-              <div className="flex gap-2 flex-wrap justify-center">
-                <Button variant="ghost" size="sm" onClick={continueAsGuest}>
-                  Continue as guest
-                </Button>
-              </div>
-            </CardFooter>
-          </Card>
-        </div>
-      </main>
-      
-      <Footer />
+          </CardFooter>
+        </Card>
+      </motion.div>
     </div>
   );
-};
-
-export default Auth;
+}

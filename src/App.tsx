@@ -16,6 +16,8 @@ import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import { SiteLoader } from "./components/site-loader";
 import { FeedbackButton } from "./components/feedback-button";
+import ChatDashboard from "./pages/ChatDashboard";
+import { ConfettiCelebration } from "./components/confetti-celebration";
 
 // Create a query client with better retry settings for failed API requests
 const queryClient = new QueryClient({
@@ -32,6 +34,7 @@ const queryClient = new QueryClient({
 // App content separated to use router hooks
 function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
+  const [showLoginSuccess, setShowLoginSuccess] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -54,14 +57,31 @@ function AppContent() {
 
   // Protected route handler
   useEffect(() => {
-    const protectedRoutes = ['/account', '/liked'];
+    const protectedRoutes = ['/account', '/liked', '/dashboard'];
     
     // Check if the route is protected and user is not logged in
     if (protectedRoutes.includes(location.pathname) && !user) {
       navigate('/auth', { state: { returnTo: location.pathname } });
       return;
     }
-  }, [location.pathname, user, navigate]);
+    
+    // Show login success celebration when user logs in and goes to dashboard
+    if (user && location.pathname === '/dashboard' && !showLoginSuccess) {
+      const lastLogin = localStorage.getItem('last-login-celebration');
+      const now = Date.now();
+      
+      // Only show celebration if it hasn't been shown in the last hour
+      if (!lastLogin || now - parseInt(lastLogin) > 60 * 60 * 1000) {
+        setShowLoginSuccess(true);
+        localStorage.setItem('last-login-celebration', now.toString());
+        
+        // Auto-hide after animation
+        setTimeout(() => {
+          setShowLoginSuccess(false);
+        }, 3000);
+      }
+    }
+  }, [location.pathname, user, navigate, showLoginSuccess]);
 
   const handleLoginClick = () => {
     navigate('/auth', { 
@@ -75,6 +95,7 @@ function AppContent() {
         <SiteLoader />
       ) : (
         <>
+          {showLoginSuccess && <ConfettiCelebration duration={3000} />}
           <Toaster />
           <Sonner closeButton position="top-right" />
           <Routes>
@@ -83,6 +104,7 @@ function AppContent() {
             <Route path="/liked" element={<Liked />} />
             <Route path="/account" element={<Account />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/dashboard" element={<ChatDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <FeedbackButton />

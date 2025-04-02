@@ -45,6 +45,14 @@ export function Header() {
               </Button>
             </Link>
             
+            {user && (
+              <Link to="/dashboard">
+                <Button variant="ghost" size="sm" className="text-foreground/90 hover:text-foreground transition-colors">
+                  Dashboard
+                </Button>
+              </Link>
+            )}
+            
             <Link to="/pricing">
               <Button variant="ghost" size="sm" className="text-foreground/90 hover:text-foreground transition-colors">
                 Pricing
@@ -77,7 +85,7 @@ export function Header() {
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to="/account" className="cursor-pointer flex items-center">
+                    <Link to="/dashboard" className="cursor-pointer flex items-center">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       <span>Dashboard</span>
                     </Link>

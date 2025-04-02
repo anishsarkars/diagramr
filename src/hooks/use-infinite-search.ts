@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { searchDiagrams } from '@/utils/search-service';
 import { searchGoogleImages } from '@/utils/googleSearch';
@@ -74,26 +73,20 @@ export function useInfiniteSearch({
     try {
       console.log("Searching for images with query:", query);
       
-      // Pre-fetch multiple pages at once to get more results upfront
-      // Increase the initial batch pages to get more results
       const initialBatchPages = 5; // Increased from 3 to 5
       let batchedResults: DiagramResult[] = [];
       
-      // Get first page
       const firstPageResults = await searchDiagrams(query, 1);
       console.log(`Got ${firstPageResults.length} search results from first page`);
       batchedResults = [...firstPageResults];
       
-      // Start preloading additional pages in parallel
       const additionalPagesPromises = [];
       for (let p = 2; p <= initialBatchPages; p++) {
         additionalPagesPromises.push(searchDiagrams(query, p));
       }
       
-      // Wait for all additional page requests to complete
       const additionalPagesResults = await Promise.allSettled(additionalPagesPromises);
       
-      // Process resolved promises and add to results
       additionalPagesResults.forEach((result, index) => {
         if (result.status === 'fulfilled' && result.value.length > 0) {
           console.log(`Got ${result.value.length} search results from page ${index + 2}`);
@@ -101,7 +94,6 @@ export function useInfiniteSearch({
         }
       });
       
-      // Filter out duplicates by URL
       const uniqueUrls = new Set();
       const uniqueResults = batchedResults.filter(item => {
         if (!uniqueUrls.has(item.imageSrc)) {
@@ -111,7 +103,6 @@ export function useInfiniteSearch({
         return false;
       });
       
-      // Combine and sort results by relevance
       allResults.current = uniqueResults.sort((a, b) => {
         const scoreA = a.relevanceScore || 0;
         const scoreB = b.relevanceScore || 0;
@@ -124,7 +115,6 @@ export function useInfiniteSearch({
       if (allResults.current.length > 0) {
         toast.success(`Found ${allResults.current.length} diagrams for "${query}"`);
       } else {
-        // If no results, try with fallback search
         const fallbackResults = await searchGoogleImages(query);
         if (fallbackResults.length > 0) {
           allResults.current = fallbackResults;
@@ -136,7 +126,6 @@ export function useInfiniteSearch({
         }
       }
       
-      // Try to fetch additional pages in the background for even more results
       if (allResults.current.length > 0) {
         fetchAdditionalPages(query, initialBatchPages + 1);
       }
@@ -150,9 +139,7 @@ export function useInfiniteSearch({
           duration: 3000
         });
         
-        // Try one more time with a different search method
         try {
-          // Direct search without using an API key (system will rotate)
           const fallbackResults = await searchGoogleImages(query);
           if (fallbackResults.length > 0) {
             allResults.current = fallbackResults;
@@ -176,22 +163,17 @@ export function useInfiniteSearch({
         setHasMore(false);
       }
       
-      throw err; // Rethrow to handle in the component
-      
+      throw err;
     } finally {
       setIsLoading(false);
     }
   }, [pageSize]);
   
   const fetchAdditionalPages = async (query: string, startPage: number) => {
-    // Increase the max additional pages to get more results
     const maxAdditionalPages = 8; // Increased from 5 to 8
     if (startPage > maxAdditionalPages) return;
     
     try {
-      // Get more results from next page
-      console.log(`Fetching additional results for page ${startPage}`);
-      
       const additionalResults = await searchDiagrams(query, startPage);
       
       if (additionalResults.length > 0) {
@@ -212,7 +194,6 @@ export function useInfiniteSearch({
       }
     } catch (err) {
       console.error(`Error fetching page ${startPage}:`, err);
-      // Don't set an error state here, just log it
     }
   };
   
@@ -237,7 +218,6 @@ export function useInfiniteSearch({
         console.log(`Need to fetch more results for page ${nextSearchPage}`);
         
         try {
-          // The searchDiagrams function handles API rotation internally
           const newPageResults = await searchDiagrams(searchTerm, nextSearchPage);
           
           const existingUrls = new Set(results.map(r => r.imageSrc));
@@ -250,7 +230,6 @@ export function useInfiniteSearch({
             setHasMore(uniqueNewResults.length >= 5);
             setCurrentSearchPage(nextSearchPage);
           } else {
-            // If no unique new results from main source, try with Google Images
             const fallbackResults = await searchGoogleImages(`${searchTerm} diagram`, nextSearchPage);
             const uniqueFallbackResults = fallbackResults.filter(r => !existingUrls.has(r.imageSrc));
             
@@ -271,7 +250,6 @@ export function useInfiniteSearch({
             toast.error("Reached API limits. Try again later.", { duration: 3000 });
           }
           
-          // Try with fallback source even if there's an error
           try {
             const fallbackResults = await searchGoogleImages(`${searchTerm} diagram`, nextSearchPage);
             const existingUrls = new Set(results.map(r => r.imageSrc));

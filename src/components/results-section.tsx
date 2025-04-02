@@ -223,7 +223,7 @@ export function ResultsSection({
                     key={`${result.id}-${index}`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    transition={{ duration: 0.3, delay: index % 12 * 0.05 }}
                     className={cn({
                       "col-span-1": true,
                       "h-full": viewMode === "grid",
@@ -239,7 +239,7 @@ export function ResultsSection({
                       tags={result.tags}
                       sourceUrl={result.sourceUrl}
                       isLiked={result.id ? likedDiagrams.has(String(result.id)) : false}
-                      onLike={() => onLike?.(result.id)}
+                      onLike={() => onLike && onLike(result.id)}
                       mode={viewMode}
                       onTagClick={(tag) => onSelectTagFilter && onSelectTagFilter(tag)}
                     />
