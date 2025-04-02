@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { HeartIcon, ExternalLink, FileType2, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 
-interface DiagramCardProps {
+export interface DiagramCardProps {
+  id?: string | number;
   title: string;
   imageSrc: string;
   author?: string;
@@ -23,9 +24,12 @@ interface DiagramCardProps {
   isLiked?: boolean;
   onLike?: () => void;
   onClick?: () => void;
+  mode?: "grid" | "list";
+  onTagClick?: (tag: string) => void;
 }
 
 export function DiagramCard({
+  id,
   title,
   imageSrc,
   author = "Unknown",
@@ -36,6 +40,8 @@ export function DiagramCard({
   isLiked = false,
   onLike,
   onClick,
+  mode = "grid",
+  onTagClick,
 }: DiagramCardProps) {
   const [imageError, setImageError] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -99,6 +105,13 @@ export function DiagramCard({
     }
     
     return imageSrc;
+  };
+  
+  const handleTagClick = (tag: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onTagClick) {
+      onTagClick(tag);
+    }
   };
   
   return (
@@ -181,7 +194,8 @@ export function DiagramCard({
               <Badge
                 key={tag}
                 variant="secondary"
-                className="text-xs px-1.5 py-0 h-5"
+                className="text-xs px-1.5 py-0 h-5 cursor-pointer hover:bg-primary/10"
+                onClick={(e) => handleTagClick(tag, e)}
               >
                 {tag}
               </Badge>

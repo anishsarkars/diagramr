@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, History, TrendingUp, Sparkles } from "lucide-react";
+import { Search, History, TrendingUp, Sparkles, Lightbulb, BookOpen, Network, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 
@@ -26,6 +26,9 @@ export function SearchSuggestions({
     "Physics force diagrams",
     "Chemical reactions illustrated",
     "Data structure flowcharts",
+    "Neural network architecture",
+    "Molecular biology diagrams",
+    "Circuit design schematics"
   ]);
 
   useEffect(() => {
@@ -50,7 +53,8 @@ export function SearchSuggestions({
         "chart",
         "visual",
         "illustration",
-        "schematic"
+        "schematic",
+        "visualization"
       ];
       
       const domains = [
@@ -63,8 +67,19 @@ export function SearchSuggestions({
         "medical",
         "anatomy",
         "process",
-        "system"
+        "system",
+        "architecture",
+        "network"
       ];
+      
+      const specificTerms = {
+        biology: ["cell", "organism", "DNA", "protein", "system", "structure"],
+        physics: ["force", "motion", "field", "wave", "particle", "circuit"],
+        chemistry: ["reaction", "molecule", "bond", "compound", "structure", "element"],
+        "computer science": ["algorithm", "flowchart", "data structure", "network", "architecture", "system"],
+        engineering: ["circuit", "system", "process", "design", "structure", "blueprint"],
+        mathematics: ["graph", "function", "set", "geometry", "probability", "statistics"]
+      };
       
       // Generate context-sensitive suggestions
       const querySuggestions: string[] = [];
@@ -78,45 +93,50 @@ export function SearchSuggestions({
       
       // Add domain-specific suggestions based on query
       const lowerQuery = query.toLowerCase();
-      if (domains.some(domain => lowerQuery.includes(domain))) {
-        // If query already contains a domain, suggest specific subtopics
-        if (lowerQuery.includes("biology")) {
-          querySuggestions.push(
-            `${query} cell structure`,
-            `${query} organ system`,
-            `${query} process flow`
-          );
-        } else if (lowerQuery.includes("physics")) {
-          querySuggestions.push(
-            `${query} force diagram`,
-            `${query} circuit diagram`,
-            `${query} vector field`
-          );
-        } else if (lowerQuery.includes("computer science") || lowerQuery.includes("programming")) {
-          querySuggestions.push(
-            `${query} flowchart`,
-            `${query} algorithm`,
-            `${query} data structure`
-          );
+      
+      // Check if query contains any domains
+      const matchedDomain = domains.find(domain => lowerQuery.includes(domain.toLowerCase()));
+      
+      if (matchedDomain) {
+        // If query contains a domain, add domain-specific suggestions
+        const domainKey = matchedDomain as keyof typeof specificTerms;
+        if (specificTerms[domainKey]) {
+          specificTerms[domainKey].forEach(term => {
+            if (!lowerQuery.includes(term.toLowerCase())) {
+              querySuggestions.push(`${query} ${term}`);
+            }
+          });
         }
       } else {
         // If no domain, suggest adding domains
-        domains.forEach(domain => {
-          if (Math.random() > 0.7) {  // Randomly select some domains to avoid too many suggestions
+        domains.forEach((domain, index) => {
+          if (index % 3 === 0) {  // Add some domains to avoid too many suggestions
             querySuggestions.push(`${query} ${domain}`);
           }
         });
       }
       
+      // Add "explain" or "visualization" prefix for certain types of queries
+      if (!lowerQuery.startsWith("explain") && 
+          !lowerQuery.includes("how") && 
+          !lowerQuery.includes("what") &&
+          !lowerQuery.includes("diagram")) {
+        querySuggestions.push(`${query} explanation diagram`);
+        querySuggestions.push(`How ${query} works diagram`);
+      }
+      
       // Deduplicate and limit
-      const uniqueSuggestions = Array.from(new Set(querySuggestions)).slice(0, 5);
+      const uniqueSuggestions = Array.from(new Set(querySuggestions))
+        .filter(suggestion => suggestion.toLowerCase() !== query.toLowerCase())
+        .slice(0, 6);
+      
       setSuggestions(uniqueSuggestions);
     } else {
       setSuggestions([]);
     }
   }, [query]);
 
-  if (!isVisible || (!suggestions.length && !searchHistory.length)) {
+  if (!isVisible || (!suggestions.length && !searchHistory.length && !topSearches.length)) {
     return null;
   }
 
@@ -129,15 +149,28 @@ export function SearchSuggestions({
         transition={{ duration: 0.2 }}
         className={cn(
           "absolute top-full left-0 right-0 mt-1 z-50 bg-card/95 backdrop-blur-md",
-          "border border-border/40 rounded-lg shadow-lg overflow-hidden max-h-80 overflow-y-auto",
+          "border border-border/40 rounded-xl shadow-lg overflow-hidden max-h-80 overflow-y-auto",
           className
         )}
       >
+        {/* AI-Powered search descriptions */}
+        {!query && (
+          <div className="p-3 border-b border-border/30">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-medium">AI-Powered Search</h3>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Search for educational diagrams using natural language. Try specific topics or concepts.
+            </p>
+          </div>
+        )}
+
         {/* Search suggestions */}
         {query && suggestions.length > 0 && (
           <div className="p-2">
             <h3 className="text-xs font-medium text-muted-foreground mb-2 px-2 flex items-center">
-              <Sparkles className="w-3 h-3 mr-1 text-primary/70" />
+              <Lightbulb className="w-3 h-3 mr-1 text-primary/70" />
               Suggestions
             </h3>
             <div className="space-y-1">
@@ -148,7 +181,7 @@ export function SearchSuggestions({
                   className="w-full justify-start text-sm px-2 py-1.5 h-auto rounded-md font-normal"
                   onClick={() => onSuggestionClick(suggestion)}
                 >
-                  <Search className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+                  <Search className="w-3.5 h-3.5 mr-2 text-primary/70" />
                   <span className="truncate">{suggestion}</span>
                 </Button>
               ))}
@@ -184,20 +217,27 @@ export function SearchSuggestions({
           <div className="p-2 border-t border-border/30">
             <h3 className="text-xs font-medium text-muted-foreground mb-2 px-2 flex items-center">
               <TrendingUp className="w-3 h-3 mr-1 text-primary/70" />
-              Popular Searches
+              Popular Topics
             </h3>
-            <div className="space-y-1">
-              {topSearches.map((item, index) => (
-                <Button
-                  key={`top-${index}`}
-                  variant="ghost"
-                  className="w-full justify-start text-sm px-2 py-1.5 h-auto rounded-md font-normal"
-                  onClick={() => onSuggestionClick(item)}
-                >
-                  <TrendingUp className="w-3.5 h-3.5 mr-2 text-muted-foreground/70" />
-                  <span className="truncate">{item}</span>
-                </Button>
-              ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+              {topSearches.map((item, index) => {
+                let icon;
+                if (index % 3 === 0) icon = <BookOpen className="w-3.5 h-3.5 mr-2 text-muted-foreground/70" />;
+                else if (index % 3 === 1) icon = <Network className="w-3.5 h-3.5 mr-2 text-muted-foreground/70" />;
+                else icon = <Database className="w-3.5 h-3.5 mr-2 text-muted-foreground/70" />;
+                
+                return (
+                  <Button
+                    key={`top-${index}`}
+                    variant="ghost"
+                    className="w-full justify-start text-sm px-2 py-1.5 h-auto rounded-md font-normal"
+                    onClick={() => onSuggestionClick(item)}
+                  >
+                    {icon}
+                    <span className="truncate">{item}</span>
+                  </Button>
+                );
+              })}
             </div>
           </div>
         )}

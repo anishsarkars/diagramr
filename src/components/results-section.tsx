@@ -2,13 +2,12 @@
 import { useState, useEffect } from "react";
 import { DiagramCard } from "@/components/diagram-card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { DiagramResult } from "@/hooks/use-infinite-search";
 import { SimpleSearchBar } from "@/components/simple-search-bar";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Search, Grid3X3, List, RefreshCw, ChevronDown } from "lucide-react";
+import { Loader2, Search, Grid3X3, List, ChevronDown } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ResultsSectionProps {
@@ -18,7 +17,7 @@ interface ResultsSectionProps {
   onSearch?: (query: string) => void;
   isLoading?: boolean;
   lastAction?: "search" | "like";
-  selectedTagFilter?: string;
+  selectedTagFilter?: string | null;
   onSelectTagFilter?: (tag: string | null) => void;
   onLike?: (imageId: string | number) => void;
   likedDiagrams?: Set<string>;
@@ -240,7 +239,7 @@ export function ResultsSection({
                       tags={result.tags}
                       sourceUrl={result.sourceUrl}
                       isLiked={result.id ? likedDiagrams.has(String(result.id)) : false}
-                      onLike={onLike ? () => onLike(result.id) : undefined}
+                      onLike={() => onLike?.(result.id)}
                       mode={viewMode}
                       onTagClick={(tag) => onSelectTagFilter && onSelectTagFilter(tag)}
                     />

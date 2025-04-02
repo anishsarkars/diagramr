@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider, useAuth } from "@/components/auth-context";
-import { AccessProvider, useAccess } from "@/components/access-context";
+import { AccessProvider } from "@/components/access-context";
 import { useState, useEffect } from "react";
 import Index from "./pages/Index";
 import Auth from "./pages/auth";
@@ -35,7 +35,6 @@ function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { isPremiumUser } = useAccess();
   
   // Enhanced loading timeout for better UX
   useEffect(() => {

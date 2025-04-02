@@ -1,15 +1,14 @@
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { DiagramrLogo } from "@/components/diagramr-logo";
 import { SearchLimitIndicator } from "./search-limit-indicator";
 import { useState, useEffect } from "react";
-import { Book, Search, LayoutDashboard, 
-  BookOpen, Network, Database, Workflow, Sparkles } from "lucide-react";
+import { Book, BookOpen, Network, Database, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { SimpleSearchBar } from "./simple-search-bar";
+import { EnhancedSearchBar } from "./enhanced-search-bar";
 
 interface HeroSectionProps {
   onSearch: (query: string) => void;
@@ -46,7 +45,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
 
   return (
     <motion.div 
-      className="bg-gradient-to-b from-background via-background/95 to-background"
+      className="min-h-[85vh] flex items-center justify-center bg-gradient-to-b from-background via-background/95 to-background pt-10 pb-20"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.7 }}
@@ -80,7 +79,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         />
       </div>
       
-      <div className="container relative z-10 pt-16 md:pt-24 pb-16 flex flex-col items-center justify-center">
+      <div className="container relative z-10 flex flex-col items-center justify-center px-4 md:px-6">
         {/* Logo and title section */}
         <motion.div 
           initial={{ y: -20, opacity: 0 }}
@@ -88,7 +87,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="mb-6"
         >
-          <DiagramrLogo size="lg" showBeta iconOnly={true} showText={false} className="mb-2" />
+          <DiagramrLogo size="lg" showBeta iconOnly={false} showText={true} className="mb-2" />
         </motion.div>
         
         <motion.h1 
@@ -101,7 +100,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         </motion.h1>
         
         <motion.div
-          className="mb-6 text-muted-foreground text-xl max-w-2xl text-center"
+          className="mb-8 text-muted-foreground text-xl max-w-2xl text-center"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
@@ -118,23 +117,26 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.5 }}
         >
-          {features.map((feature, index) => (
-            <motion.div
-              key={index}
-              className={`flex items-center justify-center gap-2 absolute left-0 right-0 ${
-                index === currentFeatureIndex ? "text-primary" : "text-transparent"
-              }`}
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ 
-                y: index === currentFeatureIndex ? 0 : (index < currentFeatureIndex ? -20 : 20),
-                opacity: index === currentFeatureIndex ? 1 : 0
-              }}
-              transition={{ duration: 0.5 }}
-            >
-              {feature.icon}
-              <span className="font-medium">{feature.label}</span>
-            </motion.div>
-          ))}
+          <AnimatePresence mode="wait">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                className={`flex items-center justify-center gap-2 absolute left-0 right-0 ${
+                  index === currentFeatureIndex ? "text-primary" : "text-transparent"
+                }`}
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ 
+                  y: index === currentFeatureIndex ? 0 : (index < currentFeatureIndex ? -20 : 20),
+                  opacity: index === currentFeatureIndex ? 1 : 0
+                }}
+                exit={{ y: -20, opacity: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                {feature.icon}
+                <span className="font-medium">{feature.label}</span>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </motion.div>
         
         {/* Enhanced search bar */}
@@ -144,11 +146,11 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.6 }}
         >
-          <SimpleSearchBar 
+          <EnhancedSearchBar 
             onSearch={(query) => onSearch(query)} 
             isLoading={isLoading}
-            className="shadow-xl ring-1 ring-primary/10 bg-background/95 backdrop-blur-md"
-            placeholder="Search for educational diagrams and visualizations..."
+            className="shadow-xl ring-1 ring-primary/20 bg-background/95 backdrop-blur-md"
+            placeholder="What diagrams are you looking for?"
           />
         </motion.div>
         
@@ -159,7 +161,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.65 }}
         >
-          <div className="w-full text-sm text-muted-foreground mb-2 text-center">Popular searches:</div>
+          <div className="w-full text-sm text-muted-foreground mb-2 text-center">Try these examples:</div>
           {exampleSearches.map((example, index) => (
             <motion.div
               key={index}
@@ -172,7 +174,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
                 className="rounded-full border-primary/20 hover:bg-primary/5"
                 onClick={() => onSearch(example)}
               >
-                <Search className="h-3 w-3 mr-1.5" />
+                <Sparkles className="h-3 w-3 mr-1.5 text-primary/70" />
                 {example}
               </Button>
             </motion.div>
@@ -215,7 +217,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
             whileHover={{ y: -5, transition: { duration: 0.2 } }}
           >
             <div className="text-primary mb-2">
-              <LayoutDashboard className="h-6 w-6" />
+              <Book className="h-6 w-6" />
             </div>
             <h3 className="font-medium mb-1">For Educators</h3>
             <p className="text-sm text-muted-foreground">Access visual resources for lectures and coursework</p>

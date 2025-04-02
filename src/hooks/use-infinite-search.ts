@@ -19,7 +19,7 @@ export interface DiagramResult {
 
 export function useInfiniteSearch({
   initialQuery = '',
-  pageSize = 12
+  pageSize = 24 // Increased page size from 12 to 24
 }: {
   initialQuery?: string;
   pageSize?: number;
@@ -75,7 +75,8 @@ export function useInfiniteSearch({
       console.log("Searching for images with query:", query);
       
       // Pre-fetch multiple pages at once to get more results upfront
-      const initialBatchPages = 3;
+      // Increase the initial batch pages to get more results
+      const initialBatchPages = 5; // Increased from 3 to 5
       let batchedResults: DiagramResult[] = [];
       
       // Get first page
@@ -135,7 +136,7 @@ export function useInfiniteSearch({
         }
       }
       
-      // Try to fetch additional pages in the background
+      // Try to fetch additional pages in the background for even more results
       if (allResults.current.length > 0) {
         fetchAdditionalPages(query, initialBatchPages + 1);
       }
@@ -144,7 +145,7 @@ export function useInfiniteSearch({
       console.error('Search error:', err);
       setError(err instanceof Error ? err : new Error('An error occurred during search'));
       
-      if (err.message.includes('quota exceeded')) {
+      if (err.message && err.message.includes('quota exceeded')) {
         toast.error("API quota issue. Trying with alternate sources...", {
           duration: 3000
         });
@@ -183,7 +184,8 @@ export function useInfiniteSearch({
   }, [pageSize]);
   
   const fetchAdditionalPages = async (query: string, startPage: number) => {
-    const maxAdditionalPages = 5;
+    // Increase the max additional pages to get more results
+    const maxAdditionalPages = 8; // Increased from 5 to 8
     if (startPage > maxAdditionalPages) return;
     
     try {
@@ -248,17 +250,45 @@ export function useInfiniteSearch({
             setHasMore(uniqueNewResults.length >= 5);
             setCurrentSearchPage(nextSearchPage);
           } else {
-            console.log("No new unique results found");
-            setHasMore(false);
+            // If no unique new results from main source, try with Google Images
+            const fallbackResults = await searchGoogleImages(`${searchTerm} diagram`, nextSearchPage);
+            const uniqueFallbackResults = fallbackResults.filter(r => !existingUrls.has(r.imageSrc));
+            
+            if (uniqueFallbackResults.length > 0) {
+              console.log(`Adding ${uniqueFallbackResults.length} new unique results from fallback source`);
+              allResults.current = [...allResults.current, ...uniqueFallbackResults];
+              setResults(prev => [...prev, ...uniqueFallbackResults]);
+              setHasMore(uniqueFallbackResults.length >= 5);
+            } else {
+              console.log("No new unique results found from either source");
+              setHasMore(false);
+            }
           }
         } catch (error: any) {
           console.error("Error loading more results:", error);
           
-          if (error.message.includes('quota exceeded')) {
+          if (error.message && error.message.includes('quota exceeded')) {
             toast.error("Reached API limits. Try again later.", { duration: 3000 });
           }
           
-          setHasMore(false);
+          // Try with fallback source even if there's an error
+          try {
+            const fallbackResults = await searchGoogleImages(`${searchTerm} diagram`, nextSearchPage);
+            const existingUrls = new Set(results.map(r => r.imageSrc));
+            const uniqueFallbackResults = fallbackResults.filter(r => !existingUrls.has(r.imageSrc));
+            
+            if (uniqueFallbackResults.length > 0) {
+              console.log(`Adding ${uniqueFallbackResults.length} new unique results from fallback after error`);
+              allResults.current = [...allResults.current, ...uniqueFallbackResults];
+              setResults(prev => [...prev, ...uniqueFallbackResults]);
+              setHasMore(uniqueFallbackResults.length >= 5);
+            } else {
+              setHasMore(false);
+            }
+          } catch (fallbackError) {
+            console.error("Fallback search also failed:", fallbackError);
+            setHasMore(false);
+          }
         }
       }
     } catch (error) {
