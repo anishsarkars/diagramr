@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { searchDiagrams } from '@/utils/search-service';
 import { searchGoogleImages } from '@/utils/googleSearch';
@@ -18,7 +19,7 @@ export interface DiagramResult {
 
 export function useInfiniteSearch({
   initialQuery = '',
-  pageSize = 24 // Increased page size from 12 to 24
+  pageSize = 24 
 }: {
   initialQuery?: string;
   pageSize?: number;
@@ -230,7 +231,8 @@ export function useInfiniteSearch({
             setHasMore(uniqueNewResults.length >= 5);
             setCurrentSearchPage(nextSearchPage);
           } else {
-            const fallbackResults = await searchGoogleImages(`${searchTerm} diagram`, nextSearchPage);
+            // Fix type error: Converting nextSearchPage (number) to string
+            const fallbackResults = await searchGoogleImages(`${searchTerm} diagram`, String(nextSearchPage));
             const uniqueFallbackResults = fallbackResults.filter(r => !existingUrls.has(r.imageSrc));
             
             if (uniqueFallbackResults.length > 0) {
@@ -251,7 +253,8 @@ export function useInfiniteSearch({
           }
           
           try {
-            const fallbackResults = await searchGoogleImages(`${searchTerm} diagram`, nextSearchPage);
+            // Fix type error: Converting nextSearchPage (number) to string
+            const fallbackResults = await searchGoogleImages(`${searchTerm} diagram`, String(nextSearchPage));
             const existingUrls = new Set(results.map(r => r.imageSrc));
             const uniqueFallbackResults = fallbackResults.filter(r => !existingUrls.has(r.imageSrc));
             

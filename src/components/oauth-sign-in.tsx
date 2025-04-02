@@ -8,9 +8,10 @@ import { motion } from "framer-motion";
 
 interface OAuthSignInProps {
   isPremium?: boolean;
+  className?: string; // Added className prop
 }
 
-export function OAuthSignIn({ isPremium = false }: OAuthSignInProps) {
+export function OAuthSignIn({ isPremium = false, className = "" }: OAuthSignInProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleGoogleSignIn = async () => {
@@ -36,7 +37,7 @@ export function OAuthSignIn({ isPremium = false }: OAuthSignInProps) {
   };
 
   return (
-    <div className="flex flex-col space-y-2">
+    <div className={`flex flex-col space-y-2 ${className}`}>
       <motion.div 
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
