@@ -11,8 +11,9 @@ import { ResultsSection } from "@/components/results-section";
 import { useAuth } from "@/components/auth-context";
 import { useNavigate } from "react-router-dom";
 import { DiagramrLogo } from "@/components/diagramr-logo";
-import { Search, ArrowRight, Plus, Send } from "lucide-react";
+import { Search, ArrowRight, Plus, Send, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { motion } from "framer-motion";
 
 export default function ChatDashboard() {
   const [query, setQuery] = useState("");
@@ -34,7 +35,7 @@ export default function ChatDashboard() {
     searchFor,
     resetSearch
   } = useInfiniteSearch({
-    pageSize: 20 // Increased to show more results initially
+    pageSize: 20
   });
   
   useEffect(() => {
@@ -192,28 +193,83 @@ export default function ChatDashboard() {
       <Header />
       
       <main className="flex-1 flex flex-col">
-        <div className="container max-w-4xl mx-auto px-4 pt-6 pb-20 flex-1 flex flex-col">
+        <div className="container max-w-4xl mx-auto px-4 pt-12 pb-24 flex-1 flex flex-col">
           {!searchTerm ? (
             // Empty state with chat-like interface
             <div className="flex-1 flex flex-col items-center justify-center">
               <div className="w-full max-w-2xl mx-auto text-center">
-                <h1 className="text-3xl font-bold mb-3">What diagrams are you looking for?</h1>
-                <p className="text-muted-foreground mb-10">
-                  Search for educational diagrams, charts, and visualizations
-                </p>
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <h1 className="text-4xl font-serif font-bold mb-3">Find your diagrams</h1>
+                  <p className="text-muted-foreground mb-8">
+                    Search for educational diagrams, charts, and visualizations
+                  </p>
+                </motion.div>
                 
-                <div className="rounded-xl border border-border/60 p-6 mb-6 bg-card/40">
-                  {exampleSearches.map((search, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      className="m-1 text-sm rounded-full border-primary/20 hover:bg-primary/5"
-                      onClick={() => handleSearch(search)}
-                    >
-                      {search}
-                    </Button>
-                  ))}
-                </div>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="mb-10"
+                >
+                  <div className="relative w-full mb-6">
+                    <div className="absolute inset-0 bg-primary/5 rounded-2xl blur-xl"></div>
+                    <div className="relative flex items-center">
+                      <Input
+                        ref={inputRef}
+                        type="text"
+                        placeholder="What diagrams are you looking for?"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        className="w-full pl-12 pr-24 py-7 text-lg rounded-2xl border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 shadow-sm"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && query.trim()) {
+                            handleSearch(query);
+                          }
+                        }}
+                      />
+                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary h-5 w-5" />
+                      <Button
+                        onClick={() => handleSearch(query)}
+                        disabled={!query.trim() || isLoading}
+                        size="lg"
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-xl px-5 py-6 gap-2"
+                      >
+                        {isLoading ? (
+                          <div className="h-5 w-5 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-1" />
+                            <span>Search</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                  <div className="text-sm text-muted-foreground mb-4">Try searching for:</div>
+                  <div className="flex flex-wrap justify-center gap-2 max-w-xl mx-auto">
+                    {exampleSearches.map((search, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        className="rounded-full text-sm border-primary/20 hover:bg-primary/5 transition-colors"
+                        onClick={() => handleSearch(search)}
+                      >
+                        {search}
+                      </Button>
+                    ))}
+                  </div>
+                </motion.div>
               </div>
             </div>
           ) : (
@@ -235,32 +291,39 @@ export default function ChatDashboard() {
           )}
         </div>
         
-        {/* Input box at bottom for chat-like interface */}
+        {/* Improved input box at bottom for chat-like interface */}
         <div className="sticky bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t z-40">
           <div className="container max-w-2xl mx-auto">
             <div className="relative">
-              <Input
-                ref={inputRef}
-                type="text"
-                placeholder="Search for diagrams..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="w-full pl-10 pr-16 py-3 rounded-full border-border focus:border-primary focus:ring-1 focus:ring-primary"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && query.trim()) {
-                    handleSearch(query);
-                  }
-                }}
-              />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Button
-                onClick={() => handleSearch(query)}
-                disabled={!query.trim()}
-                size="sm"
-                className="absolute right-1.5 top-1/2 transform -translate-y-1/2 rounded-full h-8 w-8 p-0"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
+              <div className="absolute inset-0 bg-primary/5 rounded-full blur-md opacity-50"></div>
+              <div className="relative flex items-center">
+                <Input
+                  ref={inputRef}
+                  type="text"
+                  placeholder="Search for diagrams..."
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="w-full pl-12 pr-16 py-5 rounded-full border-border/50 focus:border-primary focus:ring-1 focus:ring-primary shadow-md"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && query.trim()) {
+                      handleSearch(query);
+                    }
+                  }}
+                />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary h-5 w-5" />
+                <Button
+                  onClick={() => handleSearch(query)}
+                  disabled={!query.trim() || isLoading}
+                  size="sm"
+                  className="absolute right-2.5 top-1/2 transform -translate-y-1/2 rounded-full h-10 w-10 p-0"
+                >
+                  {isLoading ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

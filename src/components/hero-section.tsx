@@ -8,7 +8,6 @@ import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { EnhancedSearchBar } from "./enhanced-search-bar";
 import { Input } from "./ui/input";
 
 interface HeroSectionProps {
@@ -54,7 +53,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
 
   return (
     <motion.div 
-      className="min-h-[85vh] flex items-center justify-center bg-gradient-to-b from-background via-background/95 to-background pt-10 pb-20"
+      className="min-h-[85vh] flex items-center justify-center bg-gradient-to-b from-background via-background/95 to-background pt-8 pb-20"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.7 }}
@@ -169,28 +168,31 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           }}
         >
           <form onSubmit={handleSubmit} className="relative">
-            <Input
-              type="text"
-              placeholder="What diagrams are you looking for?"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-20 py-7 text-lg rounded-full border-primary/20 focus:border-primary shadow-lg focus:ring-primary/30"
-            />
-            <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-            <Button
-              type="submit"
-              disabled={!searchQuery.trim() || isLoading}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full px-5 py-6"
-            >
-              {isLoading ? (
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-background border-t-transparent" />
-              ) : (
-                <>
-                  <span className="mr-1">Search</span>
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </Button>
+            <div className="absolute inset-0 bg-primary/5 rounded-2xl blur-md"></div>
+            <div className="relative flex items-center">
+              <Input
+                type="text"
+                placeholder="What diagrams are you looking for?"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-20 py-7 text-lg rounded-2xl border-primary/20 focus:border-primary shadow-lg focus:ring-primary/30"
+              />
+              <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-primary h-5 w-5" />
+              <Button
+                type="submit"
+                disabled={!searchQuery.trim() || isLoading}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-xl px-5 py-6"
+              >
+                {isLoading ? (
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                ) : (
+                  <>
+                    <span className="mr-1">Search</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </div>
           </form>
         </motion.div>
         

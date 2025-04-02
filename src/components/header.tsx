@@ -7,7 +7,7 @@ import { useAuth } from "@/components/auth-context";
 import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LayoutDashboard, Heart, LogIn } from "lucide-react";
+import { LogIn, Heart, Settings } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,21 +37,13 @@ export function Header() {
         
         <div className="flex-1"></div>
         
-        <div className="flex items-center justify-end space-x-4">
+        <div className="flex items-center justify-end space-x-3">
           <nav className="hidden md:flex items-center space-x-1">
             <Link to="/">
               <Button variant="ghost" size="sm" className="text-foreground/90 hover:text-foreground transition-colors">
                 Home
               </Button>
             </Link>
-            
-            {user && (
-              <Link to="/dashboard">
-                <Button variant="ghost" size="sm" className="text-foreground/90 hover:text-foreground transition-colors">
-                  Dashboard
-                </Button>
-              </Link>
-            )}
             
             <Link to="/pricing">
               <Button variant="ghost" size="sm" className="text-foreground/90 hover:text-foreground transition-colors">
@@ -73,7 +65,7 @@ export function Header() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="rounded-full p-0 h-9 w-9 overflow-hidden">
-                    <Avatar className="h-9 w-9">
+                    <Avatar className="h-9 w-9 transition-all hover:ring-2 hover:ring-primary/20">
                       <AvatarImage src={user.user_metadata?.avatar_url || ""} alt={user.email || "User"} />
                       <AvatarFallback className="bg-primary/10 text-primary">
                         {user.email ? user.email.substring(0, 2).toUpperCase() : "U"}
@@ -81,12 +73,12 @@ export function Header() {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-sm border-border/50">
+                  <DropdownMenuLabel>Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link to="/dashboard" className="cursor-pointer flex items-center">
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      <Heart className="mr-2 h-4 w-4" />
                       <span>Dashboard</span>
                     </Link>
                   </DropdownMenuItem>
@@ -96,8 +88,14 @@ export function Header() {
                       <span>Liked Diagrams</span>
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/account" className="cursor-pointer flex items-center">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()} className="text-red-500 focus:text-red-500">
+                  <DropdownMenuItem onClick={() => signOut()} className="text-destructive focus:text-destructive">
                     Sign out
                   </DropdownMenuItem>
                 </DropdownMenuContent>

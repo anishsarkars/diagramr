@@ -13,7 +13,6 @@ import { Link } from "react-router-dom";
 import { useAuth } from "./auth-context";
 import { User, LogOut, Settings, Heart, Menu, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
 
 export function HeaderMenu() {
   const { user, signOut } = useAuth();
@@ -51,9 +50,9 @@ export function HeaderMenu() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-border/50" />
             <DropdownMenuItem asChild className="hover:bg-accent/50 transition-colors">
-              <Link to="/account" className="cursor-pointer w-full flex items-center">
+              <Link to="/dashboard" className="cursor-pointer w-full flex items-center">
                 <Settings className="mr-2 h-4 w-4" />
-                <span>Account Settings</span>
+                <span>Dashboard</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="hover:bg-accent/50 transition-colors">
@@ -62,26 +61,26 @@ export function HeaderMenu() {
                 <span>Liked Diagrams</span>
               </Link>
             </DropdownMenuItem>
+            <DropdownMenuItem asChild className="hover:bg-accent/50 transition-colors">
+              <Link to="/account" className="cursor-pointer w-full flex items-center">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-border/50" />
-            <DropdownMenuItem onClick={handleSignOut} className="hover:bg-accent/50 transition-colors">
+            <DropdownMenuItem onClick={handleSignOut} className="hover:bg-accent/50 transition-colors text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
               <span>Sign Out</span>
             </DropdownMenuItem>
           </>
         ) : (
           <>
-            <DropdownMenuLabel className="px-3 py-2">Diagramr Menu</DropdownMenuLabel>
+            <DropdownMenuLabel className="px-3 py-2">Diagramr</DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-border/50" />
             <DropdownMenuItem asChild className="hover:bg-accent/50 transition-colors">
               <Link to="/auth" className="cursor-pointer w-full flex items-center">
                 <User className="mr-2 h-4 w-4" />
                 <span>Sign In</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="hover:bg-accent/50 transition-colors">
-              <Link to="/auth?signup=true" className="cursor-pointer w-full flex items-center">
-                <User className="mr-2 h-4 w-4" />
-                <span>Create Account</span>
               </Link>
             </DropdownMenuItem>
           </>
