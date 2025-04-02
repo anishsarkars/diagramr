@@ -38,7 +38,7 @@ export function ConfettiCelebration({
       // Main burst
       confetti({
         particleCount: Math.floor(particleCount * intensity),
-        spread: Â 70,
+        spread: 70,
         origin: { y: 0.6 },
         colors: ['#FF5757', '#5271FF', '#F18F01', '#00BD9D', '#A148FF']
       });
