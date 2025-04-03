@@ -50,7 +50,7 @@ function AppContent() {
       if (!hasVisited) {
         localStorage.setItem("hasVisited", "true");
       }
-    }, hasVisited ? 500 : 1800); // Longer initial load for better impression
+    }, hasVisited ? 500 : 1500); // Shorter initial load for better UX
     
     return () => clearTimeout(timer);
   }, []);
@@ -78,7 +78,7 @@ function AppContent() {
         // Auto-hide after animation
         setTimeout(() => {
           setShowLoginSuccess(false);
-        }, 3000);
+        }, 2000);
       }
     }
   }, [location.pathname, user, navigate, showLoginSuccess]);
@@ -95,7 +95,7 @@ function AppContent() {
         <SiteLoader />
       ) : (
         <>
-          {showLoginSuccess && <ConfettiCelebration duration={3000} />}
+          {showLoginSuccess && <ConfettiCelebration duration={2000} particleCount={30} />}
           <Toaster />
           <Sonner closeButton position="top-right" />
           <Routes>

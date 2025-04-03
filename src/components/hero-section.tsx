@@ -53,7 +53,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
 
   return (
     <motion.div 
-      className="min-h-[85vh] flex items-center justify-center bg-gradient-to-b from-background via-background/95 to-background pt-8 pb-20"
+      className="min-h-[85vh] flex items-center justify-center bg-background py-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.7 }}
@@ -63,8 +63,8 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         <motion.div 
           className="absolute top-20 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2"
           animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.5, 0.7, 0.5]
+            scale: [1, 1.1, 1],
+            opacity: [0.4, 0.6, 0.4]
           }}
           transition={{
             duration: 8,
@@ -75,8 +75,8 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         <motion.div 
           className="absolute bottom-20 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"
           animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.7, 0.5, 0.7]
+            scale: [1, 1.1, 1],
+            opacity: [0.6, 0.4, 0.6]
           }}
           transition={{
             duration: 7,
@@ -99,7 +99,7 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         </motion.div>
         
         <motion.h1 
-          className="font-serif font-bold text-4xl md:text-6xl lg:text-7xl mb-4 text-center bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent"
+          className="font-serif font-bold text-4xl md:text-6xl lg:text-7xl mb-4 text-center"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
@@ -161,21 +161,20 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
             delay: 0.6,
             scale: {
               delay: 1.5,
-              duration: 1,
+              duration: 0.8,
               repeat: 2,
               repeatType: "reverse"
             }
           }}
         >
           <form onSubmit={handleSubmit} className="relative">
-            <div className="absolute inset-0 bg-primary/5 rounded-2xl blur-md"></div>
             <div className="relative flex items-center">
               <Input
                 type="text"
                 placeholder="What diagrams are you looking for?"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-20 py-7 text-lg rounded-2xl border-primary/20 focus:border-primary shadow-lg focus:ring-primary/30"
+                className="w-full pl-12 pr-20 py-7 text-lg rounded-2xl border-primary/20 focus:border-primary shadow-md focus:ring-primary/30"
               />
               <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-primary h-5 w-5" />
               <Button

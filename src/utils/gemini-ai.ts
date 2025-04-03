@@ -16,23 +16,29 @@ export interface GeminiResponse {
  */
 export async function generateSuggestions(query: string): Promise<GeminiResponse> {
   try {
+    // Use the provided API key from Google AI Studio
     const apiKey = "AIzaSyCL-wB_Ym_40vV17e1gFhyyL-o2864KQN8";
     
+    // Additional API key provided
+    const altApiKey = "1662e165fa7f4ef390dc17769cf96792";
+    
     // Don't make real API calls if the key isn't available or valid
-    if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
+    if ((!apiKey || apiKey === "YOUR_API_KEY_HERE") && !altApiKey) {
       console.log("Using fallback suggestions (no API key available)");
       return getFallbackSuggestions(query);
     }
     
+    const selectedKey = apiKey || altApiKey;
+    
     const messages: GeminiMessage[] = [
       {
         role: "user",
-        content: `I'm looking for diagrams about "${query}". Suggest 4 specific searches that would find good diagrams related to this topic. Each suggestion should be a specific diagram type. Answer with ONLY a JSON array of strings, nothing else.`
+        content: `I'm looking for diagrams about "${query}". Suggest 5 specific searches that would find good diagrams related to this topic. Each suggestion should be a specific diagram type or use case. Answer with ONLY a JSON array of strings, nothing else. Make suggestions diverse and helpful.`
       }
     ];
     
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${selectedKey}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -43,15 +49,16 @@ export async function generateSuggestions(query: string): Promise<GeminiResponse
             parts: [{ text: msg.content }]
           })),
           generationConfig: {
-            temperature: 0.2,
+            temperature: 0.4,
             topP: 0.8,
             topK: 40,
-            maxOutputTokens: 200,
+            maxOutputTokens: 250,
           }
         }),
       });
       
       if (!response.ok) {
+        console.error(`API request failed with status: ${response.status}`);
         throw new Error(`API request failed with status: ${response.status}`);
       }
       
@@ -69,7 +76,7 @@ export async function generateSuggestions(query: string): Promise<GeminiResponse
           const suggestions = JSON.parse(jsonContent);
           
           if (Array.isArray(suggestions)) {
-            return { suggestions: suggestions.slice(0, 4) };
+            return { suggestions: suggestions.slice(0, 5) };
           }
         } catch (e) {
           console.error("Failed to parse suggestions JSON:", e);
@@ -103,7 +110,9 @@ function getFallbackSuggestions(query: string): GeminiResponse {
     "state diagram",
     "network topology",
     "class diagram",
-    "data flow diagram"
+    "data flow diagram",
+    "architecture diagram",
+    "component diagram"
   ];
   
   // Always give at least one exact match with the query
@@ -111,7 +120,8 @@ function getFallbackSuggestions(query: string): GeminiResponse {
     `${query} ${baseTypes[0]}`,
     `${query} ${baseTypes[1]}`,
     `${baseTypes[2]} for ${query}`,
-    `${baseTypes[3]} of ${query} process`
+    `${baseTypes[3]} of ${query} process`,
+    `${baseTypes[Math.floor(Math.random() * baseTypes.length)]} for ${query}`
   ];
   
   return { suggestions };

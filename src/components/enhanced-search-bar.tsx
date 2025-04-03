@@ -108,14 +108,14 @@ export function EnhancedSearchBar({
         className={cn(
           "flex items-center w-full rounded-2xl overflow-hidden",
           "border border-primary/30",
-          "bg-background/80 backdrop-blur-lg shadow-lg",
-          isFocused ? "ring-2 ring-primary/20 shadow-xl border-primary/40" : "",
+          "bg-background/80 backdrop-blur-lg shadow-md",
+          isFocused ? "ring-2 ring-primary/20 shadow-lg border-primary/40" : "",
           isLoading ? "opacity-80" : ""
         )}
         whileTap={{ scale: 0.995 }}
       >
         <div className="flex-1 flex items-center relative">
-          <div className="absolute left-4 text-primary">
+          <div className="absolute left-4 text-primary/70">
             <SearchIcon className="h-5 w-5" />
           </div>
           <Input
@@ -168,7 +168,7 @@ export function EnhancedSearchBar({
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
                     <>
-                      <Sparkles className="h-4 w-4 md:mr-1" />
+                      <SearchIcon className="h-4 w-4 md:mr-1" />
                       <span className="hidden md:inline">Search</span>
                     </>
                   )}

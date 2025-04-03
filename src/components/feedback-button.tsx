@@ -42,7 +42,7 @@ export function FeedbackButton() {
       // Open WhatsApp in a new tab
       window.open(whatsappURL, '_blank');
       
-      toast.success('Thank you for your feedback! We appreciate your help improving Diagramr.');
+      toast.success('Thank you for your feedback!');
       setFeedback('');
       setEmail('');
       setIsOpen(false);
@@ -59,17 +59,16 @@ export function FeedbackButton() {
       <motion.div
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="fixed right-0 top-1/2 transform -translate-y-1/2 z-50"
+        className="fixed right-0 bottom-1/4 transform z-50 opacity-70 hover:opacity-100 transition-opacity"
       >
         <Button 
-          variant="default" 
+          variant="ghost" 
           size="sm" 
           onClick={() => setIsOpen(true)} 
-          className="shadow-md bg-primary text-white hover:bg-primary/90 px-3 py-5 rounded-r-none rounded-l-md flex flex-col items-center justify-center gap-2 h-auto"
+          className="shadow-sm bg-primary/10 text-primary hover:bg-primary/20 p-2 rounded-l-md rounded-r-none flex items-center justify-center h-auto"
           aria-label="Provide feedback"
         >
           <MessageSquare className="h-4 w-4" />
-          <span className="text-[10px] font-medium rotate-90 mt-1 tracking-wider">FEEDBACK</span>
         </Button>
       </motion.div>
       
@@ -78,7 +77,7 @@ export function FeedbackButton() {
           <DialogHeader>
             <DialogTitle>Share your feedback</DialogTitle>
             <DialogDescription>
-              Help us improve Diagramr by sharing your experience, reporting issues, or suggesting features.
+              Help us improve Diagramr by sharing your experience.
             </DialogDescription>
           </DialogHeader>
           
@@ -92,17 +91,16 @@ export function FeedbackButton() {
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">We'll only use this to follow up on your feedback if needed.</p>
             </div>
             
             <div className="grid gap-2">
               <Label htmlFor="feedback" className="required">Feedback</Label>
               <Textarea 
                 id="feedback" 
-                placeholder="Tell us about your experience, report a bug, or suggest an improvement..." 
+                placeholder="Tell us about your experience..." 
                 value={feedback} 
                 onChange={(e) => setFeedback(e.target.value)}
-                rows={5}
+                rows={4}
                 className="resize-none"
                 required
               />
@@ -112,17 +110,9 @@ export function FeedbackButton() {
               <Button 
                 type="submit" 
                 disabled={isSubmitting} 
-                className="w-full sm:w-auto group"
+                className="w-full sm:w-auto"
               >
-                {isSubmitting ? 'Submitting...' : (
-                  <>
-                    Send feedback
-                    <span className="ml-2 inline-flex items-center">
-                      <PhoneForwarded className="h-4 w-4 mr-1" />
-                      <span className="text-xs">via WhatsApp</span>
-                    </span>
-                  </>
-                )}
+                {isSubmitting ? 'Sending...' : 'Send feedback'}
               </Button>
             </DialogFooter>
           </form>

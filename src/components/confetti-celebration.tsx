@@ -9,8 +9,8 @@ interface ConfettiCelebrationProps {
 }
 
 export function ConfettiCelebration({ 
-  duration = 2000, 
-  particleCount = 50,
+  duration = 1500, 
+  particleCount = 30,
   onComplete 
 }: ConfettiCelebrationProps) {
   const [isActive, setIsActive] = useState(true);
@@ -32,37 +32,25 @@ export function ConfettiCelebration({
         return;
       }
       
-      // Reduced intensity
-      const intensity = 0.7 - Math.min(0.7, elapsed / duration);
+      // Very minimal intensity
+      const intensity = 0.5 - Math.min(0.5, elapsed / duration);
       
-      // Main burst - more subtle
+      // Main burst - very subtle
       confetti({
-        particleCount: Math.floor(particleCount * intensity * 0.6),
-        spread: 50,
+        particleCount: Math.floor(particleCount * intensity * 0.5),
+        spread: 40,
         origin: { y: 0.6 },
         colors: ['#FF5757', '#5271FF', '#F18F01', '#00BD9D', '#A148FF'],
-        gravity: 0.8, // Higher gravity for quicker fall
-        scalar: 0.7, // Smaller particles
-        drift: 0.5, // Less drift
-        ticks: 100 // Fewer ticks = shorter particle lifetime
+        gravity: 1, // Higher gravity for quicker fall
+        scalar: 0.6, // Smaller particles
+        drift: 0.3, // Less drift
+        ticks: 80 // Fewer ticks = shorter particle lifetime
       });
-      
-      // Side bursts (less frequent and more subtle)
-      if (Math.random() < 0.2 * intensity) {
-        confetti({
-          particleCount: Math.floor(particleCount * 0.2 * intensity),
-          angle: 60,
-          spread: 40,
-          origin: { x: 0.1, y: 0.5 },
-          gravity: 0.8,
-          scalar: 0.6
-        });
-      }
       
       // Schedule next frame with longer interval for fewer particles
       const frameId = setTimeout(() => {
         requestAnimationFrame(launchConfetti);
-      }, 150);
+      }, 250); // Longer interval between bursts
       
       animationFrameIds.push(frameId as unknown as number);
     };

@@ -1,7 +1,6 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useInfiniteSearch } from "@/hooks/use-infinite-search";
@@ -11,13 +10,21 @@ import { ResultsSection } from "@/components/results-section";
 import { useAuth } from "@/components/auth-context";
 import { useNavigate } from "react-router-dom";
 import { DiagramrLogo } from "@/components/diagramr-logo";
-import { SidebarNavigation } from "@/components/sidebar-navigation";
-import { Search, ArrowRight, Plus, Send, Sparkles, Loader2, MessageSquare, Image, Bot } from "lucide-react";
+import { Search, ArrowUp, Send, Sparkles, Loader2, MessageSquare, Image, Bot, X, Settings, Heart, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { ConfettiCelebration } from "@/components/confetti-celebration";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function ChatDashboard() {
   const [query, setQuery] = useState("");
@@ -25,13 +32,13 @@ export default function ChatDashboard() {
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
   const [likedDiagrams, setLikedDiagrams] = useState<Set<string>>(new Set());
   const [showConfetti, setShowConfetti] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [showTips, setShowTips] = useState(false);
+  const [userGreeting, setUserGreeting] = useState("");
   
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultsEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { incrementCount, hasReachedLimit, remainingSearches } = useSearchLimit();
   
   const { 
@@ -41,10 +48,36 @@ export default function ChatDashboard() {
     loadMore,
     searchTerm,
     searchFor,
+    error,
     resetSearch
   } = useInfiniteSearch({
-    pageSize: 20
+    pageSize: 12
   });
+
+  // Function to determine greeting based on time of day
+  const getGreeting = useCallback(() => {
+    const hour = new Date().getHours();
+    let greeting = "";
+    
+    if (hour < 12) {
+      greeting = "Good morning";
+    } else if (hour < 18) {
+      greeting = "Good afternoon";
+    } else {
+      greeting = "Good evening";
+    }
+    
+    // Add user name if available
+    if (user?.user_metadata?.name) {
+      greeting += `, ${user.user_metadata.name}`;
+    } else if (user?.email) {
+      // Use the part before @ in email
+      const name = user.email.split('@')[0];
+      greeting += `, ${name}`;
+    }
+    
+    return greeting;
+  }, [user]);
   
   useEffect(() => {
     // Load search history from localStorage
@@ -57,6 +90,9 @@ export default function ChatDashboard() {
         console.error('Error parsing search history:', e);
       }
     }
+    
+    // Set user greeting
+    setUserGreeting(getGreeting());
     
     // Fetch liked diagrams
     if (user) {
@@ -76,15 +112,34 @@ export default function ChatDashboard() {
       setShowConfetti(true);
       localStorage.setItem('diagramr-welcomed', 'true');
       
-      toast.success("Welcome to Diagramr! 🎉", {
-        description: "Find and create beautiful diagrams with AI assistance",
-        duration: 4000,
+      toast.success("Welcome to Diagramr!", {
+        description: "Find beautiful diagrams with AI assistance",
+        duration: 3000,
       });
     }
+  }, [user, getGreeting]);
+  
+  // Create an observer for infinite scrolling
+  useEffect(() => {
+    if (!resultsEndRef.current || !hasMore || isLoading) return;
     
-    // Generate AI suggestions
-    generateAiSuggestions();
-  }, [user]);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore();
+        }
+      },
+      { threshold: 0.5 }
+    );
+    
+    observer.observe(resultsEndRef.current);
+    
+    return () => {
+      if (resultsEndRef.current) {
+        observer.unobserve(resultsEndRef.current);
+      }
+    };
+  }, [hasMore, isLoading, loadMore, results.length]);
   
   const fetchLikedDiagrams = async () => {
     if (!user) return;
@@ -104,22 +159,6 @@ export default function ChatDashboard() {
     } catch (error) {
       console.error('Error fetching liked diagrams:', error);
     }
-  };
-  
-  const generateAiSuggestions = async () => {
-    const suggestions = [
-      "UML class diagram for e-commerce",
-      "Database schema for a social network",
-      "Flowchart for user authentication",
-      "System architecture for cloud deployment",
-      "Entity relationship diagram for blog platform"
-    ];
-    
-    setAiSuggestions(suggestions);
-    
-    // In a real implementation, we would call the Google AI API here
-    // const apiKey = "AIzaSyCL-wB_Ym_40vV17e1gFhyyL-o2864KQN8";
-    // Fetch suggestions from Google AI Studio API
   };
   
   const handleSearch = async (searchQuery: string) => {
@@ -151,12 +190,19 @@ export default function ChatDashboard() {
       
     } catch (error) {
       console.error("Search error:", error);
+      toast.error("Search failed. Please try again.");
     }
   };
   
   const handleNewSearch = () => {
     resetSearch();
     setSelectedTagFilter(null);
+    // Focus on the input after resetting search
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 100);
   };
   
   const handleLikeDiagram = async (diagramId: string | number) => {
@@ -212,7 +258,7 @@ export default function ChatDashboard() {
           
           toast.success("Diagram saved to favorites");
           setShowConfetti(true);
-          setTimeout(() => setShowConfetti(false), 2000);
+          setTimeout(() => setShowConfetti(false), 1500);
         }
       }
     } catch (error) {
@@ -220,242 +266,365 @@ export default function ChatDashboard() {
       toast.error('Failed to update liked diagrams');
     }
   };
-  
-  const handleGenerateWithAI = () => {
-    if (!query.trim()) {
-      toast.info("Please enter a query first");
-      return;
-    }
-    
-    setIsGenerating(true);
-    
-    // Simulate AI generation
-    setTimeout(() => {
-      setIsGenerating(false);
-      handleSearch(`${query} diagram`);
-      
-      toast.success("AI generation complete!", {
-        description: "Generated diagram based on your query",
-        duration: 3000
-      });
-    }, 2000);
-    
-    // In a real implementation, we would use the API key to generate a diagram
-    // const aiKey = "1662e165fa7f4ef390dc17769cf96792";
-    // const googleAiKey = "AIzaSyCL-wB_Ym_40vV17e1gFhyyL-o2864KQN8";
-  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background overflow-hidden">
-      <div className="flex flex-1 relative">
-        {/* Sidebar */}
-        <SidebarNavigation />
-        
-        {/* Main Content */}
-        <div className="flex-1 pt-0 ml-[64px] lg:ml-[256px]">
-          <main className="flex-1 flex flex-col min-h-screen">
-            <div className="container max-w-4xl mx-auto px-4 pt-8 pb-24 flex-1 flex flex-col">
-              {!searchTerm ? (
-                // Empty state with chat-like interface
-                <div className="flex-1 flex flex-col items-center justify-center">
-                  <div className="w-full max-w-2xl mx-auto text-center">
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5 }}
-                    >
-                      <h1 className="text-4xl font-serif font-bold mb-3">Find your diagrams</h1>
-                      <p className="text-muted-foreground mb-8">
-                        Search for educational diagrams, charts, and visualizations with AI assistance
-                      </p>
-                    </motion.div>
-                    
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.5, delay: 0.2 }}
-                      className="mb-10"
-                    >
-                      <div className="relative w-full mb-6">
-                        <div className="absolute inset-0 bg-primary/5 rounded-2xl blur-xl"></div>
-                        <div className="relative flex items-center">
-                          <Input
-                            ref={inputRef}
-                            type="text"
-                            placeholder="What diagrams are you looking for?"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            className="w-full pl-12 pr-24 py-7 text-lg rounded-2xl border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 shadow-sm"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && query.trim()) {
-                                handleSearch(query);
-                              }
-                            }}
-                          />
-                          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary h-5 w-5" />
-                          <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-2">
-                            <Button
-                              onClick={handleGenerateWithAI}
-                              disabled={!query.trim() || isGenerating}
-                              variant="outline"
-                              className="rounded-xl px-4 py-5 gap-2"
-                            >
-                              {isGenerating ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <>
-                                  <Bot className="h-4 w-4 mr-1" />
-                                  <span>Generate</span>
-                                </>
-                              )}
-                            </Button>
-                            <Button
-                              onClick={() => handleSearch(query)}
-                              disabled={!query.trim() || isLoading}
-                              size="lg"
-                              className="rounded-xl px-5 py-6 gap-2"
-                            >
-                              {isLoading ? (
-                                <div className="h-5 w-5 animate-spin rounded-full border-2 border-background border-t-transparent" />
-                              ) : (
-                                <>
-                                  <Search className="h-4 w-4 mr-1" />
-                                  <span>Search</span>
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                    
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: 0.4 }}
-                    >
-                      <div className="flex items-center justify-center gap-2 mb-4">
-                        <div className="h-px flex-1 bg-border/50"></div>
-                        <span className="text-sm text-muted-foreground px-2">AI Suggestions</span>
-                        <div className="h-px flex-1 bg-border/50"></div>
-                      </div>
-                      
-                      <div className="flex flex-wrap justify-center gap-2 max-w-xl mx-auto">
-                        {aiSuggestions.map((suggestion, index) => (
-                          <motion.div
-                            key={index}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ 
-                              opacity: 1, 
-                              y: 0,
-                              transition: { delay: 0.5 + (index * 0.1) }
-                            }}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <Button
-                              variant="outline"
-                              className="rounded-full text-sm border-primary/20 hover:bg-primary/5 transition-colors"
-                              onClick={() => handleSearch(suggestion)}
-                            >
-                              {suggestion}
-                            </Button>
-                          </motion.div>
-                        ))}
-                      </div>
-                      
-                      <div className="mt-8 flex justify-center">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-primary text-sm hover:bg-primary/5"
-                          onClick={() => setShowTips(true)}
-                        >
-                          <MessageSquare className="h-3 w-3 mr-1" />
-                          Tips for better results
-                        </Button>
-                      </div>
-                    </motion.div>
-                  </div>
-                </div>
-              ) : (
-                // Results section
-                <ResultsSection 
-                  results={results} 
-                  searchTerm={searchTerm} 
-                  onNewSearch={handleNewSearch} 
-                  onSearch={handleSearch}
-                  isLoading={isLoading}
-                  lastAction="search"
-                  onLike={handleLikeDiagram}
-                  likedDiagrams={likedDiagrams}
-                  hasMore={hasMore}
-                  loadMore={loadMore}
-                  selectedTagFilter={selectedTagFilter}
-                  onSelectTagFilter={setSelectedTagFilter}
-                />
-              )}
-            </div>
+      {/* Top navigation bar */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm">
+        <div className="container flex h-14 items-center">
+          <div className="flex items-center gap-2">
+            <DiagramrLogo size="sm" />
+          </div>
+          
+          <div className="flex-1"></div>
+          
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="rounded-full"
+              onClick={() => navigate('/liked')}
+            >
+              <Heart className="h-5 w-5" />
+            </Button>
             
-            {/* Improved input box at bottom for chat-like interface */}
-            {searchTerm && (
-              <div className="sticky bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t z-40">
-                <div className="container max-w-2xl mx-auto">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-primary/5 rounded-full blur-md opacity-50"></div>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="rounded-full"
+              onClick={() => navigate('/account')}
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
+            
+            <ThemeToggle />
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="rounded-full h-9 w-9 p-0 overflow-hidden">
+                  <Avatar className="h-9 w-9 transition-all hover:ring-2 hover:ring-primary/20">
+                    <AvatarImage src="" alt={user?.email || "User"} />
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {user?.email ? user.email.substring(0, 2).toUpperCase() : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem disabled className="font-medium">
+                  {user?.email}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/liked')}>
+                  <Heart className="mr-2 h-4 w-4" />
+                  <span>Liked Diagrams</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/account')}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Account</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => signOut()}>
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </header>
+      
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col">
+        <div className="container max-w-4xl mx-auto px-4 pt-8 pb-20 flex-1 flex flex-col">
+          {!searchTerm ? (
+            // Empty state with Grok-like interface
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="w-full max-w-2xl mx-auto text-center">
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="mb-6"
+                >
+                  <h1 className="text-4xl font-serif font-medium mb-2">{userGreeting}</h1>
+                  <p className="text-2xl text-muted-foreground">
+                    How can I help you find diagrams today?
+                  </p>
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="mb-10"
+                >
+                  <div className="relative w-full mb-8">
                     <div className="relative flex items-center">
                       <Input
                         ref={inputRef}
                         type="text"
-                        placeholder="Search for diagrams..."
+                        placeholder="What diagrams are you looking for?"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        className="w-full pl-12 pr-24 py-5 rounded-full border-border/50 focus:border-primary focus:ring-1 focus:ring-primary shadow-md"
+                        className="w-full pl-12 pr-14 py-7 text-lg rounded-2xl border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 shadow-md bg-background"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && query.trim()) {
                             handleSearch(query);
                           }
                         }}
                       />
-                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary h-5 w-5" />
-                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-2">
+                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+                      
+                      {query ? (
                         <Button
-                          onClick={() => handleGenerateWithAI()}
-                          disabled={!query.trim() || isLoading || isGenerating}
                           size="sm"
-                          variant="outline"
-                          className="rounded-full h-10 w-10 p-0"
+                          variant="ghost"
+                          className="absolute right-4 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                          onClick={() => setQuery("")}
                         >
-                          {isGenerating ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Bot className="h-4 w-4" />
-                          )}
+                          <X className="h-4 w-4" />
                         </Button>
-                        <Button
-                          onClick={() => handleSearch(query)}
-                          disabled={!query.trim() || isLoading}
-                          size="sm"
-                          className="rounded-full h-10 w-10 p-0"
-                        >
-                          {isLoading ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
-                          ) : (
-                            <Send className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
+                      ) : null}
                     </div>
                   </div>
-                </div>
+                  
+                  <Button
+                    onClick={() => handleSearch(query)}
+                    disabled={!query.trim() || isLoading}
+                    className="px-8 py-6 text-base rounded-xl"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                    ) : (
+                      <Search className="h-5 w-5 mr-2" />
+                    )}
+                    Search Diagrams
+                  </Button>
+                  
+                  <div className="mt-4">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-muted-foreground hover:text-primary"
+                      onClick={() => setShowTips(true)}
+                    >
+                      <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                      Search Tips
+                    </Button>
+                  </div>
+                </motion.div>
+                
+                {/* Recent searches */}
+                {searchHistory.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="mt-6"
+                  >
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                      <div className="h-px flex-1 bg-border/50"></div>
+                      <span className="text-sm text-muted-foreground px-2">Recent Searches</span>
+                      <div className="h-px flex-1 bg-border/50"></div>
+                    </div>
+                    
+                    <div className="flex flex-wrap justify-center gap-2 max-w-xl mx-auto">
+                      {searchHistory.slice(0, 5).map((item, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ 
+                            opacity: 1, 
+                            y: 0,
+                            transition: { delay: 0.4 + (index * 0.1) }
+                          }}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full text-sm"
+                            onClick={() => handleSearch(item)}
+                          >
+                            {item}
+                          </Button>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
               </div>
-            )}
-          </main>
+            </div>
+          ) : (
+            // Results section
+            <div className="w-full">
+              <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-medium mb-1">Results for "{searchTerm}"</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Showing {results.length} diagrams
+                  </p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={handleNewSearch}
+                  className="self-start"
+                >
+                  New Search
+                </Button>
+              </div>
+              
+              {/* Bento grid layout for search results */}
+              {results.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                  {results.map((diagram, index) => (
+                    <motion.div 
+                      key={diagram.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ 
+                        opacity: 1, 
+                        y: 0,
+                        transition: { 
+                          delay: Math.min(0.1 * (index % 6), 0.5)
+                        }
+                      }}
+                      className="group relative"
+                    >
+                      <div className="diagram-card overflow-hidden rounded-xl border hover:border-primary/50 transition-all">
+                        <div className="diagram-card-image">
+                          <img 
+                            src={diagram.imageSrc} 
+                            alt={diagram.title}
+                            className="object-cover w-full h-full aspect-video"
+                            loading="lazy"
+                          />
+                          
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          
+                          <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <h3 className="text-white font-medium line-clamp-1">{diagram.title}</h3>
+                          </div>
+                          
+                          <Button
+                            variant="default"
+                            size="icon"
+                            className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 h-8 w-8 ${
+                              likedDiagrams.has(String(diagram.id)) ? 'bg-primary/90 hover:bg-primary/80' : 'bg-primary/80 hover:bg-primary'
+                            }`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLikeDiagram(diagram.id);
+                            }}
+                          >
+                            <Heart 
+                              className={`h-4 w-4 ${likedDiagrams.has(String(diagram.id)) ? 'fill-white' : ''}`} 
+                            />
+                          </Button>
+                        </div>
+                        
+                        <div className="p-3">
+                          <h3 className="font-medium line-clamp-1 mb-1">{diagram.title}</h3>
+                          <div className="flex gap-1 flex-wrap mt-2">
+                            {diagram.tags && diagram.tags.slice(0, 3).map((tag: string, tagIndex: number) => (
+                              <Button
+                                key={tagIndex}
+                                variant="outline"
+                                size="sm"
+                                className="h-6 px-2 text-xs rounded-full border-primary/30 hover:bg-primary/10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedTagFilter(tag);
+                                }}
+                              >
+                                {tag}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : isLoading ? (
+                <div className="flex justify-center items-center py-20">
+                  <div className="flex flex-col items-center">
+                    <div className="h-10 w-10 rounded-full border-4 border-primary/30 border-t-primary animate-spin mb-4"></div>
+                    <p className="text-muted-foreground">Searching for diagrams...</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex justify-center items-center py-20">
+                  <div className="text-center">
+                    <p className="text-lg font-medium mb-2">No diagrams found</p>
+                    <p className="text-muted-foreground mb-6">Try a different search term or check out some suggested topics</p>
+                    <Button onClick={handleNewSearch}>Try Another Search</Button>
+                  </div>
+                </div>
+              )}
+              
+              {/* Load more indicator */}
+              {hasMore && results.length > 0 && (
+                <div ref={resultsEndRef} className="flex justify-center py-8">
+                  {isLoading ? (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Loading more...</span>
+                    </div>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      onClick={loadMore}
+                      className="px-8"
+                    >
+                      Load More
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      </div>
+        
+        {/* Search input at bottom for quick access */}
+        {searchTerm && (
+          <div className="sticky bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t z-40">
+            <div className="container max-w-2xl mx-auto">
+              <div className="relative flex items-center">
+                <Input
+                  ref={inputRef}
+                  type="text"
+                  placeholder="Search for more diagrams..."
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="w-full pl-12 pr-16 py-5 rounded-full border-border/50 focus:border-primary focus:ring-1 focus:ring-primary shadow-md"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && query.trim()) {
+                      handleSearch(query);
+                    }
+                  }}
+                />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+                <Button
+                  onClick={() => handleSearch(query)}
+                  disabled={!query.trim() || isLoading}
+                  size="icon"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full h-10 w-10"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <ArrowUp className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
       
       {/* Confetti celebration */}
-      {showConfetti && <ConfettiCelebration particleCount={40} duration={2000} onComplete={() => setShowConfetti(false)} />}
+      {showConfetti && <ConfettiCelebration particleCount={25} duration={1500} onComplete={() => setShowConfetti(false)} />}
       
       {/* Tips dialog */}
       <Dialog open={showTips} onOpenChange={setShowTips}>
@@ -490,12 +659,6 @@ export default function ChatDashboard() {
                 <h3 className="font-medium mb-1">Use technical terms</h3>
                 <p className="text-sm text-muted-foreground">
                   AI understands technical language, so use precise terminology when possible
-                </p>
-              </div>
-              <div>
-                <h3 className="font-medium mb-1">Generate with AI</h3>
-                <p className="text-sm text-muted-foreground">
-                  Click the AI icon to generate diagram suggestions based on your query
                 </p>
               </div>
             </div>
