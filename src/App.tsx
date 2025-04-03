@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +17,7 @@ import { SiteLoader } from "./components/site-loader";
 import { FeedbackButton } from "./components/feedback-button";
 import ChatDashboard from "./pages/ChatDashboard";
 import { ConfettiCelebration } from "./components/confetti-celebration";
+import { AuthDialog } from "@/components/auth-dialog";
 
 // Create a query client with better retry settings for failed API requests
 const queryClient = new QueryClient({
@@ -38,6 +38,10 @@ function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [authDialogMode, setAuthDialogMode] = useState<"welcome" | "searches-exhausted">("welcome");
+  const [guestSearchCount, setGuestSearchCount] = useState(0);
+  const MAX_GUEST_SEARCHES = 3;
   
   // Enhanced loading timeout for better UX
   useEffect(() => {
@@ -83,6 +87,36 @@ function AppContent() {
     }
   }, [location.pathname, user, navigate, showLoginSuccess]);
 
+  useEffect(() => {
+    // Check if it's the first visit
+    const hasVisited = localStorage.getItem('diagramr-visited');
+    if (!hasVisited && !user) {
+      localStorage.setItem('diagramr-visited', 'true');
+      setAuthDialogMode("welcome");
+      setShowAuthDialog(true);
+    }
+
+    // Load guest search count
+    const savedCount = localStorage.getItem('diagramr-guest-searches');
+    if (savedCount) {
+      setGuestSearchCount(parseInt(savedCount));
+    }
+  }, [user]);
+
+  // Function to increment search count
+  const incrementSearchCount = () => {
+    if (!user) {
+      const newCount = guestSearchCount + 1;
+      setGuestSearchCount(newCount);
+      localStorage.setItem('diagramr-guest-searches', newCount.toString());
+
+      if (newCount >= MAX_GUEST_SEARCHES) {
+        setAuthDialogMode("searches-exhausted");
+        setShowAuthDialog(true);
+      }
+    }
+  };
+
   const handleLoginClick = () => {
     navigate('/auth', { 
       state: { returnTo: location.pathname !== '/auth' ? location.pathname : '/' } 
@@ -108,6 +142,11 @@ function AppContent() {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <FeedbackButton />
+          <AuthDialog 
+            isOpen={showAuthDialog} 
+            onOpenChange={setShowAuthDialog}
+            mode={authDialogMode}
+          />
         </>
       )}
     </>

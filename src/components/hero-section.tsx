@@ -1,15 +1,13 @@
-
 import { motion, AnimatePresence } from "framer-motion";
 import { DiagramrLogo } from "@/components/diagramr-logo";
 import { SearchLimitIndicator } from "./search-limit-indicator";
-import { useState, useEffect } from "react";
-import { Book, BookOpen, Network, Database, Sparkles, ArrowRight, Search } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { ArrowRight, Search, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { Input } from "./ui/input";
-import { PopularSearches } from "./popular-searches";
+import { cn } from "@/lib/utils";
 
 interface HeroSectionProps {
   onSearch: (query: string) => void;
@@ -19,138 +17,151 @@ interface HeroSectionProps {
 export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   
-  const exampleSearches = [
+  const descriptions = [
+    "Find educational diagrams for your studies",
+    "Visualize complex academic concepts",
+    "Discover scientific illustrations & charts",
+    "Enhance your learning with visual aids",
+    "Access high-quality educational resources"
+  ];
+
+  const popularSearches = [
     "human anatomy diagrams",
     "molecular structure visualization",
     "physics force diagrams",
     "data structures and algorithms",
-    "circuit design diagrams"
+    "circuit design diagrams",
+    "neural network architecture",
+    "cell division process",
+    "solar system model",
+    "human brain anatomy",
+    "DNA structure diagram"
   ];
+
+  const suggestions = popularSearches.filter(search => 
+    search.toLowerCase().includes(searchQuery.toLowerCase())
+  ).slice(0, 5);
   
-  const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
-  const features = [
-    { label: "Find educational diagrams for your studies", icon: <BookOpen className="h-4 w-4 mr-2" /> },
-    { label: "Visualize complex academic concepts", icon: <Network className="h-4 w-4 mr-2" /> },
-    { label: "Discover scientific illustrations & charts", icon: <Database className="h-4 w-4 mr-2" /> },
-  ];
+  const [currentDescriptionIndex, setCurrentDescriptionIndex] = useState(0);
   
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentFeatureIndex((prevIndex) => (prevIndex + 1) % features.length);
+      setCurrentDescriptionIndex((prevIndex) => (prevIndex + 1) % descriptions.length);
     }, 3000);
     
     return () => clearInterval(interval);
-  }, [features.length]);
+  }, [descriptions.length]);
+
+  // Auto-scroll effect for popular searches
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const scroll = () => {
+      if (scrollContainer.scrollLeft >= scrollContainer.scrollWidth / 2) {
+        scrollContainer.scrollLeft = 0;
+      } else {
+        scrollContainer.scrollLeft += 1;
+      }
+    };
+
+    const scrollInterval = setInterval(scroll, 30);
+    return () => clearInterval(scrollInterval);
+  }, []);
+
+  // Handle click outside suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchInputRef.current && !searchInputRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (searchQuery.trim()) {
       onSearch(searchQuery);
+      setShowSuggestions(false);
     }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setShowSuggestions(true);
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchQuery(suggestion);
+    onSearch(suggestion);
+    setShowSuggestions(false);
   };
 
   return (
     <motion.div 
-      className="min-h-[85vh] flex items-center justify-center bg-background py-8"
+      className="min-h-[80vh] md:min-h-[85vh] flex items-center justify-center bg-background py-4 md:py-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.7 }}
     >
-      {/* Background gradient elements */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <motion.div 
-          className="absolute top-20 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2"
-          animate={{ 
-            scale: [1, 1.1, 1],
-            opacity: [0.4, 0.6, 0.4]
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            repeatType: "reverse"
-          }}
-        />
-        <motion.div 
-          className="absolute bottom-20 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"
-          animate={{ 
-            scale: [1, 1.1, 1],
-            opacity: [0.6, 0.4, 0.6]
-          }}
-          transition={{
-            duration: 7,
-            delay: 1,
-            repeat: Infinity,
-            repeatType: "reverse"
-          }}
-        />
-      </div>
-      
-      <div className="container relative z-10 flex flex-col items-center justify-center px-4 md:px-6">
-        {/* Logo and title section */}
-        <motion.div 
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="mb-6"
-        >
-          <DiagramrLogo size="lg" showBeta iconOnly={false} showText={true} className="mb-2" />
-        </motion.div>
+      <div className="container relative z-10 flex flex-col items-center justify-center px-4 md:px-6 max-w-5xl">
+        {/* Removing the logo section */}
         
-        <motion.h1 
-          className="font-serif font-bold text-4xl md:text-6xl lg:text-7xl mb-4 text-center"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          Find the Perfect Diagrams
-        </motion.h1>
+        <div className="relative">
+          <motion.div
+            className="absolute -inset-x-20 -inset-y-10 bg-gradient-to-r from-primary/20 via-primary/5 to-primary/20 opacity-50 blur-2xl"
+            animate={{
+              opacity: [0.5, 0.3, 0.5],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{
+              duration: 5,
+              repeat: Infinity,
+              repeatType: "reverse",
+            }}
+          />
+          <motion.h1 
+            className="font-serif relative font-bold text-2xl md:text-4xl lg:text-5xl mb-3 md:mb-4 text-center leading-tight bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/80"
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            What's on your mind?
+          </motion.h1>
+        </div>
         
+        {/* Animated description */}
         <motion.div
-          className="mb-8 text-muted-foreground text-xl max-w-2xl text-center"
+          className="mb-8 md:mb-12 h-6 md:h-8 overflow-hidden relative"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          <p>
-            Search for educational diagrams, charts, and visualizations to boost your studies and research
-          </p>
-        </motion.div>
-        
-        {/* Animated feature text */}
-        <motion.div
-          className="mb-8 h-8 overflow-hidden relative"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-        >
           <AnimatePresence mode="wait">
-            {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                className={`flex items-center justify-center gap-2 absolute left-0 right-0 ${
-                  index === currentFeatureIndex ? "text-primary" : "text-transparent"
-                }`}
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ 
-                  y: index === currentFeatureIndex ? 0 : (index < currentFeatureIndex ? -20 : 20),
-                  opacity: index === currentFeatureIndex ? 1 : 0
-                }}
-                exit={{ y: -20, opacity: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                {feature.icon}
-                <span className="font-medium">{feature.label}</span>
-              </motion.div>
-            ))}
+            <motion.div
+              key={currentDescriptionIndex}
+              className="text-base md:text-xl text-muted-foreground text-center"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              {descriptions[currentDescriptionIndex]}
+            </motion.div>
           </AnimatePresence>
         </motion.div>
         
-        {/* Enhanced search input */}
+        {/* Search input with suggestions */}
         <motion.div 
-          className="w-full max-w-3xl mx-auto mb-8"
+          className="w-full max-w-2xl mx-auto mb-6 md:mb-8 relative"
           initial={{ y: 20, opacity: 0 }}
           animate={{ 
             y: 0, 
@@ -171,17 +182,31 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
           <form onSubmit={handleSubmit} className="relative">
             <div className="relative flex items-center">
               <Input
+                ref={searchInputRef}
                 type="text"
                 placeholder="What diagrams are you looking for?"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-20 py-7 text-lg rounded-2xl border-primary/20 focus:border-primary shadow-md focus:ring-primary/30"
+                onChange={handleSearchChange}
+                onFocus={() => setShowSuggestions(true)}
+                className="w-full pl-12 pr-20 py-6 md:py-7 text-base md:text-lg rounded-2xl border-primary/20 focus:border-primary shadow-md focus:ring-primary/30"
               />
               <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-primary h-5 w-5" />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setShowSuggestions(false);
+                  }}
+                  className="absolute right-24 top-1/2 transform -translate-y-1/2 p-1 hover:bg-primary/5 rounded-full"
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
+              )}
               <Button
                 type="submit"
                 disabled={!searchQuery.trim() || isLoading}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-xl px-5 py-6"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-xl px-4 md:px-5 py-5 md:py-6"
               >
                 {isLoading ? (
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-background border-t-transparent" />
@@ -193,58 +218,72 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
                 )}
               </Button>
             </div>
+
+            {/* Search suggestions */}
+            <AnimatePresence>
+              {showSuggestions && suggestions.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute left-0 right-0 top-full mt-2 bg-background/80 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg overflow-hidden z-50"
+                >
+                  {suggestions.map((suggestion, index) => (
+                    <motion.button
+                      key={suggestion}
+                      type="button"
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      className={cn(
+                        "w-full px-4 py-3 text-left hover:bg-primary/5 flex items-center gap-3 transition-colors",
+                        "text-sm md:text-base",
+                        index !== suggestions.length - 1 && "border-b border-border/50"
+                      )}
+                      whileHover={{ x: 4 }}
+                    >
+                      <Search className="h-4 w-4 text-primary/60" />
+                      {suggestion}
+                    </motion.button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </form>
         </motion.div>
-        
-        {/* Example searches */}
+
+        {/* Popular searches scroll */}
         <motion.div
-          className="flex flex-wrap justify-center gap-2 mb-6 max-w-2xl mx-auto"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.65 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.7 }}
+          className="w-full max-w-2xl mx-auto mb-6 md:mb-8 relative"
         >
-          <div className="w-full text-sm text-muted-foreground mb-2 text-center">Try these examples:</div>
-          {exampleSearches.map((example, index) => (
-            <motion.div
-              key={index}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-full border-primary/20 hover:bg-primary/5"
-                onClick={() => onSearch(example)}
+          <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-background to-transparent z-10" />
+          <div className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-background to-transparent z-10" />
+          <div 
+            ref={scrollContainerRef}
+            className="flex gap-2 overflow-x-hidden whitespace-nowrap py-2"
+          >
+            {[...popularSearches, ...popularSearches].map((search, index) => (
+              <motion.div
+                key={index}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="inline-block"
               >
-                <Sparkles className="h-3 w-3 mr-1.5 text-primary/70" />
-                {example}
-              </Button>
-            </motion.div>
-          ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full border-primary/20 hover:bg-primary/5 text-sm"
+                  onClick={() => onSearch(search)}
+                >
+                  {search}
+                </Button>
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
         
         <SearchLimitIndicator />
-        
-        {/* Popular searches bento grid */}
-        <PopularSearches onSelect={onSearch} />
-        
-        {/* Call to action buttons */}
-        {!user && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.8 }}
-            className="mt-8"
-          >
-            <Button 
-              size="lg"
-              className="rounded-full px-8"
-              onClick={() => navigate('/auth')}
-            >
-              Get Started for Free
-            </Button>
-          </motion.div>
-        )}
       </div>
     </motion.div>
   );

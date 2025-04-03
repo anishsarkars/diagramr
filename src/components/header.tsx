@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -31,7 +30,7 @@ export function Header() {
       <div className="container flex h-16 items-center">
         <div className="flex items-center mr-4">
           <Link to="/" className="flex items-center space-x-2">
-            <DiagramrLogo size="sm" />
+            <DiagramrLogo size="lg" />
           </Link>
         </div>
         
