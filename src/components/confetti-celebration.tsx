@@ -10,9 +10,9 @@ interface ConfettiCelebrationProps {
 }
 
 export function ConfettiCelebration({
-  duration = 3000,
-  particleCount = 100,
-  intensity = "medium",
+  duration = 2000,
+  particleCount = 50,
+  intensity = "low",
   onComplete,
 }: ConfettiCelebrationProps) {
   const [isActive, setIsActive] = useState(true);
@@ -20,54 +20,49 @@ export function ConfettiCelebration({
   useEffect(() => {
     if (!isActive) return;
 
-    // Calculate intensity-based parameters
-    let spread = 70;
-    let startVelocity = 30;
+    // Calculate intensity-based parameters (more subtle now)
+    let spread = 50;
+    let startVelocity = 20;
     let decay = 0.9;
-    let gravity = 1;
+    let gravity = 1.2;
 
     switch (intensity) {
       case "low":
-        particleCount = Math.max(50, particleCount);
-        spread = 50;
+        particleCount = Math.max(30, particleCount);
+        spread = 40;
         break;
       case "high":
-        particleCount = Math.max(150, particleCount);
-        spread = 100;
-        startVelocity = 45;
+        particleCount = Math.max(100, particleCount);
+        spread = 70;
+        startVelocity = 30;
         decay = 0.92;
         gravity = 0.8;
         break;
       default: // medium
-        particleCount = Math.max(100, particleCount);
+        particleCount = Math.max(50, particleCount);
     }
 
-    // Create a more dramatic confetti effect
+    // Create a more subtle confetti effect
     const makeConfetti = () => {
       confetti({
-        particleCount,
+        particleCount: particleCount / 2,
         spread,
         origin: { y: 0.5 },
-        colors: ['#FF5252', '#FFD740', '#40C4FF', '#69F0AE', '#E040FB'],
+        colors: ['#9B87F5', '#7E69AB', '#D6BCFA', '#40C4FF', '#69F0AE'],
         startVelocity,
         decay,
         gravity,
-        ticks: 200,
+        ticks: 150,
         shapes: ['square', 'circle'],
-        scalar: 1.2,
+        scalar: 1,
         zIndex: 1000,
       });
     };
 
-    // Fire multiple confetti bursts for a more dramatic effect
+    // Just fire once for minimal effect
     makeConfetti();
     
-    const interval = setInterval(() => {
-      makeConfetti();
-    }, 650);
-
     const timer = setTimeout(() => {
-      clearInterval(interval);
       setIsActive(false);
       if (onComplete) {
         onComplete();
@@ -76,7 +71,6 @@ export function ConfettiCelebration({
 
     return () => {
       clearTimeout(timer);
-      clearInterval(interval);
     };
   }, [isActive, duration, particleCount, intensity, onComplete]);
 

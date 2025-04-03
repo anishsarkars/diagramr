@@ -1,5 +1,5 @@
 
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,22 +8,19 @@ import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
 import { 
-  Home, 
-  PenTool, 
   Heart, 
-  History, 
-  Settings, 
   LogOut, 
   ChevronLeft, 
   ChevronRight,
-  HelpCircle,
-  Lightbulb,
+  Settings,
   User,
-  FolderHeart
+  Search,
 } from "lucide-react";
 import { DiagramrLogo } from "./diagramr-logo";
 import { useAuth } from "./auth-context";
 import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Separator } from "./ui/separator";
 
 interface SidebarItemProps {
   icon: React.ReactNode;
@@ -41,12 +38,12 @@ export function SidebarItem({ icon, label, href, active, collapsed, onClick }: S
       to={href} 
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
-        "hover:bg-primary/10",
-        active && "bg-primary/10 text-primary font-medium"
+        "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200",
+        "hover:bg-primary/5",
+        active ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground"
       )}
     >
-      <div className="flex-shrink-0">{icon}</div>
+      <div className="flex-shrink-0 text-current">{icon}</div>
       {!collapsed && <span className="text-sm">{label}</span>}
     </Link>
   );
@@ -72,7 +69,14 @@ export function SidebarNavigation() {
   const isMobile = useIsMobile();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
+
+  // Get user initial for avatar
+  const getUserInitial = () => {
+    if (!user || !user.email) return '?';
+    return user.email.charAt(0).toUpperCase();
+  };
 
   // Close mobile sidebar when route changes
   useEffect(() => {
@@ -85,6 +89,7 @@ export function SidebarNavigation() {
     try {
       await signOut();
       toast.success("Successfully signed out");
+      navigate('/');
     } catch (error) {
       console.error("Error signing out:", error);
       toast.error("Failed to sign out. Please try again.");
@@ -119,7 +124,7 @@ export function SidebarNavigation() {
       {isMobileOpen ? (
         <ChevronLeft className="h-4 w-4" />
       ) : (
-        <Home className="h-4 w-4" />
+        <Search className="h-4 w-4" />
       )}
     </Button>
   );
@@ -138,10 +143,10 @@ export function SidebarNavigation() {
       {mobileToggle}
       <motion.aside
         initial={false}
-        animate={isMobile ? { x: isMobileOpen ? 0 : -320 } : { width: collapsed ? 64 : 256 }}
+        animate={isMobile ? { x: isMobileOpen ? 0 : -320 } : { width: collapsed ? 64 : 220 }}
         transition={{ type: "spring", damping: 20, stiffness: 300 }}
         className={cn(
-          "relative h-screen border-r border-border/30 bg-background",
+          "relative h-screen border-r border-border/10 bg-background",
           "flex flex-col overflow-hidden",
           mobileStyles
         )}
@@ -149,33 +154,15 @@ export function SidebarNavigation() {
         {collapseButton}
         
         <div className={cn(
-          "flex items-center gap-2 p-4 border-b border-border/20",
+          "flex items-center gap-2 p-4 border-b border-border/10",
           collapsed && !isMobile && "justify-center"
         )}>
           <DiagramrLogo size={collapsed && !isMobile ? "sm" : "xs"} />
           {!collapsed && <span className="font-semibold">Diagramr</span>}
         </div>
         
-        <ScrollArea className="flex-1 overflow-auto px-3 py-4">
+        <ScrollArea className="flex-1 overflow-auto px-3 py-6">
           <nav className="space-y-2">
-            <SidebarItem 
-              icon={<Home className="h-5 w-5" />} 
-              label="Dashboard" 
-              href="/dashboard" 
-              active={location.pathname === "/dashboard"}
-              collapsed={collapsed && !isMobile}
-              onClick={() => isMobile && setIsMobileOpen(false)}
-            />
-            
-            <SidebarItem 
-              icon={<PenTool className="h-5 w-5" />} 
-              label="New Diagram" 
-              href="/new" 
-              active={location.pathname === "/new"}
-              collapsed={collapsed && !isMobile}
-              onClick={() => isMobile && setIsMobileOpen(false)}
-            />
-            
             <SidebarItem 
               icon={<Heart className="h-5 w-5" />} 
               label="Liked Diagrams" 
@@ -184,65 +171,52 @@ export function SidebarNavigation() {
               collapsed={collapsed && !isMobile}
               onClick={() => isMobile && setIsMobileOpen(false)}
             />
-
-            <SidebarItem 
-              icon={<FolderHeart className="h-5 w-5" />} 
-              label="Collections" 
-              href="/collections" 
-              active={location.pathname === "/collections"}
-              collapsed={collapsed && !isMobile}
-              onClick={() => isMobile && setIsMobileOpen(false)}
-            />
             
             <SidebarItem 
-              icon={<User className="h-5 w-5" />} 
-              label="Account" 
+              icon={<Settings className="h-5 w-5" />} 
+              label="Settings" 
               href="/account" 
               active={location.pathname === "/account"}
               collapsed={collapsed && !isMobile}
               onClick={() => isMobile && setIsMobileOpen(false)}
             />
           </nav>
-          
-          {!collapsed && (
-            <div className="mt-8 space-y-4">
-              <h3 className="px-3 text-xs font-medium text-muted-foreground">Resources</h3>
-              <nav className="space-y-2">
-                <SidebarItem 
-                  icon={<HelpCircle className="h-5 w-5" />} 
-                  label="Help & Support" 
-                  href="/help" 
-                  active={location.pathname === "/help"}
-                  collapsed={collapsed && !isMobile}
-                  onClick={() => isMobile && setIsMobileOpen(false)}
-                />
-                
-                <SidebarItem 
-                  icon={<Lightbulb className="h-5 w-5" />} 
-                  label="Tips & Tutorials" 
-                  href="/tutorials" 
-                  active={location.pathname === "/tutorials"}
-                  collapsed={collapsed && !isMobile}
-                  onClick={() => isMobile && setIsMobileOpen(false)}
-                />
-              </nav>
-            </div>
-          )}
         </ScrollArea>
         
         <div className={cn(
-          "p-4 border-t border-border/20",
-          collapsed && !isMobile && "flex justify-center"
+          "p-4 border-t border-border/10",
+          !collapsed && "mx-3 mb-3 mt-auto rounded-lg bg-muted/30"
         )}>
-          <Button
-            variant="ghost"
-            size={collapsed && !isMobile ? "icon" : "sm"}
-            onClick={handleSignOut}
-            className="w-full text-muted-foreground hover:text-destructive"
-          >
-            <LogOut className="h-5 w-5 mr-2" />
-            {!collapsed && <span>Sign Out</span>}
-          </Button>
+          {!collapsed ? (
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10 border border-border/20">
+                <AvatarImage src={user?.user_metadata?.avatar_url} />
+                <AvatarFallback>{getUserInitial()}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {user?.email || 'User'}
+                </p>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleSignOut}
+                  className="text-xs p-0 h-6 text-muted-foreground hover:text-destructive"
+                >
+                  Sign out
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleSignOut}
+              className="w-full text-muted-foreground hover:text-destructive"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
+          )}
         </div>
       </motion.aside>
     </>
