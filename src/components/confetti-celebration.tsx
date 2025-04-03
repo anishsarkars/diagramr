@@ -1,78 +1,79 @@
 
-import React, { useEffect, useState } from "react";
-import confetti from "canvas-confetti";
+import { useEffect, useState } from 'react';
+import confetti from 'canvas-confetti';
 
 interface ConfettiCelebrationProps {
   duration?: number;
   particleCount?: number;
   onComplete?: () => void;
-  intensity?: "low" | "medium" | "high";
 }
 
-export function ConfettiCelebration({
-  duration = 2000,
-  particleCount = 50,
-  intensity = "low",
-  onComplete,
+export function ConfettiCelebration({ 
+  duration = 3000, 
+  particleCount = 100,
+  onComplete 
 }: ConfettiCelebrationProps) {
   const [isActive, setIsActive] = useState(true);
 
   useEffect(() => {
     if (!isActive) return;
 
-    // Calculate intensity-based parameters (more subtle now)
-    let spread = 50;
-    let startVelocity = 20;
-    let decay = 0.9;
-    let gravity = 1.2;
-
-    switch (intensity) {
-      case "low":
-        particleCount = Math.max(30, particleCount);
-        spread = 40;
-        break;
-      case "high":
-        particleCount = Math.max(100, particleCount);
-        spread = 70;
-        startVelocity = 30;
-        decay = 0.92;
-        gravity = 0.8;
-        break;
-      default: // medium
-        particleCount = Math.max(50, particleCount);
-    }
-
-    // Create a more subtle confetti effect
-    const makeConfetti = () => {
-      confetti({
-        particleCount: particleCount / 2,
-        spread,
-        origin: { y: 0.5 },
-        colors: ['#9B87F5', '#7E69AB', '#D6BCFA', '#40C4FF', '#69F0AE'],
-        startVelocity,
-        decay,
-        gravity,
-        ticks: 150,
-        shapes: ['square', 'circle'],
-        scalar: 1,
-        zIndex: 1000,
-      });
-    };
-
-    // Just fire once for minimal effect
-    makeConfetti();
+    const animationFrameIds: number[] = [];
+    const startTime = Date.now();
     
-    const timer = setTimeout(() => {
-      setIsActive(false);
-      if (onComplete) {
-        onComplete();
+    // Create multiple confetti bursts
+    const launchConfetti = () => {
+      const currentTime = Date.now();
+      const elapsed = currentTime - startTime;
+      
+      if (elapsed > duration) {
+        setIsActive(false);
+        if (onComplete) onComplete();
+        return;
       }
-    }, duration);
-
-    return () => {
-      clearTimeout(timer);
+      
+      // Intensity decreases over time
+      const intensity = 1 - Math.min(1, elapsed / duration);
+      
+      // Main burst
+      confetti({
+        particleCount: Math.floor(particleCount * intensity),
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#FF5757', '#5271FF', '#F18F01', '#00BD9D', '#A148FF']
+      });
+      
+      // Side bursts (less frequent)
+      if (Math.random() < 0.3 * intensity) {
+        confetti({
+          particleCount: Math.floor(particleCount * 0.3 * intensity),
+          angle: 60,
+          spread: 50,
+          origin: { x: 0, y: 0.6 },
+        });
+      }
+      
+      if (Math.random() < 0.3 * intensity) {
+        confetti({
+          particleCount: Math.floor(particleCount * 0.3 * intensity),
+          angle: 120,
+          spread: 50,
+          origin: { x: 1, y: 0.6 },
+        });
+      }
+      
+      // Schedule next frame
+      const frameId = requestAnimationFrame(launchConfetti);
+      animationFrameIds.push(frameId);
     };
-  }, [isActive, duration, particleCount, intensity, onComplete]);
+    
+    launchConfetti();
+    
+    return () => {
+      // Cleanup animation frames
+      animationFrameIds.forEach(id => cancelAnimationFrame(id));
+    };
+  }, [duration, particleCount, isActive, onComplete]);
 
   return null;
 }

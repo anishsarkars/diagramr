@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, History, TrendingUp, Sparkles, Lightbulb, BookOpen, Network, Database, MessageSquare, Brain } from "lucide-react";
+import { Search, History, TrendingUp, Sparkles, Lightbulb, BookOpen, Network, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 
@@ -20,7 +20,6 @@ export function SearchSuggestions({
 }: SearchSuggestionsProps) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
-  const [nlpSuggestions, setNlpSuggestions] = useState<string[]>([]);
   const [topSearches, setTopSearches] = useState<string[]>([
     "Human anatomy diagrams",
     "Cell structure visualization",
@@ -49,7 +48,6 @@ export function SearchSuggestions({
     
     // Generate smart suggestions based on the query
     if (query) {
-      // Basic query completion suggestions
       const baseTerms = [
         "diagram",
         "chart",
@@ -127,56 +125,18 @@ export function SearchSuggestions({
         querySuggestions.push(`How ${query} works diagram`);
       }
       
-      // NLP-like enhanced suggestions
-      const nlpSuggestions: string[] = [];
-      
-      // Questions and conversational suggestions
-      if (!lowerQuery.includes("?")) {
-        nlpSuggestions.push(`Show me diagrams of ${query}`);
-        nlpSuggestions.push(`What are the best diagrams for ${query}?`);
-        nlpSuggestions.push(`I need to understand ${query} visually`);
-      }
-      
-      // Task-oriented suggestions
-      const taskTerms = ["create", "design", "make", "draw", "need"];
-      const taskFound = taskTerms.some(term => lowerQuery.includes(term));
-      
-      if (taskFound) {
-        nlpSuggestions.push(`Examples of ${query.replace(/create|design|make|draw|need/gi, '').trim()}`);
-        nlpSuggestions.push(`Professional ${query.replace(/create|design|make|draw|need/gi, '').trim()} templates`);
-      }
-      
-      // Add comparative suggestions
-      if (lowerQuery.includes(" vs ") || lowerQuery.includes(" versus ") || lowerQuery.includes(" compared to ")) {
-        nlpSuggestions.push(`Comparison diagram of ${query}`);
-        nlpSuggestions.push(`Visual differences between ${query.replace(/ vs | versus | compared to /gi, ' and ')}`);
-      }
-      
-      // Add subject-specific learning terms
-      if (lowerQuery.includes("learn") || lowerQuery.includes("understand") || lowerQuery.includes("study")) {
-        nlpSuggestions.push(`${query} for beginners`);
-        nlpSuggestions.push(`${query} step by step visual guide`);
-        nlpSuggestions.push(`${query} educational diagrams`);
-      }
-      
-      // Deduplicate and limit NLP suggestions
-      setNlpSuggestions(Array.from(new Set(nlpSuggestions))
-        .filter(suggestion => suggestion.toLowerCase() !== query.toLowerCase())
-        .slice(0, 4));
-      
-      // Deduplicate and limit regular suggestions
+      // Deduplicate and limit
       const uniqueSuggestions = Array.from(new Set(querySuggestions))
         .filter(suggestion => suggestion.toLowerCase() !== query.toLowerCase())
-        .slice(0, 4);
+        .slice(0, 6);
       
       setSuggestions(uniqueSuggestions);
     } else {
       setSuggestions([]);
-      setNlpSuggestions([]);
     }
   }, [query]);
 
-  if (!isVisible || (!suggestions.length && !searchHistory.length && !topSearches.length && !nlpSuggestions.length)) {
+  if (!isVisible || (!suggestions.length && !searchHistory.length && !topSearches.length)) {
     return null;
   }
 
@@ -201,31 +161,8 @@ export function SearchSuggestions({
               <h3 className="text-sm font-medium">AI-Powered Search</h3>
             </div>
             <p className="text-xs text-muted-foreground">
-              Search for educational diagrams using natural language. Try asking questions or describing what you need.
+              Search for educational diagrams using natural language. Try specific topics or concepts.
             </p>
-          </div>
-        )}
-
-        {/* NLP Conversational suggestions */}
-        {query && nlpSuggestions.length > 0 && (
-          <div className="p-2">
-            <h3 className="text-xs font-medium text-muted-foreground mb-2 px-2 flex items-center">
-              <Brain className="w-3 h-3 mr-1 text-primary/80" />
-              Natural Language Suggestions
-            </h3>
-            <div className="space-y-1">
-              {nlpSuggestions.map((suggestion, index) => (
-                <Button
-                  key={`nlp-${index}`}
-                  variant="ghost"
-                  className="w-full justify-start text-sm px-2 py-1.5 h-auto rounded-md font-normal"
-                  onClick={() => onSuggestionClick(suggestion)}
-                >
-                  <MessageSquare className="w-3.5 h-3.5 mr-2 text-primary/80" />
-                  <span className="truncate">{suggestion}</span>
-                </Button>
-              ))}
-            </div>
           </div>
         )}
 

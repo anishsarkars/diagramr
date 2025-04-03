@@ -1,37 +1,30 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useInfiniteSearch } from "@/hooks/use-infinite-search";
 import { toast } from "sonner";
 import { useSearchLimit } from "@/hooks/use-search-limit";
+import { ResultsSection } from "@/components/results-section";
 import { useAuth } from "@/components/auth-context";
 import { useNavigate } from "react-router-dom";
+import { DiagramrLogo } from "@/components/diagramr-logo";
+import { Search, ArrowRight, Plus, Send, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { motion, AnimatePresence } from "framer-motion";
-import { DashboardLayout } from "@/components/dashboard-layout";
-import { ConfettiCelebration } from "@/components/confetti-celebration";
-import { DiagramResult } from "@/hooks/use-infinite-search";
-import { Loader2, Search, Heart, MoveRight, Sparkles } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { generateDiagramWithGemini } from "@/utils/geminiImageGenerator";
-import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { motion } from "framer-motion";
 
 export default function ChatDashboard() {
-  const [likedDiagrams, setLikedDiagrams] = useState<Set<string>>(new Set());
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [searchInput, setSearchInput] = useState("");
-  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedImages, setGeneratedImages] = useState<{id: string, url: string, prompt: string}[]>([]);
+  const [query, setQuery] = useState("");
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
+  const [likedDiagrams, setLikedDiagrams] = useState<Set<string>>(new Set());
   
+  const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { incrementCount, hasReachedLimit, remainingSearches } = useSearchLimit();
-  const isMobile = useIsMobile();
   
   const { 
     results,
@@ -42,78 +35,33 @@ export default function ChatDashboard() {
     searchFor,
     resetSearch
   } = useInfiniteSearch({
-    pageSize: 9
+    pageSize: 20
   });
   
   useEffect(() => {
-    // Check if user just logged in
-    const lastLoginCelebration = localStorage.getItem('last-login-celebration');
-    const now = Date.now();
-    
-    if (user && (!lastLoginCelebration || now - parseInt(lastLoginCelebration) > 60 * 60 * 1000)) {
-      setShowCelebration(true);
-      localStorage.setItem('last-login-celebration', now.toString());
-      
-      // Auto-hide after animation
-      setTimeout(() => {
-        setShowCelebration(false);
-      }, 3000);
+    // Load search history from localStorage
+    const savedHistory = localStorage.getItem('diagramr-search-history');
+    if (savedHistory) {
+      try {
+        const history = JSON.parse(savedHistory);
+        setSearchHistory(history);
+      } catch (e) {
+        console.error('Error parsing search history:', e);
+      }
     }
     
     // Fetch liked diagrams
     if (user) {
       fetchLikedDiagrams();
     }
+    
+    // Focus the input field when the page loads
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 500);
   }, [user]);
-
-  useEffect(() => {
-    // Generate search suggestions based on input
-    if (searchInput.length >= 2) {
-      generateSearchSuggestions(searchInput);
-    } else {
-      setSearchSuggestions([]);
-    }
-  }, [searchInput]);
-  
-  const generateSearchSuggestions = (input: string) => {
-    // Basic suggestions for common diagram types
-    const suggestions = [
-      "flowchart",
-      "sequence diagram",
-      "entity relationship diagram",
-      "UML class diagram",
-      "process flow",
-      "mindmap",
-      "gantt chart",
-      "network diagram",
-      "data flow diagram",
-      "state diagram"
-    ];
-    
-    // Filter suggestions based on input
-    const filtered = suggestions.filter(s => 
-      s.toLowerCase().includes(input.toLowerCase()) && 
-      s.toLowerCase() !== input.toLowerCase()
-    );
-    
-    // Generate more contextual suggestions
-    let contextual = [];
-    if (input.includes("flow")) {
-      contextual.push("workflow diagram", "data flow diagram", "process flow");
-    } else if (input.includes("class")) {
-      contextual.push("UML class diagram", "class hierarchy", "object diagram");
-    } else if (input.includes("data")) {
-      contextual.push("database schema", "entity relationship diagram", "data flow");
-    } else if (input.includes("network")) {
-      contextual.push("network topology", "system architecture", "cloud infrastructure");
-    }
-    
-    // Combine and deduplicate
-    const all = [...filtered, ...contextual];
-    const unique = Array.from(new Set(all));
-    
-    setSearchSuggestions(unique.slice(0, 5));
-  };
   
   const fetchLikedDiagrams = async () => {
     if (!user) return;
@@ -135,8 +83,8 @@ export default function ChatDashboard() {
     }
   };
   
-  const handleSearch = async (query: string) => {
-    if (!query.trim()) return;
+  const handleSearch = async (searchQuery: string) => {
+    if (!searchQuery.trim()) return;
     
     if (hasReachedLimit) {
       toast.info("You've reached your daily search limit!", {
@@ -152,70 +100,24 @@ export default function ChatDashboard() {
     const success = await incrementCount();
     if (!success) return;
     
-    setSearchInput("");
-    setSearchSuggestions([]);
+    setQuery("");
     
     try {
-      await searchFor(query);
+      await searchFor(searchQuery);
       
       // Update search history
-      const savedHistory = localStorage.getItem('diagramr-search-history');
-      let history: string[] = [];
-      
-      if (savedHistory) {
-        try {
-          history = JSON.parse(savedHistory);
-        } catch (e) {
-          console.error('Error parsing search history:', e);
-        }
-      }
-      
-      const newHistory = [query, ...history.filter(item => item !== query)].slice(0, 10);
+      const newHistory = [searchQuery, ...searchHistory.filter(item => item !== searchQuery)].slice(0, 10);
+      setSearchHistory(newHistory);
       localStorage.setItem('diagramr-search-history', JSON.stringify(newHistory));
       
-      // Show remaining searches info
-      if (remainingSearches <= 5 && remainingSearches > 0) {
-        toast.info(`${remainingSearches} searches remaining today`, {
-          description: user ? "Upgrade for unlimited searches" : "Sign in for more searches/day"
-        });
-      }
     } catch (error) {
       console.error("Search error:", error);
-      toast.error("Search failed. Please try again or use different terms.");
     }
   };
   
-  const handleGenerateImage = async () => {
-    if (!searchInput) {
-      toast.error("Please enter a prompt for diagram generation");
-      return;
-    }
-    
-    setIsGenerating(true);
-    
-    try {
-      const imageUrl = await generateDiagramWithGemini({ 
-        prompt: searchInput,
-        detailedPrompt: true
-      });
-      
-      if (imageUrl) {
-        setGeneratedImages(prev => [
-          { id: `gen-${Date.now()}`, url: imageUrl, prompt: searchInput },
-          ...prev
-        ]);
-        
-        toast.success("AI diagram generated successfully!");
-        setSearchInput("");
-      } else {
-        toast.error("Failed to generate diagram. Please try a different prompt.");
-      }
-    } catch (error) {
-      console.error("Error generating image:", error);
-      toast.error("Image generation failed. Please try again.");
-    } finally {
-      setIsGenerating(false);
-    }
+  const handleNewSearch = () => {
+    resetSearch();
+    setSelectedTagFilter(null);
   };
   
   const handleLikeDiagram = async (diagramId: string | number) => {
@@ -278,320 +180,156 @@ export default function ChatDashboard() {
     }
   };
   
-  const handleSuggestionClick = (suggestion: string) => {
-    setSearchInput(suggestion);
-    setSearchSuggestions([]);
-    handleSearch(suggestion);
-  };
-  
-  const filteredResults = selectedTagFilter
-    ? results.filter(result => result.tags && result.tags.includes(selectedTagFilter))
-    : results;
+  const exampleSearches = [
+    "Human anatomy diagrams",
+    "Molecular structure visualization",
+    "Physics force diagrams", 
+    "Data flow architecture",
+    "Circuit design diagrams"
+  ];
 
   return (
-    <DashboardLayout>
-      {showCelebration && (
-        <ConfettiCelebration 
-          duration={2000} 
-          particleCount={30}
-          intensity="low"
-        />
-      )}
+    <div className="flex flex-col min-h-screen bg-background">
+      <Header />
       
-      <div className="container max-w-6xl py-4 px-4 md:px-8">
-        {/* Chat-like search interface */}
-        <div className="mb-8 max-w-3xl mx-auto">
-          <div className="rounded-2xl bg-muted/20 p-8 backdrop-blur-sm border border-border/10 shadow-sm">
-            <div className="flex flex-col space-y-2">
-              <h1 className="text-2xl font-bold mb-4">Diagramr AI</h1>
-              
-              <div className="flex gap-2">
-                <Avatar className="w-8 h-8">
-                  <AvatarFallback>AI</AvatarFallback>
-                </Avatar>
-                <div className="bg-secondary/50 rounded-xl p-3 text-sm max-w-[80%]">
-                  What kind of diagram are you looking for today?
-                </div>
-              </div>
-              
-              <div className="mt-4 flex items-end gap-2">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Input
-                      placeholder="Search for diagrams or ask to generate one..."
-                      value={searchInput}
-                      onChange={(e) => setSearchInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleSearch(searchInput);
-                        }
-                      }}
-                      className="pr-20"
-                    />
-                    {searchInput && (
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 text-muted-foreground"
-                        onClick={() => setSearchInput('')}
-                      >
-                        Clear
-                      </Button>
-                    )}
-                    
-                    {/* Search suggestions */}
-                    {searchSuggestions.length > 0 && (
-                      <div className="absolute mt-1 w-full bg-background rounded-lg border border-border/10 shadow-md z-10">
-                        {searchSuggestions.map((suggestion, index) => (
-                          <div 
-                            key={index}
-                            className="p-2 hover:bg-muted/50 cursor-pointer transition-colors"
-                            onClick={() => handleSuggestionClick(suggestion)}
-                          >
-                            {suggestion}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <Button onClick={() => handleSearch(searchInput)} disabled={isLoading || !searchInput}>
-                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handleGenerateImage} 
-                  disabled={isGenerating || !searchInput}
-                  className="gap-2"
+      <main className="flex-1 flex flex-col">
+        <div className="container max-w-4xl mx-auto px-4 pt-12 pb-24 flex-1 flex flex-col">
+          {!searchTerm ? (
+            // Empty state with chat-like interface
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="w-full max-w-2xl mx-auto text-center">
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
                 >
-                  {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                  {!isMobile && "Generate"}
+                  <h1 className="text-4xl font-serif font-bold mb-3">Find your diagrams</h1>
+                  <p className="text-muted-foreground mb-8">
+                    Search for educational diagrams, charts, and visualizations
+                  </p>
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="mb-10"
+                >
+                  <div className="relative w-full mb-6">
+                    <div className="absolute inset-0 bg-primary/5 rounded-2xl blur-xl"></div>
+                    <div className="relative flex items-center">
+                      <Input
+                        ref={inputRef}
+                        type="text"
+                        placeholder="What diagrams are you looking for?"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        className="w-full pl-12 pr-24 py-7 text-lg rounded-2xl border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 shadow-sm"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && query.trim()) {
+                            handleSearch(query);
+                          }
+                        }}
+                      />
+                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary h-5 w-5" />
+                      <Button
+                        onClick={() => handleSearch(query)}
+                        disabled={!query.trim() || isLoading}
+                        size="lg"
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-xl px-5 py-6 gap-2"
+                      >
+                        {isLoading ? (
+                          <div className="h-5 w-5 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-1" />
+                            <span>Search</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                  <div className="text-sm text-muted-foreground mb-4">Try searching for:</div>
+                  <div className="flex flex-wrap justify-center gap-2 max-w-xl mx-auto">
+                    {exampleSearches.map((search, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        className="rounded-full text-sm border-primary/20 hover:bg-primary/5 transition-colors"
+                        onClick={() => handleSearch(search)}
+                      >
+                        {search}
+                      </Button>
+                    ))}
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          ) : (
+            // Results section
+            <ResultsSection 
+              results={results} 
+              searchTerm={searchTerm} 
+              onNewSearch={handleNewSearch} 
+              onSearch={handleSearch}
+              isLoading={isLoading}
+              lastAction="search"
+              onLike={handleLikeDiagram}
+              likedDiagrams={likedDiagrams}
+              hasMore={hasMore}
+              loadMore={loadMore}
+              selectedTagFilter={selectedTagFilter}
+              onSelectTagFilter={setSelectedTagFilter}
+            />
+          )}
+        </div>
+        
+        {/* Improved input box at bottom for chat-like interface */}
+        <div className="sticky bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t z-40">
+          <div className="container max-w-2xl mx-auto">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/5 rounded-full blur-md opacity-50"></div>
+              <div className="relative flex items-center">
+                <Input
+                  ref={inputRef}
+                  type="text"
+                  placeholder="Search for diagrams..."
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="w-full pl-12 pr-16 py-5 rounded-full border-border/50 focus:border-primary focus:ring-1 focus:ring-primary shadow-md"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && query.trim()) {
+                      handleSearch(query);
+                    }
+                  }}
+                />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary h-5 w-5" />
+                <Button
+                  onClick={() => handleSearch(query)}
+                  disabled={!query.trim() || isLoading}
+                  size="sm"
+                  className="absolute right-2.5 top-1/2 transform -translate-y-1/2 rounded-full h-10 w-10 p-0"
+                >
+                  {isLoading ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Results in bento grid */}
-        {(searchTerm || generatedImages.length > 0) && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="space-y-4"
-          >
-            {searchTerm && (
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-medium">
-                  Results for "<span className="text-primary">{searchTerm}</span>"
-                </h2>
-                {selectedTagFilter && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setSelectedTagFilter(null)}
-                    className="text-xs"
-                  >
-                    Clear filter: {selectedTagFilter}
-                  </Button>
-                )}
-              </div>
-            )}
-            
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-                <p className="text-muted-foreground">Searching for diagrams...</p>
-              </div>
-            ) : filteredResults.length === 0 && generatedImages.length === 0 ? (
-              searchTerm && (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="bg-muted/30 rounded-full p-6 mb-4">
-                    <Search className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-xl font-medium mb-2">No results found</h3>
-                  <p className="text-muted-foreground mb-6 max-w-lg">
-                    We couldn't find any diagrams for "{searchTerm}". Try a different search term or generate an AI diagram.
-                  </p>
-                  <Button onClick={handleGenerateImage} disabled={isGenerating} className="gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Generate with AI
-                  </Button>
-                </div>
-              )
-            ) : (
-              <div className="space-y-8">
-                {/* Generated images */}
-                {generatedImages.length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      AI Generated Diagrams
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {generatedImages.map(image => (
-                        <motion.div
-                          key={image.id}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.3 }}
-                          className="aspect-[4/3] overflow-hidden rounded-xl border border-border/10 bg-muted/20 hover:shadow-lg transition-shadow"
-                        >
-                          <div className="relative h-full">
-                            <img 
-                              src={image.url} 
-                              alt={image.prompt}
-                              className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                              <p className="text-white text-sm truncate">
-                                {image.prompt}
-                              </p>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Search Results */}
-                {filteredResults.length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium flex items-center gap-2">
-                      <Search className="h-4 w-4 text-primary" />
-                      Search Results
-                    </h3>
-                    
-                    {/* Tags filter row */}
-                    {filteredResults.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {Array.from(new Set(filteredResults.flatMap(r => r.tags || []))).slice(0, 8).map(tag => (
-                          <Button
-                            key={tag}
-                            variant={selectedTagFilter === tag ? "default" : "outline"} 
-                            size="sm"
-                            className="text-xs rounded-full h-7"
-                            onClick={() => setSelectedTagFilter(tag === selectedTagFilter ? null : tag)}
-                          >
-                            {tag}
-                          </Button>
-                        ))}
-                      </div>
-                    )}
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <AnimatePresence>
-                        {filteredResults.map((result, index) => (
-                          <motion.div
-                            key={`${result.id}-${index}`}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
-                            className="flex flex-col h-full"
-                          >
-                            <Card className="overflow-hidden h-full flex flex-col hover:shadow-md transition-shadow duration-200 border-border/10">
-                              <div className="relative aspect-[4/3] overflow-hidden bg-muted/30">
-                                <img 
-                                  src={result.imageSrc} 
-                                  alt={result.title} 
-                                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className={cn(
-                                    "absolute top-2 right-2 rounded-full bg-background/80 backdrop-blur-sm",
-                                    likedDiagrams.has(String(result.id)) ? "text-destructive" : "text-muted-foreground"
-                                  )}
-                                  onClick={() => handleLikeDiagram(result.id)}
-                                >
-                                  <Heart className={cn(
-                                    "h-4 w-4",
-                                    likedDiagrams.has(String(result.id)) && "fill-destructive"
-                                  )} />
-                                </Button>
-                              </div>
-                              <div className="p-3 flex-1 flex flex-col">
-                                <h4 className="font-medium line-clamp-2 mb-2">{result.title}</h4>
-                                <div className="flex flex-wrap gap-1 mt-auto pt-2">
-                                  {(result.tags || []).slice(0, 3).map((tag, i) => (
-                                    <Button
-                                      key={i}
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
-                                      onClick={() => setSelectedTagFilter(tag)}
-                                    >
-                                      #{tag}
-                                    </Button>
-                                  ))}
-                                </div>
-                              </div>
-                            </Card>
-                          </motion.div>
-                        ))}
-                      </AnimatePresence>
-                    </div>
-                    
-                    {/* Load more button */}
-                    {hasMore && (
-                      <div className="flex justify-center mt-8">
-                        <Button
-                          variant="outline"
-                          onClick={loadMore}
-                          className="gap-2"
-                          disabled={isLoading}
-                        >
-                          {isLoading ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <>
-                              Load more
-                              <MoveRight className="h-4 w-4" />
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </motion.div>
-        )}
-        
-        {/* Initial state */}
-        {!searchTerm && filteredResults.length === 0 && generatedImages.length === 0 && !isLoading && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-12 text-center"
-          >
-            <div className="max-w-md">
-              <h2 className="text-2xl font-bold mb-4">Find or Generate Diagrams</h2>
-              <p className="text-muted-foreground mb-8">
-                Search for educational diagrams or use our AI to generate custom diagrams for your needs.
-              </p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {["flow chart", "entity relationship", "sequence diagram", "UML class diagram"].map((term, i) => (
-                  <Button 
-                    key={i} 
-                    variant="outline" 
-                    className="text-sm justify-start"
-                    onClick={() => handleSearch(term)}
-                  >
-                    <Search className="h-3 w-3 mr-2" />
-                    {term}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </div>
-    </DashboardLayout>
+      </main>
+      
+      <Footer />
+    </div>
   );
 }
