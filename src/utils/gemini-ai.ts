@@ -23,7 +23,7 @@ export async function generateSuggestions(query: string): Promise<GeminiResponse
     const altApiKey = "1662e165fa7f4ef390dc17769cf96792";
     
     // Don't make real API calls if the key isn't available or valid
-    if ((!apiKey || apiKey === "YOUR_API_KEY_HERE") && !altApiKey) {
+    if ((!apiKey || apiKey === "") && !altApiKey) {
       console.log("Using fallback suggestions (no API key available)");
       return getFallbackSuggestions(query);
     }

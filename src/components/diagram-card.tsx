@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +25,7 @@ interface DiagramCardProps {
   mode?: "grid" | "list";
   onTagClick?: (tag: string) => void;
   className?: string;
+  isPriority?: boolean;
 }
 
 export function DiagramCard({
@@ -41,6 +41,7 @@ export function DiagramCard({
   mode = "grid",
   onTagClick,
   className,
+  isPriority = false,
 }: DiagramCardProps) {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [showEnlargeModal, setShowEnlargeModal] = useState(false);
