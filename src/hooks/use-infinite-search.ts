@@ -28,7 +28,7 @@ export function useInfiniteSearch({
   isLoading: boolean;
   error: Error | null;
   hasMore: boolean;
-  loadMore: () => void;
+  loadMore: () => Promise<void>;
   searchTerm: string;
   searchFor: (query: string) => Promise<void>;
   resetSearch: () => void;
@@ -199,7 +199,10 @@ export function useInfiniteSearch({
   };
   
   const loadMore = useCallback(async () => {
-    if (isLoading || isLoadingMore.current || !hasMore) return;
+    if (isLoading || isLoadingMore.current || !hasMore) {
+      console.log("Cannot load more because isLoading:", isLoading, "isLoadingMore:", isLoadingMore.current, "hasMore:", hasMore);
+      return;
+    }
     
     console.log("Loading more results...");
     isLoadingMore.current = true;
@@ -211,16 +214,24 @@ export function useInfiniteSearch({
       
       if (endIndex < allResults.current.length) {
         console.log(`Loading more results from memory (${startIndex}-${endIndex})`);
-        setResults(prev => [...prev, ...allResults.current.slice(startIndex, endIndex)]);
+        const nextBatch = allResults.current.slice(startIndex, endIndex);
+        setResults(prev => [...prev, ...nextBatch]);
         setPage(nextPage);
         setHasMore(allResults.current.length > endIndex);
-      } else {
-        const nextSearchPage = currentSearchPage + 1;
-        console.log(`Need to fetch more results for page ${nextSearchPage}`);
+        console.log(`Added ${nextBatch.length} more results, hasMore:`, allResults.current.length > endIndex);
+        return;
+      } 
+      
+      // Need to fetch more external results
+      const nextSearchPage = currentSearchPage + 1;
+      console.log(`Need to fetch more results for page ${nextSearchPage}`);
+      
+      try {
+        // Try searching from primary source first
+        console.log("Fetching from primary source for page:", nextSearchPage);
+        const newPageResults = await searchDiagrams(searchTerm, nextSearchPage);
         
-        try {
-          const newPageResults = await searchDiagrams(searchTerm, nextSearchPage);
-          
+        if (newPageResults && newPageResults.length > 0) {
           const existingUrls = new Set(results.map(r => r.imageSrc));
           const uniqueNewResults = newPageResults.filter(r => !existingUrls.has(r.imageSrc));
           
@@ -228,32 +239,42 @@ export function useInfiniteSearch({
             console.log(`Adding ${uniqueNewResults.length} new unique results to display`);
             allResults.current = [...allResults.current, ...uniqueNewResults];
             setResults(prev => [...prev, ...uniqueNewResults]);
-            setHasMore(uniqueNewResults.length >= 5);
+            setHasMore(true);
             setCurrentSearchPage(nextSearchPage);
-          } else {
-            // Convert nextSearchPage (number) to string for second parameter
-            const fallbackResults = await searchGoogleImages(`${searchTerm} diagram`, String(nextSearchPage));
-            const uniqueFallbackResults = fallbackResults.filter(r => !existingUrls.has(r.imageSrc));
-            
-            if (uniqueFallbackResults.length > 0) {
-              console.log(`Adding ${uniqueFallbackResults.length} new unique results from fallback source`);
-              allResults.current = [...allResults.current, ...uniqueFallbackResults];
-              setResults(prev => [...prev, ...uniqueFallbackResults]);
-              setHasMore(uniqueFallbackResults.length >= 5);
-            } else {
-              console.log("No new unique results found from either source");
-              setHasMore(false);
-            }
+            return;
           }
-        } catch (error: any) {
-          console.error("Error loading more results:", error);
+        }
+        
+        // If no results or all duplicates, try Google fallback
+        console.log("No new results from primary source, trying Google fallback");
+        const fallbackResults = await searchGoogleImages(searchTerm, String(nextSearchPage));
+        
+        if (fallbackResults && fallbackResults.length > 0) {
+          const existingUrls = new Set(results.map(r => r.imageSrc));
+          const uniqueFallbackResults = fallbackResults.filter(r => !existingUrls.has(r.imageSrc));
           
-          if (error.message && error.message.includes('quota exceeded')) {
-            toast.error("Reached API limits. Try again later.", { duration: 3000 });
+          if (uniqueFallbackResults.length > 0) {
+            console.log(`Adding ${uniqueFallbackResults.length} new unique results from fallback source`);
+            allResults.current = [...allResults.current, ...uniqueFallbackResults];
+            setResults(prev => [...prev, ...uniqueFallbackResults]);
+            setHasMore(uniqueFallbackResults.length >= 5);
+            setCurrentSearchPage(nextSearchPage);
+            return;
           }
+        }
+        
+        // If we get here, no new results were found
+        console.log("No new unique results found from either source");
+        setHasMore(false);
+        
+      } catch (error: any) {
+        console.error("Error loading more results:", error);
+        
+        // Try fallback on error
+        if (error.message && error.message.includes('quota exceeded')) {
+          console.log("API quota exceeded, trying fallback source");
           
           try {
-            // Convert nextSearchPage (number) to string for second parameter
             const fallbackResults = await searchGoogleImages(`${searchTerm} diagram`, String(nextSearchPage));
             const existingUrls = new Set(results.map(r => r.imageSrc));
             const uniqueFallbackResults = fallbackResults.filter(r => !existingUrls.has(r.imageSrc));
@@ -263,18 +284,21 @@ export function useInfiniteSearch({
               allResults.current = [...allResults.current, ...uniqueFallbackResults];
               setResults(prev => [...prev, ...uniqueFallbackResults]);
               setHasMore(uniqueFallbackResults.length >= 5);
-            } else {
-              setHasMore(false);
+              setCurrentSearchPage(nextSearchPage);
+              return;
             }
           } catch (fallbackError) {
             console.error("Fallback search also failed:", fallbackError);
-            setHasMore(false);
           }
         }
+        
+        // If all attempts failed
+        setHasMore(false);
+        throw error;
       }
     } catch (error) {
       console.error("Error loading more results:", error);
-      setHasMore(false);
+      throw error;
     } finally {
       isLoadingMore.current = false;
     }

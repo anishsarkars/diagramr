@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "react-router-dom";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { motion } from "framer-motion";
-import { Github, Linkedin, Twitter, ExternalLink } from "lucide-react";
+import { Github, Linkedin, Twitter, ExternalLink, Heart } from "lucide-react";
 import { Logo } from "@/components/logo";
 
 export function Footer() {
@@ -91,7 +91,8 @@ export function Footer() {
             <div className="pt-2">
               <motion.div
                 className="bg-card p-4 rounded-lg border border-border/40 shadow-sm"
-                whileHover={{ scale: 1.02 }}
+                whileHover={{ scale: 1.02, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                transition={{ type: "spring", stiffness: 500 }}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">Creator</Badge>
@@ -112,8 +113,16 @@ export function Footer() {
         </div>
         
         <div className="mt-8 pt-4 border-t border-border/30 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-muted-foreground">
-            © {currentYear} Diagramr. Built with ❤️ by 
+          <motion.p 
+            className="text-sm text-muted-foreground flex items-center gap-1"
+            whileHover={{ color: "#F87171" }}
+          >
+            © {currentYear} Diagramr. Built with 
+            <span className="inline-flex items-center">
+              <Heart className="h-3 w-3 text-red-400 animate-pulse" />
+            </span>
+            <span className="font-medium"> in Indore </span>
+            by 
             <a 
               href="https://www.linkedin.com/in/anishsarkar-/" 
               target="_blank" 
@@ -122,7 +131,7 @@ export function Footer() {
             >
               @Anish <ExternalLink className="h-3 w-3 ml-0.5" />
             </a>
-          </p>
+          </motion.p>
           
           <motion.div 
             className="text-xs text-muted-foreground flex items-center gap-1.5 px-2.5 py-1 bg-muted/50 rounded-full"

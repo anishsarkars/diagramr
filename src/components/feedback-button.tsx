@@ -59,15 +59,17 @@ export function FeedbackButton() {
       <motion.div
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
+        className="fixed right-0 top-1/2 transform -translate-y-1/2 z-50"
       >
         <Button 
-          variant="ghost" 
+          variant="default" 
           size="sm" 
           onClick={() => setIsOpen(true)} 
-          className="fixed bottom-4 right-4 shadow-md bg-primary text-white hover:bg-primary/90 rounded-full w-10 h-10 p-0 flex items-center justify-center"
+          className="shadow-md bg-primary text-white hover:bg-primary/90 px-3 py-5 rounded-r-none rounded-l-md flex flex-col items-center justify-center gap-2 h-auto"
           aria-label="Provide feedback"
         >
-          <MessageSquare className="h-5 w-5" />
+          <MessageSquare className="h-4 w-4" />
+          <span className="text-[10px] font-medium rotate-90 mt-1 tracking-wider">FEEDBACK</span>
         </Button>
       </motion.div>
       

@@ -7,8 +7,9 @@ import { cn } from "@/lib/utils";
 import { DiagramResult } from "@/hooks/use-infinite-search";
 import { SimpleSearchBar } from "@/components/simple-search-bar";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Search, Grid3X3, List, ChevronDown } from "lucide-react";
+import { Loader2, Search, Grid3X3, List, ChevronDown, MoreHorizontal } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
 
 interface ResultsSectionProps {
   results: DiagramResult[];
@@ -44,6 +45,7 @@ export function ResultsSection({
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [tags, setTags] = useState<string[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [currentBatch, setCurrentBatch] = useState<DiagramResult[]>([]);
   const isMobile = useIsMobile();
   
   // Extract unique tags from results
@@ -57,22 +59,31 @@ export function ResultsSection({
       .slice(0, 12); // Limit to 12 tags
     
     setTags(uniqueTags);
+    
+    // Show in batches for better UI
+    if (results.length > 0) {
+      setCurrentBatch(results);
+    }
   }, [results]);
   
   const filteredResults = selectedTagFilter
-    ? results.filter(
+    ? currentBatch.filter(
         (result) => result.tags && result.tags.includes(selectedTagFilter)
       )
-    : results;
+    : currentBatch;
 
-  const handleLoadMore = () => {
+  const handleLoadMore = async () => {
     if (isLoading || isLoadingMore || !loadMore) return;
     
     setIsLoadingMore(true);
     try {
-      loadMore();
+      await loadMore();
+      toast.success("More diagrams loaded");
+    } catch (error) {
+      console.error("Error loading more results:", error);
+      toast.error("Failed to load more results");
     } finally {
-      setTimeout(() => setIsLoadingMore(false), 1000);
+      setTimeout(() => setIsLoadingMore(false), 500);
     }
   };
 
@@ -93,6 +104,15 @@ export function ResultsSection({
     }
     
     return resultsText;
+  };
+
+  const getLayoutGridClasses = () => {
+    // Enhanced bento-style grid
+    return {
+      "grid gap-5": true,
+      "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3": viewMode === "grid",
+      "grid-cols-1": viewMode === "list",
+    };
   };
 
   return (
@@ -163,24 +183,27 @@ export function ResultsSection({
           className="mb-4 w-full whitespace-nowrap pb-2"
         >
           <div className="flex gap-2">
-            <Button
-              variant={selectedTagFilter ? "outline" : "default"}
-              size="sm"
-              className="rounded-full text-xs"
-              onClick={() => onSelectTagFilter && onSelectTagFilter(null)}
-            >
-              All Results
-            </Button>
-            {tags.map((tag) => (
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button
-                key={tag}
-                variant={selectedTagFilter === tag ? "default" : "outline"}
+                variant={selectedTagFilter ? "outline" : "default"}
                 size="sm"
                 className="rounded-full text-xs"
-                onClick={() => onSelectTagFilter && onSelectTagFilter(tag)}
+                onClick={() => onSelectTagFilter && onSelectTagFilter(null)}
               >
-                {tag}
+                All Results
               </Button>
+            </motion.div>
+            {tags.map((tag) => (
+              <motion.div key={tag} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  variant={selectedTagFilter === tag ? "default" : "outline"}
+                  size="sm"
+                  className="rounded-full text-xs"
+                  onClick={() => onSelectTagFilter && onSelectTagFilter(tag)}
+                >
+                  {tag}
+                </Button>
+              </motion.div>
             ))}
           </div>
         </ScrollArea>
@@ -208,27 +231,33 @@ export function ResultsSection({
       ) : (
         <div className="space-y-6">
           <AnimatePresence>
-            <div
-              className={cn({
-                "grid gap-4 sm:gap-5": true,
-                "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4": viewMode === "grid",
-                "grid-cols-1": viewMode === "list",
-              })}
-            >
+            <div className={cn(getLayoutGridClasses())}>
               {filteredResults.map((result, index) => {
                 const isLastItem = index === filteredResults.length - 1;
+                const isPromoted = index === 0 || index === 3;
                 
                 return (
                   <motion.div
                     key={`${result.id}-${index}`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2, delay: Math.min(index % 8 * 0.05, 0.4) }}
+                    transition={{ 
+                      duration: 0.3, 
+                      delay: Math.min(index % 8 * 0.05, 0.4),
+                      type: "spring",
+                      stiffness: 260,
+                      damping: 20
+                    }}
                     className={cn({
-                      "col-span-1": true,
+                      "col-span-1": !isPromoted || viewMode === "list",
+                      "row-span-1": !isPromoted || viewMode === "list",
+                      "md:col-span-2 md:row-span-1": isPromoted && viewMode === "grid" && index === 0,
                       "h-full": viewMode === "grid",
+                      "shadow-sm hover:shadow-md transition-all duration-300": true,
+                      "border border-border/30 rounded-xl overflow-hidden": true,
                     })}
                     ref={isLastItem ? lastResultRef : null}
+                    whileHover={{ y: -3, transition: { duration: 0.2 } }}
                   >
                     <DiagramCard
                       id={result.id}
@@ -242,6 +271,7 @@ export function ResultsSection({
                       onLike={() => onLike && onLike(result.id)}
                       mode={viewMode}
                       onTagClick={(tag) => onSelectTagFilter && onSelectTagFilter(tag)}
+                      isPriority={isPromoted}
                     />
                   </motion.div>
                 );
@@ -252,25 +282,30 @@ export function ResultsSection({
           {/* Load more button */}
           {hasMore && (
             <div className="flex justify-center pt-4 pb-8">
-              <Button 
-                variant="outline" 
-                size="lg" 
-                onClick={handleLoadMore} 
-                disabled={isLoadingMore}
-                className="min-w-[200px]"
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                {isLoadingMore ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Loading...
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="mr-2 h-4 w-4" />
-                    Load More Results
-                  </>
-                )}
-              </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  onClick={handleLoadMore} 
+                  disabled={isLoadingMore}
+                  className="min-w-[200px]"
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="mr-2 h-4 w-4" />
+                      Load More Results
+                    </>
+                  )}
+                </Button>
+              </motion.div>
             </div>
           )}
         </div>
