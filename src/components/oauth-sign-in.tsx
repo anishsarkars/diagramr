@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,20 +16,37 @@ export function OAuthSignIn({ isPremium = false, className = "" }: OAuthSignInPr
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth`,
           queryParams: {
-            client_id: '680718326327-duph7gibjc8kdejfsv6h7qafo1lcc478.apps.googleusercontent.com',
             access_type: 'offline',
             prompt: 'consent',
           },
         },
       });
-    } catch (error) {
+
+      if (error) {
+        console.error("OAuth sign-in error:", error);
+        toast.error("We're working on it!", {
+          description: "We're constantly improving. Please try again in a few moments.",
+          action: {
+            label: "Try Again",
+            onClick: () => handleGoogleSignIn()
+          }
+        });
+        return;
+      }
+    } catch (error: any) {
       console.error("OAuth sign-in error:", error);
-      toast.error("Failed to sign in with Google. Please try again.");
+      toast.error("We're working on it!", {
+        description: "We're constantly improving. Please try again in a few moments.",
+        action: {
+          label: "Try Again",
+          onClick: () => handleGoogleSignIn()
+        }
+      });
     } finally {
       setIsLoading(false);
     }

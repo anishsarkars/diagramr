@@ -1,15 +1,16 @@
-
-import { motion } from "framer-motion";
-import { CheckCircle, ZapIcon, SearchIcon, FileTextIcon, HeartIcon, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircle, ZapIcon, SearchIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { useAuth } from "@/components/auth-context";
+import { useState } from "react";
 
 const Pricing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   const plans = [
     {
@@ -27,7 +28,7 @@ const Pricing = () => {
       buttonAction: () => navigate("/"),
     },
     {
-      name: "Pro",
+      name: "Premium",
       price: "$3",
       period: "per month",
       features: [
@@ -54,131 +55,194 @@ const Pricing = () => {
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
       
-      <main className="flex-1 pt-24 pb-16">
-        <div className="container">
+      <main className="flex-1 pt-24 pb-16 relative overflow-hidden">
+        {/* Animated background gradients */}
+        <motion.div 
+          className="absolute inset-0 pointer-events-none"
+          animate={{
+            background: [
+              "radial-gradient(circle at 20% 20%, var(--primary)/0.03, transparent 70%)",
+              "radial-gradient(circle at 60% 60%, var(--primary)/0.03, transparent 70%)",
+              "radial-gradient(circle at 20% 20%, var(--primary)/0.03, transparent 70%)",
+            ],
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+        >
           <motion.div 
-            className="text-center max-w-3xl mx-auto mb-12"
+            className="absolute -right-1/4 top-0 w-1/2 h-1/2 bg-primary/5 rounded-full blur-3xl"
+            animate={{
+              x: [0, 20, 0],
+              y: [0, -20, 0],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          <motion.div 
+            className="absolute -left-1/4 bottom-0 w-1/2 h-1/2 bg-blue-500/5 rounded-full blur-3xl"
+            animate={{
+              x: [0, -20, 0],
+              y: [0, 20, 0],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 1
+            }}
+          />
+        </motion.div>
+
+        <div className="container relative z-10">
+          <motion.div 
+            className="text-center max-w-2xl mx-auto mb-16"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className="text-4xl font-bold mb-4">Choose Your Plan</h1>
-            <p className="text-muted-foreground text-lg">
+            <motion.h1 
+              className="text-3xl font-bold mb-3"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              Manage your plan
+            </motion.h1>
+            <motion.p 
+              className="text-muted-foreground"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
               Find the perfect educational diagrams to boost your studies and research
-            </p>
+            </motion.p>
           </motion.div>
           
           <motion.div 
             className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            {plans.map((plan, index) => (
-              <motion.div
-                key={plan.name}
-                className={`rounded-xl overflow-hidden border ${
-                  plan.isPopular
-                    ? "border-primary/50 bg-primary/5"
-                    : "border-border bg-background/60"
-                } backdrop-blur-sm shadow-lg relative`}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 * (index + 1) }}
-                whileHover={{ y: -5, transition: { duration: 0.2 } }}
-              >
-                {plan.isPopular && (
-                  <div className="absolute top-0 right-0">
-                    <div className="bg-primary text-primary-foreground text-xs font-medium py-1 px-3 rounded-bl-lg">
-                      Recommended
+            <AnimatePresence>
+              {plans.map((plan, index) => (
+                <motion.div
+                  key={plan.name}
+                  className={`rounded-xl border ${
+                    plan.isPopular
+                      ? "border-primary/20 bg-primary/[0.03]"
+                      : "border-border/60 bg-background/60"
+                  } backdrop-blur-sm shadow-sm relative overflow-hidden`}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1 * (index + 1) }}
+                  onHoverStart={() => setHoveredCard(plan.name)}
+                  onHoverEnd={() => setHoveredCard(null)}
+                  whileHover={{
+                    y: -4,
+                    transition: { duration: 0.2 },
+                  }}
+                >
+                  {plan.isPopular && hoveredCard === plan.name && (
+                    <motion.div
+                      className="absolute inset-0 bg-primary/[0.02] pointer-events-none"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    />
+                  )}
+                  
+                  <div className="p-8">
+                    <motion.h3 
+                      className="text-lg font-medium mb-2 flex items-center gap-2"
+                      initial={false}
+                      animate={{
+                        color: hoveredCard === plan.name ? "var(--primary)" : "var(--foreground)",
+                      }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <motion.div
+                        animate={{
+                          rotate: hoveredCard === plan.name ? [0, -10, 10, 0] : 0,
+                        }}
+                        transition={{ duration: 0.4, delay: 0.1 }}
+                      >
+                        {plan.name === "Free" && <SearchIcon className="h-4 w-4 text-muted-foreground" />}
+                        {plan.name === "Premium" && <ZapIcon className="h-4 w-4 text-primary" />}
+                      </motion.div>
+                      {plan.name}
+                    </motion.h3>
+                    <div className="flex items-baseline gap-1 mb-6">
+                      <span className="text-3xl font-bold">{plan.price}</span>
+                      <span className="text-muted-foreground text-sm">/{plan.period}</span>
                     </div>
+                    <ul className="space-y-3 mb-8">
+                      {plan.features.map((feature, featureIndex) => (
+                        <motion.li 
+                          key={feature} 
+                          className="flex items-start gap-2 text-sm"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ 
+                            opacity: 1, 
+                            x: 0,
+                            transition: { delay: 0.2 + (featureIndex * 0.1) }
+                          }}
+                        >
+                          <motion.div
+                            initial={false}
+                            animate={{
+                              scale: hoveredCard === plan.name ? [1, 1.2, 1] : 1,
+                            }}
+                            transition={{ duration: 0.2, delay: featureIndex * 0.05 }}
+                          >
+                            <CheckCircle className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                          </motion.div>
+                          <span>{feature}</span>
+                        </motion.li>
+                      ))}
+                    </ul>
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Button
+                        className={`w-full ${
+                          plan.isPopular
+                            ? "bg-primary hover:bg-primary/90"
+                            : ""
+                        }`}
+                        variant={plan.isPopular ? "default" : "outline"}
+                        onClick={plan.buttonAction}
+                      >
+                        {plan.buttonText}
+                      </Button>
+                    </motion.div>
                   </div>
-                )}
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
-                    {plan.name === "Free" && <SearchIcon className="h-5 w-5 text-muted-foreground" />}
-                    {plan.name === "Pro" && <ZapIcon className="h-5 w-5 text-primary" />}
-                    {plan.name}
-                  </h3>
-                  <div className="flex items-end gap-1 mb-6">
-                    <span className="text-3xl font-bold">{plan.price}</span>
-                    <span className="text-muted-foreground mb-1">/{plan.period}</span>
-                  </div>
-                  <ul className="space-y-3 mb-8">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2">
-                        <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    className={`w-full ${
-                      plan.isPopular
-                        ? "bg-primary hover:bg-primary/90"
-                        : ""
-                    }`}
-                    variant={plan.isPopular ? "default" : "outline"}
-                    onClick={plan.buttonAction}
-                  >
-                    {plan.buttonText}
-                  </Button>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </motion.div>
           
           <motion.div 
-            className="mt-16 text-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
+            className="mt-12 text-center text-muted-foreground text-sm max-w-xl mx-auto bg-muted/20 p-4 rounded-lg backdrop-blur-sm"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+            whileHover={{
+              backgroundColor: "var(--muted)",
+              transition: { duration: 0.2 }
+            }}
           >
-            <h2 className="text-2xl font-semibold mb-2">Why Choose Diagramr Pro?</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
-              Upgrade to access more educational diagrams and resources to enhance your academic journey
+            <p className="italic">
+              During our beta phase, most features are available for free. Enjoy free access to educational diagrams and resources while we continue to improve Diagramr.
             </p>
-            
-            <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-              <div className="p-4 rounded-lg">
-                <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
-                  <SearchIcon className="h-6 w-6" />
-                </div>
-                <h3 className="font-medium mb-2">More Daily Searches</h3>
-                <p className="text-sm text-muted-foreground">
-                  Get 50+ searches per day to find all the educational diagrams you need.
-                </p>
-              </div>
-              
-              <div className="p-4 rounded-lg">
-                <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
-                  <HeartIcon className="h-6 w-6" />
-                </div>
-                <h3 className="font-medium mb-2">Save Favorites</h3>
-                <p className="text-sm text-muted-foreground">
-                  Build unlimited collections of diagrams for your different study projects.
-                </p>
-              </div>
-              
-              <div className="p-4 rounded-lg">
-                <div className="bg-primary/10 text-primary p-3 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="h-6 w-6" />
-                </div>
-                <h3 className="font-medium mb-2">Priority Support</h3>
-                <p className="text-sm text-muted-foreground">
-                  Get faster assistance for any questions about educational resources.
-                </p>
-              </div>
-            </div>
-            
-            <div className="mt-12 text-center text-muted-foreground text-sm max-w-2xl mx-auto bg-muted/30 p-4 rounded-lg">
-              <p className="italic">
-                <b>Note:</b> During our beta phase, most features are available for free. Enjoy free access to educational diagrams and resources while we continue to improve Diagramr.
-              </p>
-              <p className="mt-2">
-                Diagramr is in the early stages and can sometimes make mistakes, but we're constantly working to improve the quality and accuracy of our results.
-              </p>
-            </div>
           </motion.div>
         </div>
       </main>

@@ -17,7 +17,6 @@ import { SiteLoader } from "./components/site-loader";
 import { FeedbackButton } from "./components/feedback-button";
 import ChatDashboard from "./pages/ChatDashboard";
 import { ConfettiCelebration } from "./components/confetti-celebration";
-import { AuthDialog } from "@/components/auth-dialog";
 
 // Create a query client with better retry settings for failed API requests
 const queryClient = new QueryClient({
@@ -35,26 +34,16 @@ const queryClient = new QueryClient({
 function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [showLoginSuccess, setShowLoginSuccess] = useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const [showAuthDialog, setShowAuthDialog] = useState(false);
-  const [authDialogMode, setAuthDialogMode] = useState<"welcome" | "searches-exhausted">("welcome");
   const [guestSearchCount, setGuestSearchCount] = useState(0);
-  const MAX_GUEST_SEARCHES = 3;
   
-  // Enhanced loading timeout for better UX
+  // Add loading timeout
   useEffect(() => {
-    // Check if user has already visited
-    const hasVisited = localStorage.getItem("hasVisited");
-    
-    // Simulate loading time for first-time visitors
     const timer = setTimeout(() => {
       setIsLoading(false);
-      if (!hasVisited) {
-        localStorage.setItem("hasVisited", "true");
-      }
-    }, hasVisited ? 500 : 1500); // Shorter initial load for better UX
+    }, 1000);
     
     return () => clearTimeout(timer);
   }, []);
@@ -88,14 +77,6 @@ function AppContent() {
   }, [location.pathname, user, navigate, showLoginSuccess]);
 
   useEffect(() => {
-    // Check if it's the first visit
-    const hasVisited = localStorage.getItem('diagramr-visited');
-    if (!hasVisited && !user) {
-      localStorage.setItem('diagramr-visited', 'true');
-      setAuthDialogMode("welcome");
-      setShowAuthDialog(true);
-    }
-
     // Load guest search count
     const savedCount = localStorage.getItem('diagramr-guest-searches');
     if (savedCount) {
@@ -109,11 +90,6 @@ function AppContent() {
       const newCount = guestSearchCount + 1;
       setGuestSearchCount(newCount);
       localStorage.setItem('diagramr-guest-searches', newCount.toString());
-
-      if (newCount >= MAX_GUEST_SEARCHES) {
-        setAuthDialogMode("searches-exhausted");
-        setShowAuthDialog(true);
-      }
     }
   };
 
@@ -142,11 +118,6 @@ function AppContent() {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <FeedbackButton />
-          <AuthDialog 
-            isOpen={showAuthDialog} 
-            onOpenChange={setShowAuthDialog}
-            mode={authDialogMode}
-          />
         </>
       )}
     </>

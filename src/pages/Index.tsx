@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
@@ -10,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useInfiniteSearch } from "@/hooks/use-infinite-search";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   const [showSearchField, setShowSearchField] = useState(true);
@@ -292,7 +292,10 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   }, [results, hasMore, isLoading]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className={cn(
+      "min-h-screen bg-background relative overflow-x-hidden",
+      "main-content"
+    )}>
       <Header />
       
       <main className="flex-1 pt-16 md:pt-20">
