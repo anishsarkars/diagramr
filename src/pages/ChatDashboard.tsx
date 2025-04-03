@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import { ResultsSection } from "@/components/results-section";
 import { useAuth } from "@/components/auth-context";
 import { useNavigate } from "react-router-dom";
 import { DiagramrLogo } from "@/components/diagramr-logo";
-import { Search, ArrowUp, Send, Sparkles, Loader2, MessageSquare, Image, Bot, X, Settings, Heart, User } from "lucide-react";
+import { Search, ArrowUp, Loader2, MessageSquare, X, Settings, Heart, User, TrendingUp, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { ConfettiCelebration } from "@/components/confetti-celebration";
@@ -25,6 +24,8 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { PopularSearches } from "@/components/popular-searches";
 
 export default function ChatDashboard() {
   const [query, setQuery] = useState("");
@@ -120,26 +121,23 @@ export default function ChatDashboard() {
   }, [user, getGreeting]);
   
   // Create an observer for infinite scrolling
-  useEffect(() => {
-    if (!resultsEndRef.current || !hasMore || isLoading) return;
+  const lastDiagramRef = useCallback((node: HTMLDivElement | null) => {
+    if (!node || !hasMore || isLoading) return;
     
     const observer = new IntersectionObserver(
-      (entries) => {
+      entries => {
         if (entries[0].isIntersecting) {
+          console.log("Intersection observed, loading more...");
           loadMore();
         }
       },
-      { threshold: 0.5 }
+      { threshold: 0.1 }
     );
     
-    observer.observe(resultsEndRef.current);
+    observer.observe(node);
     
-    return () => {
-      if (resultsEndRef.current) {
-        observer.unobserve(resultsEndRef.current);
-      }
-    };
-  }, [hasMore, isLoading, loadMore, results.length]);
+    return () => observer.disconnect();
+  }, [hasMore, isLoading, loadMore]);
   
   const fetchLikedDiagrams = async () => {
     if (!user) return;
@@ -179,6 +177,8 @@ export default function ChatDashboard() {
     if (!success) return;
     
     setQuery("");
+    
+    console.log(`Starting search for: "${searchQuery}"`);
     
     try {
       await searchFor(searchQuery);
@@ -266,6 +266,12 @@ export default function ChatDashboard() {
       toast.error('Failed to update liked diagrams');
     }
   };
+
+  // For debugging
+  useEffect(() => {
+    console.log("Results updated:", results.length);
+    console.log("Has more:", hasMore);
+  }, [results, hasMore]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background overflow-hidden">
@@ -454,6 +460,9 @@ export default function ChatDashboard() {
                     </div>
                   </motion.div>
                 )}
+
+                {/* Popular searches bento grid */}
+                <PopularSearches onSelect={handleSearch} />
               </div>
             </div>
           ) : (
@@ -475,76 +484,87 @@ export default function ChatDashboard() {
                 </Button>
               </div>
               
+              {/* Debug info for load more troubleshooting */}
+              {/* <div className="text-xs text-muted-foreground mb-4">
+                Results: {results.length} | Has more: {hasMore ? "Yes" : "No"} | Loading: {isLoading ? "Yes" : "No"}
+              </div> */}
+              
               {/* Bento grid layout for search results */}
               {results.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-                  {results.map((diagram, index) => (
-                    <motion.div 
-                      key={diagram.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ 
-                        opacity: 1, 
-                        y: 0,
-                        transition: { 
-                          delay: Math.min(0.1 * (index % 6), 0.5)
-                        }
-                      }}
-                      className="group relative"
-                    >
-                      <div className="diagram-card overflow-hidden rounded-xl border hover:border-primary/50 transition-all">
-                        <div className="diagram-card-image">
-                          <img 
-                            src={diagram.imageSrc} 
-                            alt={diagram.title}
-                            className="object-cover w-full h-full aspect-video"
-                            loading="lazy"
-                          />
-                          
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          
-                          <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <h3 className="text-white font-medium line-clamp-1">{diagram.title}</h3>
-                          </div>
-                          
-                          <Button
-                            variant="default"
-                            size="icon"
-                            className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 h-8 w-8 ${
-                              likedDiagrams.has(String(diagram.id)) ? 'bg-primary/90 hover:bg-primary/80' : 'bg-primary/80 hover:bg-primary'
-                            }`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleLikeDiagram(diagram.id);
-                            }}
-                          >
-                            <Heart 
-                              className={`h-4 w-4 ${likedDiagrams.has(String(diagram.id)) ? 'fill-white' : ''}`} 
+                  {results.map((diagram, index) => {
+                    // Add ref to last item for infinite scroll
+                    const isLastItem = index === results.length - 1;
+                    
+                    return (
+                      <motion.div 
+                        key={diagram.id}
+                        ref={isLastItem ? lastDiagramRef : null}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ 
+                          opacity: 1, 
+                          y: 0,
+                          transition: { 
+                            delay: Math.min(0.1 * (index % 6), 0.5)
+                          }
+                        }}
+                        className="group relative"
+                      >
+                        <div className="diagram-card overflow-hidden rounded-xl border hover:border-primary/50 transition-all">
+                          <div className="diagram-card-image">
+                            <img 
+                              src={diagram.imageSrc} 
+                              alt={diagram.title}
+                              className="object-cover w-full h-full aspect-video"
+                              loading={index < 6 ? "eager" : "lazy"}
                             />
-                          </Button>
-                        </div>
-                        
-                        <div className="p-3">
-                          <h3 className="font-medium line-clamp-1 mb-1">{diagram.title}</h3>
-                          <div className="flex gap-1 flex-wrap mt-2">
-                            {diagram.tags && diagram.tags.slice(0, 3).map((tag: string, tagIndex: number) => (
-                              <Button
-                                key={tagIndex}
-                                variant="outline"
-                                size="sm"
-                                className="h-6 px-2 text-xs rounded-full border-primary/30 hover:bg-primary/10"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedTagFilter(tag);
-                                }}
-                              >
-                                {tag}
-                              </Button>
-                            ))}
+                            
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            
+                            <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <h3 className="text-white font-medium line-clamp-1">{diagram.title}</h3>
+                            </div>
+                            
+                            <Button
+                              variant="default"
+                              size="icon"
+                              className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 h-8 w-8 ${
+                                likedDiagrams.has(String(diagram.id)) ? 'bg-primary/90 hover:bg-primary/80' : 'bg-primary/80 hover:bg-primary'
+                              }`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleLikeDiagram(diagram.id);
+                              }}
+                            >
+                              <Heart 
+                                className={`h-4 w-4 ${likedDiagrams.has(String(diagram.id)) ? 'fill-white' : ''}`} 
+                              />
+                            </Button>
+                          </div>
+                          
+                          <div className="p-3">
+                            <h3 className="font-medium line-clamp-1 mb-1">{diagram.title}</h3>
+                            <div className="flex gap-1 flex-wrap mt-2">
+                              {diagram.tags && diagram.tags.slice(0, 3).map((tag: string, tagIndex: number) => (
+                                <Button
+                                  key={tagIndex}
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-6 px-2 text-xs rounded-full border-primary/30 hover:bg-primary/10"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedTagFilter(tag);
+                                  }}
+                                >
+                                  {tag}
+                                </Button>
+                              ))}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    );
+                  })}
                 </div>
               ) : isLoading ? (
                 <div className="flex justify-center items-center py-20">
@@ -565,7 +585,7 @@ export default function ChatDashboard() {
               
               {/* Load more indicator */}
               {hasMore && results.length > 0 && (
-                <div ref={resultsEndRef} className="flex justify-center py-8">
+                <div className="flex justify-center py-8">
                   {isLoading ? (
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Loader2 className="h-5 w-5 animate-spin" />
@@ -582,6 +602,9 @@ export default function ChatDashboard() {
                   )}
                 </div>
               )}
+              
+              {/* Debug element for intersection observer */}
+              <div ref={resultsEndRef} className="h-4 mb-8"></div>
             </div>
           )}
         </div>

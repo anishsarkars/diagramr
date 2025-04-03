@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "react-router-dom";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { motion } from "framer-motion";
-import { Github, Linkedin, Twitter, ExternalLink, Heart } from "lucide-react";
+import { Github, Linkedin, Twitter, Heart } from "lucide-react";
 import { Logo } from "@/components/logo";
 
 export function Footer() {
@@ -16,6 +16,26 @@ export function Footer() {
     return null;
   }
 
+  // More minimal footer for dashboard
+  if (location.pathname === "/dashboard") {
+    return (
+      <footer className="border-t border-border/20 py-3 bg-background">
+        <div className="container flex justify-between items-center">
+          <div className="text-xs text-muted-foreground">
+            © {currentYear} Diagramr
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="text-xs text-muted-foreground flex items-center">
+              <span className="flex items-center">
+                Built with <Heart className="h-3 w-3 mx-1 text-primary" /> in Indore
+              </span>
+            </div>
+          </div>
+        </div>
+      </footer>
+    );
+  }
+
   return (
     <motion.footer 
       className="border-t border-border/40 bg-gradient-to-b from-background to-background/95 backdrop-blur-sm"
@@ -24,7 +44,7 @@ export function Footer() {
       transition={{ delay: 0.3, duration: 0.5 }}
     >
       <div className="container py-8 relative overflow-hidden">
-        {/* 3D Design Elements */}
+        {/* Background elements */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute -right-24 -bottom-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl opacity-50"></div>
           <div className="absolute -left-20 -bottom-16 w-72 h-72 bg-primary/10 rounded-full blur-3xl opacity-30"></div>
@@ -72,8 +92,8 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Generate with AI
+                <a href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Dashboard
                 </a>
               </li>
               <li>
@@ -84,54 +104,23 @@ export function Footer() {
             </ul>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-3">
             <h3 className="font-medium mb-3">Theme</h3>
             <ThemeToggle variant="outline" />
             
-            <div className="pt-2">
-              <motion.div
-                className="bg-card p-4 rounded-lg border border-border/40 shadow-sm"
-                whileHover={{ scale: 1.02, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
-                transition={{ type: "spring", stiffness: 500 }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">Creator</Badge>
-                  <h4 className="font-medium text-sm">Anish Sarkar</h4>
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Idea to MVP, Explorer, Student, From Indore
-                </p>
-                <Button variant="default" size="sm" className="w-full gap-1.5" asChild>
-                  <a href="https://www.linkedin.com/in/anishsarkar-/" target="_blank" rel="noopener noreferrer">
-                    <Linkedin className="h-3.5 w-3.5" />
-                    <span className="text-xs">Connect on LinkedIn</span>
-                  </a>
-                </Button>
-              </motion.div>
+            <div className="flex items-center gap-2 mt-4">
+              <Badge variant="outline" className="bg-primary/5">Launch</Badge>
+              <p className="text-xs text-muted-foreground">Beta Version 0.9.0</p>
             </div>
           </div>
         </div>
         
         <div className="mt-8 pt-4 border-t border-border/30 flex flex-col md:flex-row justify-between items-center gap-4">
-          <motion.p 
-            className="text-sm text-muted-foreground flex items-center gap-1"
-            whileHover={{ color: "#F87171" }}
-          >
+          <p className="text-sm text-muted-foreground flex items-center gap-1">
             © {currentYear} Diagramr. Built with 
-            <span className="inline-flex items-center">
-              <Heart className="h-3 w-3 text-red-400 animate-pulse" />
-            </span>
-            <span className="font-medium"> in Indore </span>
-            by 
-            <a 
-              href="https://www.linkedin.com/in/anishsarkar-/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-primary hover:text-primary/90 font-medium ml-1 inline-flex items-center gap-0.5"
-            >
-              @Anish <ExternalLink className="h-3 w-3 ml-0.5" />
-            </a>
-          </motion.p>
+            <Heart className="h-3 w-3 text-red-400" />
+            in Indore
+          </p>
           
           <motion.div 
             className="text-xs text-muted-foreground flex items-center gap-1.5 px-2.5 py-1 bg-muted/50 rounded-full"

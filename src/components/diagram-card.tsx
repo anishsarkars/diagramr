@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { ImageEnlargeModal } from "./image-enlarge-modal";
 
-interface DiagramCardProps {
+export interface DiagramCardProps {
   id: string | number;
   title: string;
   imageSrc: string;
@@ -117,6 +118,7 @@ export function DiagramCard({
             onLoad={handleImageLoad}
             onClick={() => setShowEnlargeModal(true)}
             style={{ cursor: "pointer" }}
+            loading={isPriority ? "eager" : "lazy"}
           />
         </div>
 

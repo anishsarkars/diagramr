@@ -114,7 +114,7 @@
   
   /* Enhanced UI components */
   .glass-card {
-    @apply bg-background/70 backdrop-blur-xl border border-border/30 shadow-md;
+    @apply bg-background/70 backdrop-blur-xl border border-border/30 shadow-md rounded-xl;
   }
   
   .search-bar-container {
@@ -143,6 +143,21 @@
   .grid-layout {
     @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6;
   }
+
+  /* Bento card styles */
+  .bento-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4;
+  }
+
+  .bento-card {
+    @apply bg-background/30 backdrop-blur-md border border-border/30 
+           rounded-xl overflow-hidden shadow-sm hover:shadow-md 
+           transition-all duration-300 hover:border-primary/20;
+  }
+
+  .bento-card-lg {
+    @apply col-span-1 sm:col-span-2 md:col-span-2;
+  }
 }
 
 /* Responsive design improvements */
@@ -168,6 +183,10 @@
   
   .diagram-card {
     @apply rounded-lg;
+  }
+
+  .bento-card-lg {
+    @apply col-span-1;
   }
 }
 
@@ -291,15 +310,4 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 
 .dark .btn-glow:hover {
   box-shadow: 0 0 20px rgba(255, 100, 80, 0.4);
-}
-
-/* Mobile adaptations */
-@media (max-width: 640px) {
-  .image-preview-modal {
-    @apply p-2 max-w-[95vw] max-h-[90vh];
-  }
-  
-  .mobile-menu-fullwidth {
-    @apply w-screen left-0 right-0 max-w-none rounded-none border-x-0;
-  }
 }

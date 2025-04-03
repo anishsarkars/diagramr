@@ -41,18 +41,24 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     pageSize: 20 // Increased to show more results initially
   });
 
-  const observer = useRef<IntersectionObserver | null>(null);
+  // Create an observer for infinite scrolling
   const lastResultRef = useCallback((node: HTMLDivElement | null) => {
-    if (isLoading) return;
-    if (observer.current) observer.current.disconnect();
+    if (isLoading || !hasMore) return;
     
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
-        loadMore();
-      }
-    });
-    
-    if (node) observer.current.observe(node);
+    if (node) {
+      const observer = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) {
+          console.log("Last item visible, loading more...");
+          loadMore();
+        }
+      }, { threshold: 0.5 });
+      
+      observer.observe(node);
+      
+      return () => {
+        observer.disconnect();
+      };
+    }
   }, [isLoading, hasMore, loadMore]);
 
   const handleSearch = async (prompt: string) => {
@@ -87,6 +93,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     const success = await incrementCount();
     if (!success) return;
     
+    // Clear session storage for search results
     Object.keys(sessionStorage).forEach(key => {
       if (key.startsWith('diagramr-search-')) {
         sessionStorage.removeItem(key);
@@ -277,6 +284,13 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     }
   }, [error]);
 
+  // For debugging
+  useEffect(() => {
+    console.log("Current results:", results.length);
+    console.log("Has more:", hasMore);
+    console.log("Is loading:", isLoading);
+  }, [results, hasMore, isLoading]);
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
@@ -306,6 +320,6 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
       <Footer />
     </div>
   );
-};
+}
 
 export default Index;

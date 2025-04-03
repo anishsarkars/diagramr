@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Input } from "./ui/input";
+import { PopularSearches } from "./popular-searches";
 
 interface HeroSectionProps {
   onSearch: (query: string) => void;
@@ -223,6 +224,9 @@ export function HeroSection({ onSearch, isLoading }: HeroSectionProps) {
         </motion.div>
         
         <SearchLimitIndicator />
+        
+        {/* Popular searches bento grid */}
+        <PopularSearches onSelect={onSearch} />
         
         {/* Call to action buttons */}
         {!user && (

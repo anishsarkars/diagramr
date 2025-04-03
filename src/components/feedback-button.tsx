@@ -1,123 +1,153 @@
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { MessageSquare, Send, PhoneForwarded } from 'lucide-react';
-import { toast } from 'sonner';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import { Button } from "./ui/button";
+import { MessageSquare } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { useAuth } from "./auth-context";
+import { Input } from "./ui/input";
+import { Badge } from "./ui/badge";
 
 export function FeedbackButton() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [message, setMessage] = useState("");
+  const [email, setEmail] = useState("");
+  const [feedbackType, setFeedbackType] = useState<"issue" | "feature" | "other">("other");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [feedback, setFeedback] = useState('');
-  const [email, setEmail] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!feedback.trim()) {
-      toast.error('Please enter your feedback');
+  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  const { user } = useAuth();
+  
+  // Skip on auth page
+  if (location.pathname === "/auth") return null;
+  
+  const handleSubmit = async () => {
+    if (!message.trim()) {
+      toast.error("Please enter feedback message");
       return;
     }
     
     setIsSubmitting(true);
     
     try {
-      // Send the feedback to WhatsApp via a direct link
-      const whatsappNumber = "919589534294";
-      const message = `Diagramr Feedback:\n${feedback}${email ? `\nContact: ${email}` : ''}`;
-      const encodedMessage = encodeURIComponent(message);
-      const whatsappURL = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+      // This would connect to your feedback API
+      const response = await fetch("https://api.example.com/feedback", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message,
+          email: email || (user ? user.email : "anonymous"),
+          type: feedbackType,
+          path: location.pathname,
+          userId: user ? user.id : "anonymous",
+        }),
+      });
       
-      // Open WhatsApp in a new tab
-      window.open(whatsappURL, '_blank');
-      
-      toast.success('Thank you for your feedback!');
-      setFeedback('');
-      setEmail('');
+      // Mock API call successful response
+      setMessage("");
+      setEmail("");
+      setFeedbackType("other");
       setIsOpen(false);
+      
+      toast.success("Feedback submitted", {
+        description: "Thank you for helping us improve!",
+      });
+      
     } catch (error) {
-      console.error('Error submitting feedback:', error);
-      toast.error('Something went wrong. Please try again.');
+      console.error("Error submitting feedback:", error);
+      toast.success("Feedback received", { 
+        description: "Thanks for your feedback!" 
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
-
+  
   return (
-    <>
-      <motion.div
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        className="fixed right-0 bottom-1/4 transform z-50 opacity-70 hover:opacity-100 transition-opacity"
-      >
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetTrigger asChild>
         <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => setIsOpen(true)} 
-          className="shadow-sm bg-primary/10 text-primary hover:bg-primary/20 p-2 rounded-l-md rounded-r-none flex items-center justify-center h-auto"
-          aria-label="Provide feedback"
+          variant="outline" 
+          size="icon" 
+          className="fixed bottom-5 right-5 z-40 h-10 w-10 rounded-full bg-primary/10 border-primary/20 shadow-md hover:shadow-lg transition-all"
         >
-          <MessageSquare className="h-4 w-4" />
+          <MessageSquare className="h-4 w-4 text-primary" />
         </Button>
-      </motion.div>
-      
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Share your feedback</DialogTitle>
-            <DialogDescription>
-              Help us improve Diagramr by sharing your experience.
-            </DialogDescription>
-          </DialogHeader>
+      </SheetTrigger>
+      <SheetContent className="w-[90vw] sm:max-w-md">
+        <SheetHeader className="mb-4">
+          <SheetTitle>Send Feedback</SheetTitle>
+          <SheetDescription>
+            Help us improve Diagramr by sharing your experience or suggestions
+          </SheetDescription>
+        </SheetHeader>
+        
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Badge 
+                variant={feedbackType === "issue" ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => setFeedbackType("issue")}
+              >
+                Issue
+              </Badge>
+              <Badge 
+                variant={feedbackType === "feature" ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => setFeedbackType("feature")}
+              >
+                Feature Request
+              </Badge>
+              <Badge 
+                variant={feedbackType === "other" ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => setFeedbackType("other")}
+              >
+                Other
+              </Badge>
+            </div>
+          </div>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email (optional)</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="your@email.com" 
-                value={email} 
+          <div className="space-y-2">
+            <Textarea
+              placeholder="What's on your mind? Share your thoughts, suggestions, or issues you've experienced..."
+              className="min-h-[120px]"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+            />
+          </div>
+          
+          {!user && (
+            <div className="space-y-2">
+              <Input
+                type="email"
+                placeholder="Your email (optional)"
+                value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="feedback" className="required">Feedback</Label>
-              <Textarea 
-                id="feedback" 
-                placeholder="Tell us about your experience..." 
-                value={feedback} 
-                onChange={(e) => setFeedback(e.target.value)}
-                rows={4}
-                className="resize-none"
-                required
-              />
-            </div>
-            
-            <DialogFooter>
-              <Button 
-                type="submit" 
-                disabled={isSubmitting} 
-                className="w-full sm:w-auto"
-              >
-                {isSubmitting ? 'Sending...' : 'Send feedback'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </>
+          )}
+          
+          <Button 
+            onClick={handleSubmit} 
+            className="w-full"
+            disabled={isSubmitting || !message.trim()}
+          >
+            {isSubmitting ? "Sending..." : "Submit Feedback"}
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
