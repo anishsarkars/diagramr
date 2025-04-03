@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Link } from "react-router-dom";
 import { useAuth } from "./auth-context";
-import { User, LogOut, Settings, Heart, Menu, ChevronDown } from "lucide-react";
+import { User, LogOut, Settings, Heart, Menu, ChevronDown, Home, PenTool } from "lucide-react";
 import { toast } from "sonner";
 
 export function HeaderMenu() {
@@ -51,7 +51,7 @@ export function HeaderMenu() {
             <DropdownMenuSeparator className="bg-border/50" />
             <DropdownMenuItem asChild className="hover:bg-accent/50 transition-colors">
               <Link to="/dashboard" className="cursor-pointer w-full flex items-center">
-                <Settings className="mr-2 h-4 w-4" />
+                <Home className="mr-2 h-4 w-4" />
                 <span>Dashboard</span>
               </Link>
             </DropdownMenuItem>
