@@ -17,6 +17,8 @@ import { Search, X, Send, Info, Sparkles, ArrowRight } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { PopularSearchesBento } from "@/components/popular-searches-bento";
 
 const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   const [showSearchField, setShowSearchField] = useState(true);
@@ -25,7 +27,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showTips, setShowTips] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isDeviceMobile, setIsDeviceMobile] = useState(false);
   const [currentDescriptionIndex, setCurrentDescriptionIndex] = useState(0);
   const [suggestionScrollPosition, setSuggestionScrollPosition] = useState(0);
   const [typingSuggestions, setTypingSuggestions] = useState<string[]>([]);
@@ -34,6 +36,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { 
     incrementCount, 
     hasReachedLimit, 
@@ -41,6 +44,13 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
     remainingSearches,
     loadCounts
   } = useSearchLimit();
+  
+  // Redirect logged-in users to dashboard
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
   
   const { 
     results,
@@ -58,7 +68,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   // Detect mobile devices
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      setIsDeviceMobile(window.innerWidth < 768);
     };
     
     checkMobile();
@@ -199,278 +209,262 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
       // Add common diagram types for any short query
       if (searchQuery.length > 1 && searchQuery.length < 15 && !searchQuery.toLowerCase().includes("diagram")) {
         nlpSuggestions.push(
-          `${searchQuery} flow chart`,
+          `${searchQuery} flowchart`,
           `${searchQuery} mind map`,
-          `${searchQuery} UML diagram`
+          `${searchQuery} concept map`
         );
       }
       
-      // Combine and deduplicate suggestions, prioritizing exact matches
-      const allSuggestions = [
-        ...matchedExactSuggestions,
+      // Combine and deduplicate all suggestions
+      const combinedSuggestions = [...new Set([
+        ...matchedExactSuggestions, 
         ...matchedContextualSuggestions,
         ...nlpSuggestions
-      ];
+      ])];
       
-      // Remove duplicates and limit results
-      const uniqueSuggestions = Array.from(new Set(allSuggestions)).slice(0, 6);
+      // Filter out suggestions that are too similar to the query itself
+      const filteredSuggestions = combinedSuggestions.filter(suggestion => 
+        suggestion.toLowerCase() !== searchQuery.toLowerCase() &&
+        suggestion.length > searchQuery.length
+      );
       
-      setTypingSuggestions(uniqueSuggestions);
-      setShowTypingSuggestions(uniqueSuggestions.length > 0);
+      // Limit to 5 suggestions and show them
+      setTypingSuggestions(filteredSuggestions.slice(0, 5));
+      setShowTypingSuggestions(filteredSuggestions.length > 0);
     } else {
       setShowTypingSuggestions(false);
     }
-    
-    // Force focus on the input field when typing
-    if (searchQuery.trim().length > 0 && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [searchQuery, scrollingSuggestions]);
+  }, [searchQuery]);
 
-  // Ensure suggestions appear when focusing on the input
   const handleInputFocus = () => {
-    if (searchQuery.trim().length > 1) {
-      setShowTypingSuggestions(typingSuggestions.length > 0);
-    }
+    setShowTypingSuggestions(typingSuggestions.length > 0);
   };
   
-  // Delay hiding suggestions on blur to allow clicking
   const handleInputBlur = () => {
+    // Delay hiding suggestions to allow for clicks
     setTimeout(() => {
       setShowTypingSuggestions(false);
     }, 200);
   };
-
-  // Add an effect to reload search counts when the component mounts
-  useEffect(() => {
-    // Reload search count data
-    loadCounts();
-  }, [loadCounts]);
+  
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      handleSearch(searchQuery);
+    }
+  };
 
   const handleSearch = async (prompt: string) => {
+    if (!prompt.trim()) return;
+    
     if (hasReachedLimit) {
+      // Check if user needs to log in
       if (requiresLogin) {
-        toast.info("Sign in to get more searches (20 free searches daily)", {
-          description: "Create a free account to continue searching",
-          action: {
-            label: "Sign In",
-            onClick: () => {
-              if (onLoginClick) {
-                onLoginClick();
-              } else {
-                navigate("/auth");
-              }
+        if (onLoginClick) {
+          // Alert user they need to sign in
+          toast.error("Please sign in to continue searching", {
+            description: "You've reached the guest search limit.",
+            action: {
+              label: "Sign In",
+              onClick: onLoginClick
             }
-          }
-        });
-        return;
+          });
+        }
       } else {
-        toast.info("You've reached your daily search limit!", {
-          description: "Upgrade to Pro for 50+ searches per day",
+        // User is logged in but reached their limit
+        toast.error("Search limit reached", {
+          description: "You've reached your daily search limit. Upgrade to Premium for more searches.",
           action: {
             label: "Upgrade",
             onClick: () => navigate("/pricing")
           }
         });
-        return;
       }
-    }
-    
-    const success = await incrementCount();
-    if (!success) return;
-    
-    // Reload counts after incrementing to ensure UI is updated
-    loadCounts();
-    
-    // Clear session storage for search results
-    Object.keys(sessionStorage).forEach(key => {
-      if (key.startsWith('diagramr-search-')) {
-        sessionStorage.removeItem(key);
-      }
-    });
-    
-    setShowSearchField(false);
-    setSelectedTagFilter(null);
-    setSearchQuery("");
-    
-    try {
-      console.log(`Starting search for query: "${prompt}"`);
-      await searchFor(prompt);
-      setSearchAttempts(0);
-      
-      // Save to search history
-      const savedHistory = localStorage.getItem('diagramr-search-history');
-      let history: string[] = [];
-      
-      if (savedHistory) {
-        try {
-          history = JSON.parse(savedHistory);
-        } catch (e) {
-          console.error('Error parsing search history:', e);
-        }
-      }
-      
-      const newHistory = [prompt, ...history.filter(item => item !== prompt)].slice(0, 10);
-      localStorage.setItem('diagramr-search-history', JSON.stringify(newHistory));
-      
-      if (remainingSearches <= 5 && remainingSearches > 0) {
-        toast.info(`${remainingSearches} searches remaining today`, {
-          description: user ? "Upgrade to Pro for more searches" : "Sign in for 20 searches/day",
-          action: {
-            label: user ? "Upgrade" : "Sign In",
-            onClick: () => {
-              if (user) {
-                navigate("/pricing");
-              } else if (onLoginClick) {
-                onLoginClick();
-              } else {
-                navigate("/auth");
-              }
-            }
-          }
-        });
-      }
-    } catch (error) {
-      console.error("Search error:", error);
-      
-      setSearchAttempts(prev => prev + 1);
-      
-      if (error.message === 'API quota exceeded') {
-        toast.error("API quota issue. Trying with alternate sources...", {
-          duration: 3000
-        });
-      } else {
-        if (searchAttempts >= 1) {
-          const simplifiedQuery = prompt.split(' ').slice(0, 3).join(' ');
-          toast.error("Search failed", {
-            description: "Try a simplified search term or try again later.",
-            action: {
-              label: `Try "${simplifiedQuery}"`,
-              onClick: () => handleSearch(simplifiedQuery)
-            },
-            duration: 8000
-          });
-        } else {
-          toast.error("Search failed", {
-            description: "There was an error with your search. Please try again or modify your search terms.",
-            duration: 5000
-          });
-        }
-      }
-      
-      setShowSearchField(true);
-    }
-  };
-
-  const handleNewSearch = () => {
-    setShowSearchField(true);
-    resetSearch();
-    setSearchAttempts(0);
-    setSelectedTagFilter(null);
-  };
-
-  const handleLikeDiagram = async (diagramId: string | number) => {
-    if (!user) {
-      toast.info("Please sign in to save diagrams", {
-        description: "Create a free account to save your favorite diagrams",
-        action: {
-          label: "Sign In",
-          onClick: () => {
-            if (onLoginClick) {
-              onLoginClick();
-            } else {
-              navigate("/auth", { state: { returnTo: "/" } });
-            }
-          }
-        }
-      });
       return;
     }
     
-    try {
-      const diagramToLike = results.find(r => r.id === diagramId);
-      if (diagramToLike) {
-        const isLiked = likedDiagrams.has(String(diagramId));
-        
-        if (isLiked) {
-          const { error } = await supabase
-            .from('saved_diagrams')
-            .delete()
-            .eq('user_id', user.id)
-            .eq('diagram_id', String(diagramId));
-          
-          if (error) throw error;
-          
-          const newLiked = new Set(likedDiagrams);
-          newLiked.delete(String(diagramId));
-          setLikedDiagrams(newLiked);
-          
-          toast.success("Diagram removed from favorites");
-        } else {
-          const diagramData = {
-            id: String(diagramToLike.id),
-            title: diagramToLike.title,
-            imageSrc: diagramToLike.imageSrc,
-            author: diagramToLike.author || "",
-            authorUsername: diagramToLike.authorUsername || "",
-            tags: diagramToLike.tags || [],
-            sourceUrl: diagramToLike.sourceUrl || "",
-            isGenerated: diagramToLike.isGenerated || false
-          };
-          
-          const { error } = await supabase
-            .from('saved_diagrams')
-            .insert({
-              user_id: user.id,
-              diagram_id: String(diagramId),
-              diagram_data: diagramData
-            });
-          
-          if (error) throw error;
-          
-          const newLiked = new Set(likedDiagrams);
-          newLiked.add(String(diagramId));
-          setLikedDiagrams(newLiked);
-          
-          toast.success("Diagram saved to favorites");
-        }
-      }
-    } catch (error) {
-      console.error('Error saving diagram:', error);
-      toast.error('Failed to update liked diagrams');
+    // Increment search count
+    incrementCount();
+    setSearchAttempts(prev => prev + 1);
+    
+    // Set the search query
+    setSearchQuery(prompt);
+    
+    // Reset search and tag filter
+    resetSearch();
+    setSelectedTagFilter(null);
+    
+    // Search for the prompt
+    searchFor(prompt);
+    
+    // Hide suggestions
+    setShowTypingSuggestions(false);
+  };
+  
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchQuery(suggestion);
+    handleSearch(suggestion);
+  };
+  
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    resetSearch();
+    setSelectedTagFilter(null);
+    
+    // Focus the input after clearing
+    if (inputRef.current) {
+      inputRef.current.focus();
     }
   };
-
+  
+  const handleTagFilterSelect = (tag: string | null) => {
+    setSelectedTagFilter(tag);
+  };
+  
   const fetchLikedDiagrams = useCallback(async () => {
     if (!user) return;
     
     try {
       const { data, error } = await supabase
-        .from('saved_diagrams')
+        .from('liked_diagrams')
         .select('diagram_id')
         .eq('user_id', user.id);
       
-      if (error) throw error;
-      
-      if (data) {
-        const likedIds = new Set(data.map(item => item.diagram_id));
-        setLikedDiagrams(likedIds);
+      if (error) {
+        console.error('Error fetching liked diagrams:', error);
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching liked diagrams:', error);
+      
+      setLikedDiagrams(new Set(data.map(item => item.diagram_id.toString())));
+    } catch (err) {
+      console.error('Error in fetchLikedDiagrams:', err);
     }
   }, [user]);
-
-  useEffect(() => {
-    fetchLikedDiagrams();
-    
-    // Focus search input
-    setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
+  
+  const handleLikeDiagram = async (diagramId: string | number) => {
+    if (!user) {
+      if (onLoginClick) {
+        toast("Please sign in to save diagrams", {
+          description: "Create an account to save your favorite diagrams.",
+          action: {
+            label: "Sign In",
+            onClick: onLoginClick
+          }
+        });
       }
-    }, 500);
-  }, [fetchLikedDiagrams]);
+      return;
+    }
+    
+    const stringId = diagramId.toString();
+    
+    try {
+      // Check if already liked
+      if (likedDiagrams.has(stringId)) {
+        // Unlike: Remove from database
+        const { error } = await supabase
+          .from('liked_diagrams')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('diagram_id', diagramId);
+        
+        if (error) throw error;
+        
+        // Update local state
+        const newLiked = new Set(likedDiagrams);
+        newLiked.delete(stringId);
+        setLikedDiagrams(newLiked);
+        
+        toast.success("Diagram removed from saved items");
+      } else {
+        // Like: Add to database
+        const { error } = await supabase
+          .from('liked_diagrams')
+          .insert({
+            user_id: user.id,
+            diagram_id: diagramId,
+            diagram_data: results.find(r => r.id.toString() === stringId)
+          });
+        
+        if (error) throw error;
+        
+        // Update local state
+        const newLiked = new Set(likedDiagrams);
+        newLiked.add(stringId);
+        setLikedDiagrams(newLiked);
+        
+        toast.success("Diagram saved to your library");
+      }
+    } catch (err) {
+      console.error('Error toggling like status:', err);
+      toast.error("Failed to update saved status");
+    }
+  };
+  
+  // Load search limit data
+  useEffect(() => {
+    loadCounts();
+  }, [loadCounts]);
+  
+  // Load liked diagrams if user is logged in
+  useEffect(() => {
+    if (user) {
+      fetchLikedDiagrams();
+    } else {
+      setLikedDiagrams(new Set());
+    }
+  }, [user, fetchLikedDiagrams]);
+  
+  // Show search limit warning
+  useEffect(() => {
+    if (remainingSearches === 3) {
+      setTimeout(() => {
+        toast("Running low on searches", {
+          description: "You have only 3 searches remaining today. Sign in for more searches.",
+          action: onLoginClick && {
+            label: "Sign In",
+            onClick: onLoginClick
+          }
+        });
+      }, 500);
+    }
+  }, [remainingSearches, onLoginClick]);
+  
+  useEffect(() => {
+    if (error && error.message?.includes('API quota exceeded')) {
+      toast.error("API quota exceeded", {
+        description: "The search service is currently experiencing high demand. Please try again later.",
+        duration: 8000,
+      });
+    }
+  }, [error]);
+
+  // Define a function to get a search query from the URL
+  const getSearchFromUrl = () => {
+    // If we're running in the browser, get the URL parameters
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('q');
+    }
+    return null;
+  };
+
+  // Check for search query in URL on first render
+  useEffect(() => {
+    const urlSearchQuery = getSearchFromUrl();
+    if (urlSearchQuery) {
+      setSearchQuery(urlSearchQuery);
+      handleSearch(urlSearchQuery);
+    }
+  }, []);
+
+  const handleNewSearch = () => {
+    resetSearch();
+    setSearchQuery("");
+    setSelectedTagFilter(null);
+    // Focus the input
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
 
   return (
     <div className="min-h-screen font-sans antialiased relative overflow-hidden bg-transparent">
@@ -479,426 +473,154 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
       <div className="fixed right-0 top-0 w-full h-full bg-blue-500/5 blur-[120px] z-[-1]" style={{ borderRadius: '70% 30% 70% 30% / 30% 30% 70% 70%' }} />
       <div className="fixed left-0 bottom-0 w-1/2 h-1/2 bg-purple-500/5 blur-[120px] z-[-1]" style={{ borderRadius: '30% 70% 30% 70% / 70% 30% 70% 30%' }} />
       
-      <Header />
-      <main className="flex-1">
+      <Header authenticatedRedirect="/dashboard" onLoginClick={onLoginClick} />
+      
+      <main className="relative z-10 flex flex-col items-center justify-center px-4 py-6 md:py-12 max-w-7xl mx-auto">
         {!searchTerm ? (
-          <div className="flex flex-col items-center justify-center min-h-[80vh] container max-w-2xl mx-auto px-4 md:px-6 py-4">
-            <div className="text-center mb-16">
-            <motion.h1 
-                className="text-[28px] md:text-[32px] font-normal mb-2 tracking-tight text-foreground"
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-                Find diagrams at the speed of thought.
-            </motion.h1>
-            
-            {/* Animated rotating descriptions */}
-            <motion.div
-                className="h-6 overflow-hidden relative"
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentDescriptionIndex}
-                    className="text-lg md:text-xl text-muted-foreground/70 font-normal"
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: -20, opacity: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  {descriptions[currentDescriptionIndex]}
-                </motion.div>
-              </AnimatePresence>
-            </motion.div>
-            </div>
+          /* Home page content when no search is active */
+          <>
+            <HeroSection 
+              onSearch={handleSearch} 
+              remainingSearches={remainingSearches}
+              requiresLogin={requiresLogin}
+              onLoginClick={onLoginClick}
+              currentDescriptionIndex={currentDescriptionIndex}
+              descriptions={descriptions}
+            />
             
             <motion.div 
-              className="w-full max-w-2xl mx-auto mb-12 relative hidden md:block"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              className="w-full max-w-3xl mx-auto mt-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
             >
-              <div className="relative z-10">
-                {/* Subtle glow effect behind input */}
-                <div className="absolute -inset-3 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-[28px] blur-xl opacity-70"></div>
+              <div className="flex items-center mb-3">
+                <div className="flex-1 h-[1px] bg-border/40" />
+                <span className="px-3 text-xs text-muted-foreground">Popular searches</span>
+                <div className="flex-1 h-[1px] bg-border/40" />
+              </div>
+              
+              <PopularSearchesBento onSearch={handleSearch} />
+            </motion.div>
+          </>
+        ) : (
+          /* Search results when a search is active */
+          <div className="w-full">
+            {/* Search input field for new searches */}
+            <div className="mb-8 max-w-2xl mx-auto">
+              <div className="relative">
+                <Input
+                  ref={inputRef}
+                  type="text"
+                  placeholder="Search for diagrams, charts, or illustrations..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
+                  onKeyDown={handleKeyDown}
+                  className="h-12 pl-12 pr-12 rounded-full shadow-sm border-input/50 bg-background/50 backdrop-blur-sm"
+                />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                {searchQuery && (
+                  <button
+                    onClick={handleClearSearch}
+                    className="absolute right-14 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+                <Button
+                  onClick={() => handleSearch(searchQuery)}
+                  disabled={!searchQuery.trim() || isLoading}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full h-8 w-8 p-0"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
                 
-                <div className="flex items-center relative overflow-hidden rounded-[22px] shadow-md border border-border/40 focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/20 dark:border-gray-700/50 bg-background/90 dark:bg-[#1d1e20]/90 backdrop-blur-sm">
-                  <Input
-                    ref={inputRef}
-                    type="text"
-                    placeholder="What diagrams are you looking for?"
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      // Immediately show suggestions if at least 2 characters typed
-                      if (e.target.value.trim().length > 1) {
-                        setShowTypingSuggestions(true);
-                      }
-                    }}
-                    onFocus={handleInputFocus}
-                    onBlur={handleInputBlur}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleSearch(searchQuery);
-                        setShowTypingSuggestions(false);
-                      }
-                    }}
-                    className="w-full pl-14 pr-28 py-7 text-base md:text-lg rounded-[22px] border-0 shadow-none focus:ring-0 focus:outline-none dark:bg-transparent"
-                  />
-                  <div className="absolute left-5 top-1/2 transform -translate-y-1/2">
-                    <Search className="text-primary/80 h-5 w-5" />
-                  </div>
-                  
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSearchQuery('');
-                        setShowTypingSuggestions(false);
-                      }}
-                      className="absolute right-24 top-1/2 transform -translate-y-1/2 p-1.5 hover:bg-muted/50 rounded-full"
+                {/* Typing suggestions dropdown */}
+                <AnimatePresence>
+                  {showTypingSuggestions && typingSuggestions.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute left-0 right-0 top-full mt-2 bg-background/95 backdrop-blur-sm rounded-lg shadow-lg border border-border/40 overflow-hidden z-50"
                     >
-                      <X className="h-4 w-4 text-muted-foreground/70" />
-                    </button>
+                      <ul className="py-2">
+                        {typingSuggestions.map((suggestion, i) => (
+                          <li key={suggestion}>
+                            <button
+                              className="w-full px-4 py-2 text-left hover:bg-muted/50 transition-colors flex items-center gap-2"
+                              onClick={() => handleSuggestionClick(suggestion)}
+                            >
+                              <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span className="line-clamp-1">{suggestion}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </motion.div>
                   )}
-                  
-                  <Button
-                    onClick={() => {
-                      handleSearch(searchQuery);
-                      setShowTypingSuggestions(false);
-                    }}
-                    disabled={!searchQuery.trim() || isLoading}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 rounded-full px-6 py-2.5 bg-primary/90 hover:bg-primary dark:bg-primary/90 dark:hover:bg-primary shadow-sm"
-                  >
-                    {isLoading ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
-                    ) : (
-                      <span className="font-normal">Search</span>
-                    )}
-                  </Button>
-                </div>
+                </AnimatePresence>
+              </div>
+              
+              <div className="flex items-center justify-between mt-4 px-2">
+                <button
+                  onClick={() => setShowTips(!showTips)}
+                  className="flex items-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Info className="h-3.5 w-3.5 mr-1" />
+                  Search tips
+                </button>
                 
-                {/* Enhanced Typing suggestions with NLP-like behavior */}
-                {showTypingSuggestions && (
-                  <motion.div 
-                    className="absolute left-0 right-0 top-full mt-2 bg-background/95 dark:bg-[#1d1e20]/95 backdrop-blur-sm rounded-xl shadow-sm border border-border/30 dark:border-gray-700/50 py-2 z-20"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                  >
-                    <ul className="max-h-64 overflow-auto">
-                      {typingSuggestions.map((suggestion, index) => (
-                        <motion.li 
-                          key={suggestion} 
-                          className="px-4 py-2 hover:bg-muted/50 dark:hover:bg-gray-800/50 cursor-pointer"
-                          initial={{ opacity: 0, x: -5 }}
-                          animate={{ 
-                            opacity: 1, 
-                            x: 0,
-                            transition: { delay: index * 0.05 }
-                          }}
-                          onClick={() => {
-                            handleSearch(suggestion);
-                            setShowTypingSuggestions(false);
-                          }}
-                        >
-                          <div className="flex items-center">
-                            <Search className="h-3 w-3 mr-2 text-muted-foreground/70" />
-                            <span className="font-normal">
-                              {searchQuery && suggestion.toLowerCase().includes(searchQuery.toLowerCase()) ? (
-                                <>
-                                  {suggestion.substring(0, suggestion.toLowerCase().indexOf(searchQuery.toLowerCase()))}
-                                  <span className="font-medium text-primary/80">
-                                    {searchQuery}
-                                  </span>
-                                  {suggestion.substring(suggestion.toLowerCase().indexOf(searchQuery.toLowerCase()) + searchQuery.length)}
-                                </>
-                              ) : (
-                                suggestion
-                              )}
-                            </span>
-                          </div>
-                        </motion.li>
-                      ))}
-                    </ul>
-                  </motion.div>
+                {remainingSearches !== null && (
+                  <span className="text-xs text-muted-foreground">
+                    {remainingSearches} {remainingSearches === 1 ? 'search' : 'searches'} remaining
+                  </span>
                 )}
               </div>
               
-              <div className="flex justify-between items-center text-xs text-muted-foreground/70 mt-3 px-2">
-                <div className="flex items-center">
-                  <Info className="h-3 w-3 mr-1" />
-                  <span>
-                    {user ? (
-                      remainingSearches !== undefined ? 
-                      `${remainingSearches} searches remaining today` : 
-                      "Unlimited searches"
-                    ) : (
-                      remainingSearches !== undefined ?
-                      `${remainingSearches}/3 guest searches left` :
-                      "3/3 guest searches left"
-                    )}
-                  </span>
-                </div>
-                
-                <button 
-                  onClick={() => setShowTips(true)}
-                  className="flex items-center hover:text-primary/80 transition-colors"
-                >
-                  <Sparkles className="h-3 w-3 mr-1" />
-                  <span>Search tips</span>
-                </button>
-              </div>
-            </motion.div>
-            
-            {/* Mobile search button - REMOVED */}
-            
-            {/* Infinite scrolling suggestions - Styled like Grok's suggestion chips */}
-            <div className="w-full max-w-xl mx-auto">
-              <motion.div 
-                className="flex overflow-hidden py-2"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
-                <div 
-                  className="flex gap-3"
-                  style={{
-                    width: "300%",
-                    transform: `translateX(-${suggestionScrollPosition % 66.6}%)`,
-                    transition: "transform 2.5s ease-out"
-                  }}
-                >
-                  {[...scrollingSuggestions, ...scrollingSuggestions, ...scrollingSuggestions].map((suggestion, index) => (
-                    <motion.div
-                      key={`${suggestion}-${index}`}
-                      whileHover={{ 
-                        scale: 1.03,
-                        transition: { duration: 0.2 }
-                      }}
-                      whileTap={{ scale: 0.98 }}
-                      className="origin-center"
-                    >
-                      <button
-                        className="flex items-center px-4 py-2 rounded-full text-sm font-normal text-foreground/90 border border-border/25 bg-background/50 hover:bg-background/90 hover:border-border/40 whitespace-nowrap dark:border-gray-700/40 dark:bg-gray-800/30 dark:hover:bg-gray-800/50"
-                        onClick={() => handleSearch(suggestion)}
-                      >
-                        {suggestion}
-                      </button>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        ) : (
-          <div className="container max-w-6xl mx-auto px-2 md:px-4 py-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-2.5">
-              <div className="flex flex-col">
-                <h2 className="text-xl md:text-2xl font-medium leading-tight">
-                  Results for "{searchTerm}"
-                </h2>
-                <p className="text-sm text-muted-foreground/70 mt-0.5">
-                  Showing {Math.min(results.length, 15)} of {results.length > 20 ? `${results.length}+ diagrams` : `${results.length} diagrams`}
-                </p>
-              </div>
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-1.5 h-8 whitespace-nowrap self-start sm:self-center mt-1 sm:mt-0"
-                onClick={handleNewSearch}
-              >
-                <Search className="h-3.5 w-3.5" />
-                <span>New Search</span>
-              </Button>
+              <AnimatePresence>
+                {showTips && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="bg-muted/30 backdrop-blur-sm mt-2 p-3 rounded-lg border border-border/40"
+                  >
+                    <p className="text-xs text-muted-foreground mb-1">For better results, try:</p>
+                    <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1">
+                      <li>Being specific (e.g., "DNA double helix diagram" instead of "DNA")</li>
+                      <li>Include diagram type (flowchart, mind map, UML, etc.)</li>
+                      <li>Add a domain (biology, physics, computer science)</li>
+                      <li>Use natural language (e.g., "Show me flowcharts about...")</li>
+                    </ul>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
             
-            <ResultsSection 
+            {/* Results section */}
+            <ResultsSection
+              searchTerm={searchTerm}
               results={results}
               isLoading={isLoading}
-              error={error}
-              likedDiagrams={likedDiagrams}
-              onLike={handleLikeDiagram}
-              selectedTagFilter={selectedTagFilter}
-              onSelectTagFilter={setSelectedTagFilter}
-              lastDiagramRef={lastResultRef}
-              searchTerm={searchTerm}
-              onNewSearch={handleNewSearch}
-              onSearch={handleSearch}
               hasMore={hasMore}
+              error={error}
+              lastResultRef={lastResultRef}
+              selectedTagFilter={selectedTagFilter}
+              onTagFilterSelect={handleTagFilterSelect}
               loadMore={loadMore}
+              onNewSearch={handleNewSearch}
+              isLiked={(id) => likedDiagrams.has(id.toString())}
+              onLike={handleLikeDiagram}
+              onSearch={handleSearch}
             />
           </div>
         )}
       </main>
-      
-      {/* Mobile search input fixed to bottom */}
-      {isMobile && !searchTerm && (
-        <div className="fixed bottom-0 left-0 right-0 bg-[#f9f8f6]/95 dark:bg-[#1d1e20]/95 backdrop-blur-lg border-t border-border/30 dark:border-gray-800 p-4 pb-10 z-50 safe-bottom">
-          <div className="relative z-10">
-            {/* Subtle glow effect */}
-            <div className="absolute -inset-4 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-full blur-xl opacity-70"></div>
-            
-            <div className="relative overflow-hidden rounded-full shadow-md border border-border/40 focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/20 dark:border-gray-700/50 bg-background/90 dark:bg-[#1d1e20]/90 backdrop-blur-sm">
-            <Input
-              ref={inputRef}
-              type="text"
-                placeholder="What do you want to know?"
-              value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  // Immediately show suggestions if at least 2 characters typed
-                  if (e.target.value.trim().length > 1) {
-                    setShowTypingSuggestions(true);
-                  }
-                }}
-                onFocus={handleInputFocus}
-                onBlur={handleInputBlur}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleSearch(searchQuery);
-                  setShowTypingSuggestions(false);
-                }
-              }}
-                className="pr-16 pl-6 py-9 border-0 text-base shadow-none focus:ring-0 focus:outline-none dark:bg-transparent"
-            />
-            <Button 
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-14 w-14 rounded-full p-0 bg-[#10A37F] hover:bg-[#10A37F]/90 dark:bg-[#10A37F] dark:hover:bg-[#10A37F]/90 shadow-sm flex items-center justify-center"
-              onClick={() => {
-                handleSearch(searchQuery);
-                setShowTypingSuggestions(false);
-              }}
-              disabled={!searchQuery.trim()}
-            >
-                {/* More minimal icon that matches Claude's theme */}
-                <svg 
-                  className="h-6 w-6 text-white"
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path 
-                    d="M5 12h14M12 5l7 7-7 7" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                  />
-                </svg>
-            </Button>
-            
-              {/* Mobile typing suggestions with NLP-like behavior - showing upwards */}
-              {showTypingSuggestions && (
-              <motion.div 
-                  className="absolute left-0 right-0 bottom-full mb-2 bg-background/95 dark:bg-[#1d1e20]/95 backdrop-blur-sm rounded-xl shadow-md border border-border/30 dark:border-gray-700/50 py-2 z-20 max-h-[50vh] overflow-auto"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-              >
-                  <ul>
-                  {typingSuggestions.map((suggestion, index) => (
-                    <motion.li 
-                      key={suggestion} 
-                        className="px-4 py-3 hover:bg-muted/50 dark:hover:bg-gray-800/50 cursor-pointer"
-                      initial={{ opacity: 0, x: -5 }}
-                      animate={{ 
-                        opacity: 1, 
-                        x: 0,
-                        transition: { delay: index * 0.05 }
-                      }}
-                      onClick={() => {
-                        handleSearch(suggestion);
-                        setShowTypingSuggestions(false);
-                      }}
-                    >
-                      <div className="flex items-center">
-                          <Search className="h-3 w-3 mr-2 text-muted-foreground/70" />
-                          <span className="text-sm font-normal">
-                            {searchQuery && suggestion.toLowerCase().includes(searchQuery.toLowerCase()) ? (
-                              <>
-                                {suggestion.substring(0, suggestion.toLowerCase().indexOf(searchQuery.toLowerCase()))}
-                                <span className="font-medium text-primary/80">
-                                  {searchQuery}
-                                </span>
-                                {suggestion.substring(suggestion.toLowerCase().indexOf(searchQuery.toLowerCase()) + searchQuery.length)}
-                              </>
-                            ) : (
-                              suggestion
-                            )}
-                          </span>
-                      </div>
-                    </motion.li>
-                  ))}
-                </ul>
-              </motion.div>
-            )}
-            </div>
-            
-            {/* Mobile search counter */}
-            <div className="flex justify-between items-center text-xs text-muted-foreground/70 mt-2 px-2">
-              <div className="flex items-center">
-                <Info className="h-3 w-3 mr-1" />
-                <span>
-                  {user ? (
-                    remainingSearches !== undefined ? 
-                    `${remainingSearches} searches remaining today` : 
-                    "Unlimited searches"
-                  ) : (
-                    remainingSearches !== undefined ?
-                    `${remainingSearches}/3 guest searches left` :
-                    "3/3 guest searches left"
-                  )}
-                </span>
-              </div>
-              
-              <button 
-                onClick={() => setShowTips(true)}
-                className="flex items-center hover:text-primary/80 transition-colors"
-              >
-                <Sparkles className="h-3 w-3 mr-1" />
-                <span>Search tips</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      <Dialog open={showTips} onOpenChange={setShowTips}>
-        <DialogContent className="sm:max-w-md bg-background/95 dark:bg-gray-900/95 backdrop-blur-sm border-border/30 dark:border-gray-800/50 shadow-sm">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-normal">Tips for better results</DialogTitle>
-            <DialogDescription className="text-muted-foreground/70">
-              Here are some tips to get better diagram search results
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
-            <div className="space-y-5 px-1 py-2">
-              <div className="space-y-1.5">
-                <h3 className="font-normal text-base">Be specific</h3>
-                <p className="text-sm text-muted-foreground/70">
-                  Instead of "biology diagrams", try "human respiratory system diagram"
-                </p>
-              </div>
-              <div className="space-y-1.5">
-                <h3 className="font-normal text-base">Include the type</h3>
-                <p className="text-sm text-muted-foreground/70">
-                  Specify the type like "flowchart", "ER diagram", "concept map"
-                </p>
-              </div>
-              <div className="space-y-1.5">
-                <h3 className="font-normal text-base">Use field terminology</h3>
-                <p className="text-sm text-muted-foreground/70">
-                  Include field-specific terms like "UML class diagram for e-commerce"
-                </p>
-              </div>
-            </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
