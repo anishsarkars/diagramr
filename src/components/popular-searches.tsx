@@ -1,75 +1,123 @@
-
-import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Sparkles, TrendingUp } from "lucide-react";
+import { useState, useEffect, useRef } from 'react';
+import { 
+  Activity, 
+  Atom, 
+  Brain, 
+  Briefcase, 
+  BarChart as ChartBar,
+  CircuitBoard, 
+  FileDigit, 
+  FlaskConical, 
+  ArrowRight as FlowIcon, 
+  Circle as GeometryIcon, 
+  GitBranch, 
+  Globe, 
+  Lightbulb, 
+  Network, 
+  Puzzle, 
+  BarChart4 as ScalingIcon, 
+  GitCommit as WorkflowIcon
+} from 'lucide-react';
 
 interface PopularSearchesProps {
-  onSelect: (query: string) => void;
+  searches: string[];
+  onClick: (search: string) => void;
+  className?: string;
 }
 
-export function PopularSearches({ onSelect }: PopularSearchesProps) {
-  const [popularSearches, setPopularSearches] = useState<string[]>([
-    "Human anatomy diagrams",
-    "Circuit design",
-    "UML class diagrams",
-    "Entity relationship diagrams",
-    "Flow charts",
-    "Mind maps",
-    "Network topology",
-    "Physics concepts"
-  ]);
+export function PopularSearches({ searches, onClick, className = '' }: PopularSearchesProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isHovering, setIsHovering] = useState(false);
 
-  // Effect to simulate fetching trending searches
-  useEffect(() => {
-    // This would be replaced with an actual API call in production
-    const mockPopularSearches = [
-      "Human anatomy diagrams",
-      "Circuit design",
-      "UML class diagrams",
-      "Entity relationship diagrams", 
-      "Flow charts",
-      "Mind maps",
-      "Network topology",
-      "Physics concepts"
-    ];
+  // Map search categories to icons with consistent styling
+  const getIconForSearch = (search: string) => {
+    const searchLower = search.toLowerCase();
+    const iconClasses = "h-2.5 w-2.5 mr-1 opacity-70";
     
-    setPopularSearches(mockPopularSearches);
-  }, []);
+    if (searchLower.includes('network') || searchLower.includes('topology'))
+      return <Network className={`${iconClasses} text-blue-400`} />;
+    else if (searchLower.includes('flow') || searchLower.includes('process'))
+      return <FlowIcon className={`${iconClasses} text-indigo-400`} />;
+    else if (searchLower.includes('chart') || searchLower.includes('bar') || searchLower.includes('graph'))
+      return <ChartBar className={`${iconClasses} text-purple-400`} />;
+    else if (searchLower.includes('brain') || searchLower.includes('mind') || searchLower.includes('neural'))
+      return <Brain className={`${iconClasses} text-pink-400`} />;
+    else if (searchLower.includes('business') || searchLower.includes('organization'))
+      return <Briefcase className={`${iconClasses} text-amber-400`} />;
+    else if (searchLower.includes('chemical') || searchLower.includes('reaction') || searchLower.includes('molecular'))
+      return <FlaskConical className={`${iconClasses} text-red-400`} />;
+    else if (searchLower.includes('circuit') || searchLower.includes('electrical'))
+      return <CircuitBoard className={`${iconClasses} text-orange-400`} />;
+    else if (searchLower.includes('uml') || searchLower.includes('class') || searchLower.includes('database'))
+      return <GitBranch className={`${iconClasses} text-teal-400`} />;
+    else if (searchLower.includes('geo') || searchLower.includes('map'))
+      return <Globe className={`${iconClasses} text-emerald-400`} />;
+    else if (searchLower.includes('math') || searchLower.includes('geometry'))
+      return <GeometryIcon className={`${iconClasses} text-cyan-400`} />;
+    else if (searchLower.includes('physics') || searchLower.includes('atom'))
+      return <Atom className={`${iconClasses} text-blue-400`} />;
+    else if (searchLower.includes('concept') || searchLower.includes('idea'))
+      return <Lightbulb className={`${iconClasses} text-yellow-400`} />;
+    else if (searchLower.includes('activity') || searchLower.includes('timeline'))
+      return <Activity className={`${iconClasses} text-green-400`} />;
+    else if (searchLower.includes('architecture') || searchLower.includes('structure'))
+      return <ScalingIcon className={`${iconClasses} text-violet-400`} />;
+    else if (searchLower.includes('data') || searchLower.includes('analytics'))
+      return <FileDigit className={`${iconClasses} text-blue-400`} />;
+    else if (searchLower.includes('workflow') || searchLower.includes('service') || searchLower.includes('blueprint'))
+      return <WorkflowIcon className={`${iconClasses} text-sky-400`} />;
+    else
+      return <Puzzle className={`${iconClasses} text-gray-400`} />;
+  };
+
+  useEffect(() => {
+    if (scrollRef.current && !isHovering) {
+      const scrollContainer = scrollRef.current;
+      let scrollAmount = 0;
+      const speed = 0.5; // pixels per frame
+      
+      const scrollInterval = setInterval(() => {
+        scrollContainer.scrollLeft += speed;
+        scrollAmount += speed;
+        
+        // Reset once we've scrolled the entire width
+        if (scrollAmount >= scrollContainer.scrollWidth / 2) {
+          scrollContainer.scrollLeft = 0;
+          scrollAmount = 0;
+        }
+      }, 20);
+      
+      return () => {
+        clearInterval(scrollInterval);
+      };
+    }
+  }, [isHovering]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.2 }}
-      className="w-full mt-8"
+    <div
+      className={`relative overflow-hidden group ${className}`}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
     >
-      <div className="flex items-center justify-center mb-4 gap-2">
-        <TrendingUp className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-medium">Popular Searches</h3>
-      </div>
+      <div className="absolute top-0 bottom-0 left-0 w-8 z-10 bg-gradient-to-r from-background to-transparent pointer-events-none"></div>
+      <div className="absolute top-0 bottom-0 right-0 w-8 z-10 bg-gradient-to-l from-background to-transparent pointer-events-none"></div>
       
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-        {popularSearches.map((search, index) => (
-          <motion.div
-            key={search}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
-            whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
-            className="relative overflow-hidden group"
-            onClick={() => onSelect(search)}
+      <div 
+        ref={scrollRef}
+        className="flex overflow-x-auto scrollbar-hide py-2 space-x-2 whitespace-nowrap"
+      >
+        {/* Double the items to create the continuous scrolling effect */}
+        {[...searches, ...searches].map((search, index) => (
+          <button
+            key={`${search}-${index}`}
+            onClick={() => onClick(search)}
+            className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-muted/40 hover:bg-muted/70 transition-colors duration-200 border border-border/30 shadow-sm"
           >
-            <div className="glass-card border border-primary/10 p-3 rounded-xl cursor-pointer h-full flex items-center justify-center bg-background/30 backdrop-blur-sm">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/5 to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
-              <div className="relative z-10 flex items-center justify-center">
-                <Sparkles className="h-3.5 w-3.5 text-primary/70 mr-2" />
-                <span className="text-sm truncate">{search}</span>
-              </div>
-            </div>
-          </motion.div>
+            {getIconForSearch(search)}
+            {search}
+          </button>
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 }

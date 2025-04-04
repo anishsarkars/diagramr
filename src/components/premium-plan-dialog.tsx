@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -98,8 +97,8 @@ export function PremiumPlanDialog({
               </div>
               
               <div className="flex items-baseline gap-2 mb-3">
-                <span className="text-2xl font-bold">$3</span>
-                <span className="text-muted-foreground font-medium line-through">$9</span>
+                <span className="text-2xl font-bold">₹259</span>
+                <span className="text-muted-foreground font-medium line-through">₹699</span>
                 <span className="text-xs text-muted-foreground">/month</span>
               </div>
               

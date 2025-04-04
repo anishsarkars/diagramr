@@ -1,4 +1,3 @@
-
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
@@ -12,11 +11,11 @@ interface ThemeToggleProps {
 }
 
 export function ThemeToggle({ 
-  variant = "outline", 
+  variant = "ghost", 
   size = "icon", 
   className 
 }: ThemeToggleProps) {
-  const { theme, setTheme, toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const { isPremiumUser } = useAccess();
   
   return (
@@ -24,36 +23,30 @@ export function ThemeToggle({
       variant={variant}
       size={size}
       onClick={toggleTheme}
-      className={`relative overflow-hidden ${
-        isPremiumUser 
-          ? "border-purple-500/20 hover:bg-purple-500/10" 
-          : ""
-      } ${className}`}
+      className={`relative overflow-hidden h-8 w-8 rounded-md hover:bg-background/80 ${className}`}
     >
       <motion.div
-        initial={{ opacity: 0, rotate: -30, scale: 0.8 }}
+        initial={{ opacity: 0, scale: 0.8 }}
         animate={{ 
           opacity: theme === "dark" ? 0 : 1, 
-          rotate: theme === "dark" ? -30 : 0,
           scale: theme === "dark" ? 0.8 : 1,
         }}
-        transition={{ duration: 0.3, type: "spring" }}
+        transition={{ duration: 0.2 }}
         className="absolute"
       >
-        <Sun className={`h-4 w-4 ${isPremiumUser ? "text-amber-500" : ""}`} />
+        <Sun className="h-3.5 w-3.5 opacity-70" />
       </motion.div>
       
       <motion.div
-        initial={{ opacity: 0, rotate: 30, scale: 0.8 }}
+        initial={{ opacity: 0, scale: 0.8 }}
         animate={{ 
           opacity: theme === "light" ? 0 : 1, 
-          rotate: theme === "light" ? 30 : 0,
           scale: theme === "light" ? 0.8 : 1,
         }}
-        transition={{ duration: 0.3, type: "spring" }}
+        transition={{ duration: 0.2 }}
         className="absolute"
       >
-        <Moon className={`h-4 w-4 ${isPremiumUser ? "text-purple-400" : ""}`} />
+        <Moon className="h-3.5 w-3.5 opacity-70" />
       </motion.div>
       
       <span className="sr-only">Toggle theme</span>

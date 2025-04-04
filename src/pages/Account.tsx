@@ -1,7 +1,5 @@
-
 import { useState, useEffect } from "react";
 import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
 import { useAuth } from "@/components/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +13,8 @@ import {
   LogOut, 
   Check,
   Loader2,
-  Lock
+  Lock,
+  Sparkles
 } from "lucide-react";
 import {
   Card,
@@ -83,11 +82,20 @@ export default function Account() {
       const { error } = await supabase
         .from('profiles')
         .update({ 
-          username: userName 
+          username: userName
         })
         .eq('id', user.id);
       
       if (error) throw error;
+      
+      // Update notification settings in the database
+      try {
+        // Store notification preferences in local storage
+        localStorage.setItem('diagramr-notifications', JSON.stringify(notifications));
+        console.log('Saving notification preferences to local storage:', notifications);
+      } catch (e) {
+        console.error('Error saving notifications to localStorage:', e);
+      }
       
       toast.success("Profile updated successfully");
     } catch (error) {
@@ -109,6 +117,18 @@ export default function Account() {
     }
   };
 
+  const handleSaveNotifications = async () => {
+    try {
+      // Store notification preferences in local storage
+      localStorage.setItem('diagramr-notifications', JSON.stringify(notifications));
+      
+      toast.success("Notification settings updated");
+    } catch (error) {
+      console.error('Error updating notification settings:', error);
+      toast.error('Failed to update notification settings');
+    }
+  };
+
   if (!user) {
     return null; // Redirect happens in useEffect
   }
@@ -117,7 +137,7 @@ export default function Account() {
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
       
-      <main className="flex-1 container py-12">
+      <main className="flex-1 container max-w-4xl px-4 py-12">
         <motion.div 
           className="mb-8"
           initial={{ opacity: 0, y: 10 }}
@@ -125,311 +145,170 @@ export default function Account() {
           transition={{ duration: 0.4 }}
         >
           <h1 className="text-2xl font-bold">Account Settings</h1>
-          <p className="text-muted-foreground">Manage your account preferences and settings</p>
+          <p className="text-muted-foreground">Manage your account preferences</p>
         </motion.div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Sidebar */}
+        <div className="space-y-8">
+          {/* Profile section */}
           <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
           >
-            <Card className="md:col-span-1 h-full">
-              <CardHeader>
-                <CardTitle>
-                  <div className="flex items-center gap-2">
-                    <User className="h-5 w-5 text-primary" />
-                    <span>{profile?.username || user.email}</span>
-                  </div>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  Profile
                 </CardTitle>
-                <CardDescription>
-                  {profile?.is_premium ? (
-                    <Badge variant="default" className="bg-primary/90 hover:bg-primary">
-                      Premium Account
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline">Free Account</Badge>
-                  )}
-                </CardDescription>
               </CardHeader>
-              <CardContent className="h-full">
-                <nav className="space-y-1">
-                  <motion.div 
-                    className="flex items-center gap-2 text-sm font-medium p-2 rounded-md bg-accent cursor-pointer"
-                    whileHover={{ x: 2 }}
-                  >
-                    <User className="h-4 w-4" />
-                    <span>Profile</span>
-                  </motion.div>
-                  <motion.div 
-                    className="flex items-center gap-2 text-sm font-medium p-2 rounded-md hover:bg-accent cursor-pointer"
-                    whileHover={{ x: 2 }}
-                  >
-                    <Bell className="h-4 w-4" />
-                    <span>Notifications</span>
-                  </motion.div>
-                  <motion.div 
-                    className="flex items-center gap-2 text-sm font-medium p-2 rounded-md hover:bg-accent cursor-pointer"
-                    whileHover={{ x: 2 }}
-                  >
-                    <CreditCard className="h-4 w-4" />
-                    <span>Billing</span>
-                  </motion.div>
-                  <motion.div 
-                    className="flex items-center gap-2 text-sm font-medium p-2 rounded-md hover:bg-accent cursor-pointer"
-                    whileHover={{ x: 2 }}
-                  >
-                    <Lock className="h-4 w-4" />
-                    <span>Security</span>
-                  </motion.div>
-                  <Separator className="my-2" />
-                  <motion.div 
-                    className="flex items-center gap-2 text-sm font-medium p-2 rounded-md hover:bg-accent text-destructive cursor-pointer"
-                    whileHover={{ x: 2 }}
-                    onClick={handleSignOut}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>Sign out</span>
-                  </motion.div>
-                </nav>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input 
+                    id="username" 
+                    value={userName} 
+                    onChange={(e) => setUserName(e.target.value)} 
+                    placeholder="Your username"
+                    className="max-w-md"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    This is the name that will be displayed in greetings and throughout the app.
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input 
+                    id="email" 
+                    value={email}
+                    disabled
+                    placeholder="Your email address"
+                    className="max-w-md"
+                  />
+                </div>
+                
+                <Button 
+                  onClick={handleUpdateProfile}
+                  disabled={isLoading || !userName.trim() || userName === profile?.username}
+                  className="mt-2"
+                >
+                  {isLoading ? (
+                    <span className="flex items-center">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </span>
+                  ) : (
+                    <span className="flex items-center">
+                      <Check className="mr-2 h-4 w-4" />
+                      Save Changes
+                    </span>
+                  )}
+                </Button>
               </CardContent>
             </Card>
           </motion.div>
           
-          {/* Main content */}
+          {/* Notifications section */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
-            className="md:col-span-2"
           >
             <Card>
-              <Tabs defaultValue="profile">
-                <CardHeader>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Bell className="h-5 w-5 text-primary" />
+                  Notifications
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <CardTitle>Settings</CardTitle>
-                    <TabsList>
-                      <TabsTrigger value="profile">Profile</TabsTrigger>
-                      <TabsTrigger value="notifications">Notifications</TabsTrigger>
-                      <TabsTrigger value="security">Security</TabsTrigger>
-                      <TabsTrigger value="billing">Billing</TabsTrigger>
-                    </TabsList>
-                  </div>
-                </CardHeader>
-                
-                {/* Profile Tab */}
-                <TabsContent value="profile" className="m-0">
-                  <CardContent className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="username">Username</Label>
-                      <Input 
-                        id="username" 
-                        value={userName} 
-                        onChange={(e) => setUserName(e.target.value)} 
-                        placeholder="Your username"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input 
-                        id="email" 
-                        value={email}
-                        disabled
-                        placeholder="Your email address"
-                      />
+                    <div className="space-y-0.5">
+                      <Label htmlFor="email-updates">Email updates</Label>
                       <p className="text-xs text-muted-foreground">
-                        To change your email, please contact support.
+                        Receive updates about your account via email
                       </p>
                     </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button onClick={handleUpdateProfile} disabled={isLoading}>
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="h-4 w-4 mr-2" />
-                          Save Changes
-                        </>
-                      )}
+                    <Switch 
+                      id="email-updates" 
+                      checked={notifications.emailUpdates}
+                      onCheckedChange={(checked) => 
+                        setNotifications({...notifications, emailUpdates: checked})
+                      }
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="new-features">New features</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Get notified about new features and improvements
+                      </p>
+                    </div>
+                    <Switch 
+                      id="new-features" 
+                      checked={notifications.newFeatures}
+                      onCheckedChange={(checked) => 
+                        setNotifications({...notifications, newFeatures: checked})
+                      }
+                    />
+                  </div>
+                </div>
+                
+                <Button
+                  onClick={handleSaveNotifications}
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                >
+                  Save Notification Settings
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+          
+          {/* Account actions */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+          >
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Settings className="h-5 w-5 text-primary" />
+                  Account Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col space-y-2">
+                  {!profile?.is_premium && (
+                    <Button 
+                      variant="outline" 
+                      className="justify-start text-left w-full sm:w-auto"
+                      onClick={() => navigate("/pricing")}
+                    >
+                      <Sparkles className="mr-2 h-4 w-4 text-primary" />
+                      Upgrade to Premium
                     </Button>
-                  </CardFooter>
-                </TabsContent>
-                
-                {/* Notifications Tab */}
-                <TabsContent value="notifications" className="m-0">
-                  <CardContent className="space-y-4 pt-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="email-updates">Email Updates</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Receive email notifications about your account
-                        </p>
-                      </div>
-                      <Switch 
-                        id="email-updates" 
-                        checked={notifications.emailUpdates}
-                        onCheckedChange={(checked) => 
-                          setNotifications(prev => ({ ...prev, emailUpdates: checked }))
-                        }
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="new-features">New Features</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Get notified about new features and improvements
-                        </p>
-                      </div>
-                      <Switch 
-                        id="new-features" 
-                        checked={notifications.newFeatures}
-                        onCheckedChange={(checked) => 
-                          setNotifications(prev => ({ ...prev, newFeatures: checked }))
-                        }
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="search-alerts">Search Alerts</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Receive alerts for saved searches
-                        </p>
-                      </div>
-                      <Switch 
-                        id="search-alerts"
-                        checked={notifications.searchAlerts}
-                        onCheckedChange={(checked) => 
-                          setNotifications(prev => ({ ...prev, searchAlerts: checked }))
-                        }
-                      />
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button variant="default">Save Notification Settings</Button>
-                  </CardFooter>
-                </TabsContent>
-                
-                {/* Security Tab */}
-                <TabsContent value="security" className="m-0">
-                  <CardContent className="space-y-4 pt-4">
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-medium">Password Settings</h3>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label>Two-Factor Authentication</Label>
-                          <p className="text-xs text-muted-foreground">
-                            Add an extra layer of security to your account
-                          </p>
-                        </div>
-                        <Switch 
-                          checked={passwordSettings.twoFactorEnabled}
-                          onCheckedChange={(checked) => 
-                            setPasswordSettings(prev => ({ ...prev, twoFactorEnabled: checked }))
-                          }
-                        />
-                      </div>
-                      
-                      <div className="pt-2">
-                        <Button variant="outline" className="w-full">Change Password</Button>
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-medium">Account Security</h3>
-                      
-                      <div>
-                        <p className="text-sm font-medium">Last Sign In</p>
-                        <p className="text-sm text-muted-foreground">Today at 12:34 PM</p>
-                      </div>
-                      
-                      <div>
-                        <p className="text-sm font-medium">Active Sessions</p>
-                        <p className="text-sm text-muted-foreground">1 active session</p>
-                      </div>
-                      
-                      <Button variant="outline" className="text-destructive" size="sm">
-                        Sign out of all devices
-                      </Button>
-                    </div>
-                  </CardContent>
-                </TabsContent>
-                
-                {/* Billing Tab */}
-                <TabsContent value="billing" className="m-0">
-                  <CardContent className="space-y-4 pt-4">
-                    <div className="bg-primary/5 border border-primary/10 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-medium">
-                          {profile?.is_premium ? "Premium Plan" : "Free Plan"}
-                        </h3>
-                        {profile?.is_premium ? (
-                          <Badge variant="default" className="bg-primary/90 hover:bg-primary">
-                            Active
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline">Free Tier</Badge>
-                        )}
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Check className="h-4 w-4 text-green-500" />
-                          <span>
-                            {profile?.is_premium 
-                              ? "Unlimited searches per day" 
-                              : "5 searches per day"}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Check className="h-4 w-4 text-green-500" />
-                          <span>
-                            {profile?.is_premium 
-                              ? "20 AI diagram generations per day" 
-                              : "1 AI diagram generation per day"}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Check className="h-4 w-4 text-green-500" />
-                          <span>
-                            {profile?.is_premium 
-                              ? "Save unlimited diagrams" 
-                              : "Save up to 20 diagrams"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {!profile?.is_premium && (
-                      <Button variant="default" className="w-full" onClick={() => navigate('/pricing')}>
-                        Upgrade to Premium
-                      </Button>
-                    )}
-                    
-                    {profile?.is_premium && (
-                      <div className="text-sm text-muted-foreground">
-                        Your premium plan renews on <span className="font-medium">May 15, 2024</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </TabsContent>
-              </Tabs>
+                  )}
+                  
+                  <Button 
+                    variant="destructive" 
+                    className="justify-start text-left w-full sm:w-auto"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign out
+                  </Button>
+                </div>
+              </CardContent>
             </Card>
           </motion.div>
         </div>
       </main>
-      
-      <Footer />
     </div>
   );
 }

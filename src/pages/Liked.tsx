@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
 import { useAuth } from "@/components/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Bookmark, Search, Loader2, Heart, FolderPlus, Folder, Edit, X, Eye, Grid, ListFilter } from "lucide-react";
+import { Bookmark, Search, Loader2, Heart, FolderPlus, Folder, Edit, X, Eye, Grid, ListFilter, Tag, Badge } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -59,6 +58,8 @@ export default function Liked() {
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [selectedDiagram, setSelectedDiagram] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [showAllTags, setShowAllTags] = useState(false);
   
   const navigate = useNavigate();
 
@@ -175,6 +176,12 @@ export default function Liked() {
     ? likedDiagrams 
     : likedDiagrams.filter(diagram => diagram.folder === activeTab);
 
+  const uniqueTags = Array.from(new Set(
+    filteredDiagrams
+      .flatMap(diagram => diagram.diagram_data.tags || [])
+      .filter(Boolean)
+  ));
+
   return (
     <div className={`flex flex-col min-h-screen ${isPremiumUser ? "bg-gradient-to-b from-background to-background/95" : "bg-background"}`}>
       <Header />
@@ -242,13 +249,13 @@ export default function Liked() {
         </motion.div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-6 bg-muted/50 p-1 overflow-x-auto flex w-full justify-start">
+          <TabsList className="mb-6 bg-muted/50 p-1 overflow-x-auto flex w-full justify-start no-scrollbar">
             <TabsTrigger 
               value="all" 
               className="flex items-center gap-1.5 data-[state=active]:bg-background"
             >
               <Bookmark className="h-4 w-4" />
-              All Diagrams
+              <span>All diagrams</span>
             </TabsTrigger>
             
             {folders.map(folder => (
@@ -257,8 +264,8 @@ export default function Liked() {
                 value={folder.id}
                 className="flex items-center gap-1.5 data-[state=active]:bg-background"
               >
-                <div className={`h-3 w-3 rounded-full ${folder.color}`}></div>
-                {folder.name}
+                <span className={`h-2 w-2 rounded-full ${folder.color}`} />
+                <span>{folder.name}</span>
               </TabsTrigger>
             ))}
           </TabsList>
@@ -268,244 +275,135 @@ export default function Liked() {
               <div className="flex justify-center items-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
-            ) : filteredDiagrams.length === 0 ? (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center py-16 space-y-4"
-              >
-                {activeTab === "all" ? (
-                  <>
-                    <Heart className="h-12 w-12 mx-auto text-muted-foreground/50" />
-                    <h2 className="text-xl font-medium">No liked diagrams yet</h2>
-                    <p className="text-muted-foreground max-w-md mx-auto">
-                      You haven't liked any diagrams yet. Start exploring to find diagrams you love!
-                    </p>
-                    <Button onClick={() => navigate('/')} className="mt-4 gap-2">
-                      <Search className="h-4 w-4" />
-                      <span>Search for diagrams</span>
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Folder className="h-12 w-12 mx-auto text-muted-foreground/50" />
-                    <h2 className="text-xl font-medium">No diagrams in this folder</h2>
-                    <p className="text-muted-foreground max-w-md mx-auto">
-                      This folder is empty. Add diagrams by selecting them from your liked items.
-                    </p>
-                    <Button onClick={() => setActiveTab("all")} className="mt-4 gap-2">
-                      <Bookmark className="h-4 w-4" />
-                      <span>View all diagrams</span>
-                    </Button>
-                  </>
-                )}
-              </motion.div>
+            ) : likedDiagrams.length > 0 ? (
+              <div>
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+                  <h1 className="text-2xl font-bold">Your Liked Diagrams</h1>
+                  
+                  <div className="relative w-full md:w-auto">
+                    <AnimatePresence>
+                      {uniqueTags.length > 0 && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          transition={{ duration: 0.2 }}
+                          className="flex flex-wrap gap-2 p-2 rounded-lg bg-card/50 backdrop-blur-sm border border-border/40"
+                        >
+                          {showAllTags ? (
+                            <>
+                              <Badge 
+                                variant={!selectedTag ? "default" : "outline"}
+                                className={`cursor-pointer transition-all hover:bg-primary/20 ${!selectedTag ? 'bg-primary text-primary-foreground' : ''}`}
+                                onClick={() => setSelectedTag(null)}
+                              >
+                                All
+                              </Badge>
+                              
+                              {uniqueTags.map(tag => (
+                                <Badge 
+                                  key={tag}
+                                  variant={selectedTag === tag ? "default" : "outline"}
+                                  className={`cursor-pointer transition-all hover:bg-primary/20 ${selectedTag === tag ? 'bg-primary text-primary-foreground' : ''}`}
+                                  onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                                >
+                                  {tag}
+                                </Badge>
+                              ))}
+                              
+                              {uniqueTags.length > 5 && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-6 px-2 text-xs"
+                                  onClick={() => setShowAllTags(false)}
+                                >
+                                  Show Less
+                                </Button>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <Badge 
+                                variant={!selectedTag ? "default" : "outline"}
+                                className={`cursor-pointer transition-all hover:bg-primary/20 ${!selectedTag ? 'bg-primary text-primary-foreground' : ''}`}
+                                onClick={() => setSelectedTag(null)}
+                              >
+                                All
+                              </Badge>
+                              
+                              {uniqueTags.slice(0, 5).map(tag => (
+                                <Badge 
+                                  key={tag}
+                                  variant={selectedTag === tag ? "default" : "outline"}
+                                  className={`cursor-pointer transition-all hover:bg-primary/20 ${selectedTag === tag ? 'bg-primary text-primary-foreground' : ''}`}
+                                  onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                                >
+                                  {tag}
+                                </Badge>
+                              ))}
+                              
+                              {uniqueTags.length > 5 && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-6 px-2 text-xs"
+                                  onClick={() => setShowAllTags(true)}
+                                >
+                                  +{uniqueTags.length - 5} More
+                                </Button>
+                              )}
+                            </>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                  <AnimatePresence>
+                    {filteredDiagrams.map((diagram, index) => (
+                      <motion.div
+                        key={diagram.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ 
+                          duration: 0.3, 
+                          delay: index * 0.05,
+                          ease: [0.4, 0, 0.2, 1]
+                        }}
+                      >
+                        <DiagramCard
+                          diagram={diagram}
+                          viewMode="grid"
+                          isLiked={true}
+                          onLike={() => handleRemoveDiagram(diagram.id)}
+                          onTagClick={(tag) => setSelectedTag(tag)}
+                          className="transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </div>
             ) : (
-              <div className={viewMode === "grid" 
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
-                : "space-y-4"
-              }>
-                {filteredDiagrams.map((diagram, index) => (
-                  viewMode === "grid" ? (
-                    <motion.div
-                      key={diagram.id}
-                      className={`diagram-card overflow-hidden rounded-xl border ${
-                        isPremiumUser ? "border-border/80 shadow-sm hover:shadow-md" : "border-border"
-                      } transition-all duration-300`}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      whileHover={{ y: -5 }}
-                    >
-                      <div className="diagram-card-image relative group">
-                        <img 
-                          src={diagram.diagram_data.imageSrc} 
-                          alt={diagram.diagram_data.title} 
-                          className="w-full aspect-video object-cover" 
-                        />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="secondary" 
-                            onClick={() => {
-                              setSelectedImage(diagram.diagram_data);
-                              setShowImageModal(true);
-                            }}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-medium text-lg line-clamp-1">{diagram.diagram_data.title}</h3>
-                          {diagram.folder && (
-                            <div className={`h-2 w-2 rounded-full ${folders.find(f => f.id === diagram.folder)?.color}`}></div>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground mb-4">
-                          Liked on {new Date(diagram.created_at).toLocaleDateString()}
-                        </p>
-                        <div className="flex justify-between mt-2">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" size="sm" className="flex items-center">
-                                <FolderPlus className="h-3.5 w-3.5 mr-1.5" />
-                                {diagram.folder 
-                                  ? folders.find(f => f.id === diagram.folder)?.name
-                                  : "Add to folder"}
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-md">
-                              <DialogHeader>
-                                <DialogTitle>Move to folder</DialogTitle>
-                                <DialogDescription>
-                                  Select a folder to organize this diagram
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-2 gap-2">
-                                  {folders.map(folder => (
-                                    <Button
-                                      key={folder.id}
-                                      variant="outline"
-                                      className={`flex justify-start items-center gap-2 ${
-                                        diagram.folder === folder.id ? "bg-muted" : ""
-                                      }`}
-                                      onClick={() => handleAssignFolder(diagram.id, folder.id)}
-                                    >
-                                      <div className={`h-3 w-3 rounded-full ${folder.color}`}></div>
-                                      <span className="truncate">{folder.name}</span>
-                                    </Button>
-                                  ))}
-                                </div>
-                                {diagram.folder && (
-                                  <Button 
-                                    variant="ghost" 
-                                    className="text-muted-foreground"
-                                    onClick={() => handleAssignFolder(diagram.id, null)}
-                                  >
-                                    <X className="h-4 w-4 mr-2" />
-                                    Remove from folder
-                                  </Button>
-                                )}
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                          
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-destructive"
-                            onClick={() => handleRemoveDiagram(diagram.id)}
-                          >
-                            Unlike
-                          </Button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key={diagram.id}
-                      className={`flex gap-4 p-4 rounded-xl border ${
-                        isPremiumUser ? "border-border/80 shadow-sm hover:shadow-md" : "border-border"
-                      } transition-all duration-300`}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <div className="relative w-24 h-24 bg-muted rounded-md overflow-hidden flex-shrink-0">
-                        <img 
-                          src={diagram.diagram_data.imageSrc} 
-                          alt={diagram.diagram_data.title} 
-                          className="w-full h-full object-cover" 
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start mb-1">
-                          <h3 className="font-medium text-base line-clamp-1">{diagram.diagram_data.title}</h3>
-                          {diagram.folder && (
-                            <div className="flex items-center gap-1.5 text-xs">
-                              <div className={`h-2 w-2 rounded-full ${folders.find(f => f.id === diagram.folder)?.color}`}></div>
-                              <span className="text-muted-foreground">
-                                {folders.find(f => f.id === diagram.folder)?.name}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground mb-2">
-                          Liked on {new Date(diagram.created_at).toLocaleDateString()}
-                        </p>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          <Button 
-                            size="sm" 
-                            variant="secondary" 
-                            className="h-8"
-                            onClick={() => {
-                              setSelectedImage(diagram.diagram_data);
-                              setShowImageModal(true);
-                            }}
-                          >
-                            <Eye className="h-3.5 w-3.5 mr-1.5" />
-                            View
-                          </Button>
-                          
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" size="sm" className="h-8 flex items-center">
-                                <FolderPlus className="h-3.5 w-3.5 mr-1.5" />
-                                Move
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-md">
-                              <DialogHeader>
-                                <DialogTitle>Move to folder</DialogTitle>
-                              </DialogHeader>
-                              <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-2 gap-2">
-                                  {folders.map(folder => (
-                                    <Button
-                                      key={folder.id}
-                                      variant="outline"
-                                      className={`flex justify-start items-center gap-2 ${
-                                        diagram.folder === folder.id ? "bg-muted" : ""
-                                      }`}
-                                      onClick={() => handleAssignFolder(diagram.id, folder.id)}
-                                    >
-                                      <div className={`h-3 w-3 rounded-full ${folder.color}`}></div>
-                                      <span className="truncate">{folder.name}</span>
-                                    </Button>
-                                  ))}
-                                </div>
-                                {diagram.folder && (
-                                  <Button 
-                                    variant="ghost" 
-                                    className="text-muted-foreground"
-                                    onClick={() => handleAssignFolder(diagram.id, null)}
-                                  >
-                                    <X className="h-4 w-4 mr-2" />
-                                    Remove from folder
-                                  </Button>
-                                )}
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                          
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 text-destructive"
-                            onClick={() => handleRemoveDiagram(diagram.id)}
-                          >
-                            <X className="h-3.5 w-3.5 mr-1.5" />
-                            Remove
-                          </Button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )
-                ))}
+              <div className="flex flex-col items-center justify-center h-64 text-center">
+                <div className="rounded-full bg-primary/10 p-3 mb-4">
+                  <Heart className="h-6 w-6 text-primary" />
+                </div>
+                <h2 className="text-xl font-medium mb-2">No liked diagrams yet</h2>
+                <p className="text-muted-foreground max-w-md mb-6">
+                  When you find diagrams you like, click the heart icon to save them here for easy access later.
+                </p>
+                <Button 
+                  onClick={() => navigate('/dashboard')} 
+                  className="flex items-center gap-2"
+                >
+                  <Search className="h-4 w-4" />
+                  Find diagrams
+                </Button>
               </div>
             )}
           </TabsContent>
@@ -565,8 +463,6 @@ export default function Liked() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      <Footer />
     </div>
   );
 }

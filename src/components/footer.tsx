@@ -1,8 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Logo } from "@/components/logo";
-import { LinkedinIcon, Heart } from "lucide-react";
+import { DiagramrLogo } from "@/components/diagramr-logo";
+import { Heart, ExternalLink, Github, Twitter, Sparkles, Code } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export function Footer() {
   const location = useLocation();
@@ -13,104 +14,159 @@ export function Footer() {
     return null;
   }
 
-  // More minimal footer for dashboard
-  if (location.pathname === "/dashboard") {
-    return (
-      <footer className="border-t border-border/20 py-3 bg-background">
-        <div className="container flex justify-between items-center">
-          <div className="text-xs text-muted-foreground">
-            © {currentYear} Diagramr
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="text-xs text-muted-foreground flex items-center">
-              <span className="flex items-center">
-                Built with <Heart className="h-3 w-3 mx-1 text-primary" /> in Indore
-              </span>
-            </div>
-          </div>
-        </div>
-      </footer>
-    );
-  }
-
   return (
-    <motion.footer 
-      className="border-t border-border/40 bg-gradient-to-b from-background to-background/95 backdrop-blur-sm"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3, duration: 0.5 }}
-    >
-      <div className="container py-4 relative overflow-hidden">
-        {/* Background elements */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -right-24 -bottom-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl opacity-50"></div>
-          <div className="absolute -left-20 -bottom-16 w-72 h-72 bg-primary/10 rounded-full blur-3xl opacity-30"></div>
-        </div>
-        
-        <div className="relative z-10 flex justify-between items-center">
-          <div className="space-y-4 max-w-md">
-            <div className="flex items-center gap-6">
-              <Logo size="sm" iconOnly={false} showText className="lg:ml-0" />
-              
-              <div className="flex gap-4 text-sm text-muted-foreground">
-                <Link to="/pricing" className="hover:text-foreground transition-colors">
-                  Pricing
-                </Link>
-                <Link to="/auth" className="hover:text-foreground transition-colors">
-                  Login
-                </Link>
-              </div>
-            </div>
+    <footer className="w-full border-t border-border/40 bg-background/80 backdrop-blur-sm pb-safe">
+      <div className="container px-4 py-8 md:py-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+          <div className="flex flex-col gap-4">
+            <DiagramrLogo size="md" />
+            <p className="text-sm text-muted-foreground max-w-xs">
+              AI-powered diagram search for students, teachers, and professionals.
+              Find the perfect diagrams for your projects instantly.
+            </p>
           </div>
           
-          {/* Built by Anish card - moved to right side and made bigger */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            <a 
-              href="https://www.linkedin.com/in/anishsarkar-/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="no-underline group relative"
-            >
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="relative flex items-center"
-              >
-                {/* Subtle glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg blur-xl opacity-0 group-hover:opacity-100 transition-all duration-700" />
-                
-                <Badge 
-                  variant="secondary" 
-                  className="relative flex items-center gap-4 py-3 px-6 shadow-sm backdrop-blur-[2px] bg-card/40 hover:bg-card/50 border-0 transition-all duration-500"
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">Links</h3>
+            <ul className="space-y-3">
+              <li>
+                <a 
+                  href="https://diagramr.com/about" 
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <motion.span 
-                    className="text-base font-medium text-muted-foreground group-hover:text-foreground transition-colors duration-500"
-                    initial={{ letterSpacing: "0em" }}
-                    whileHover={{ letterSpacing: "0.02em" }}
+                  About
+                </a>
+              </li>
+              <li>
+                <a 
+                  href="https://diagramr.com/privacy" 
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a 
+                  href="https://diagramr.com/terms" 
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Terms of Service
+                </a>
+              </li>
+              <li>
+                <a 
+                  href="https://diagramr.com/contact" 
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Contact
+                </a>
+              </li>
+            </ul>
+          </div>
+          
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">Creator</h3>
+            <motion.div 
+              className="relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-br from-background to-primary/5 p-4 shadow-md hover:shadow-lg transition-all duration-300"
+              whileHover={{ 
+                scale: 1.02,
+                boxShadow: "0 8px 30px rgba(0, 0, 0, 0.12)",
+                borderColor: "rgba(var(--primary), 0.3)"
+              }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <div className="absolute top-0 left-0 w-full h-full bg-primary/5 opacity-50"></div>
+              <div className="absolute top-0 right-0">
+                <div className="w-24 h-24 rounded-full bg-primary/10 blur-3xl opacity-30 transform translate-x-8 -translate-y-8"></div>
+              </div>
+              
+              <div className="relative flex flex-col gap-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-primary/30">
+                    <img
+                      src="https://avatars.githubusercontent.com/u/80917940?v=4"
+                      alt="Anish"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h4 className="font-medium flex items-center gap-1">
+                      Anish
+                      <Sparkles className="h-3.5 w-3.5 text-primary ml-0.5" />
+                    </h4>
+                    <p className="text-xs text-muted-foreground">Full Stack Developer</p>
+                  </div>
+                </div>
+                
+                <p className="text-sm text-muted-foreground/90 my-1">
+                  Built with <span className="inline-flex items-center mx-0.5"><Heart className="h-3 w-3 text-red-500 fill-red-500 mx-0.5" /></span> using React, Supabase & AI.
+                </p>
+                
+                <div className="flex items-center gap-2 mt-1">
+                  <a 
+                    href="https://github.com/anishsrinivasan" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Built by @Anish
-                  </motion.span>
-                  <motion.div
-                    initial={{ x: 0 }}
-                    whileHover={{ x: 2 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    <Github className="h-4 w-4" />
+                  </a>
+                  <a 
+                    href="https://twitter.com/anishsrinivasan" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <LinkedinIcon className="h-5 w-5 text-[#0077B5]/70 group-hover:text-[#0077B5] transition-colors duration-500" />
-                  </motion.div>
-                </Badge>
-              </motion.div>
-            </a>
-          </motion.div>
+                    <Twitter className="h-4 w-4" />
+                  </a>
+                  <a 
+                    href="https://anishsrinivasan.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-foreground transition-colors ml-auto"
+                  >
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 gap-1 text-xs hover:bg-primary/10 hover:text-primary"
+                    >
+                      <Code className="h-3 w-3" />
+                      Portfolio
+                      <ExternalLink className="h-3 w-3 ml-0.5" />
+                    </Button>
+                  </a>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
         
-        <div className="mt-4 pt-4 border-t border-border/40 text-center text-sm text-muted-foreground">
-          <p>&copy; {currentYear} Diagramr. All rights reserved.</p>
+        <div className="mt-8 pt-8 border-t border-border/30 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-xs text-muted-foreground">
+            © {currentYear} Diagramr. All rights reserved.
+          </p>
+          <div className="flex items-center gap-4">
+            <a 
+              href="https://github.com/anishsrinivasan/diagramr" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Github className="h-4 w-4" />
+            </a>
+            <a 
+              href="https://twitter.com/getdiagramr" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Twitter className="h-4 w-4" />
+            </a>
+          </div>
         </div>
       </div>
-    </motion.footer>
+    </footer>
   );
 }

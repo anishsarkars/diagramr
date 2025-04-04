@@ -1,91 +1,118 @@
-
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { useAuth } from "./auth-context";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "react-router-dom";
-import { useAuth } from "./auth-context";
-import { User, LogOut, Settings, Heart, Menu, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User, LogOut, Settings, Heart } from "lucide-react";
 import { toast } from "sonner";
 
 export function HeaderMenu() {
   const { user, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Admin emails for access control
+  const adminEmails = ['admin@diagramr.com']; // Add your admin emails here
+  const isAdmin = user && user.email && adminEmails.includes(user.email);
 
   const handleSignOut = async () => {
     try {
       await signOut();
-      toast.success("Successfully signed out");
+      toast.success("You have been signed out");
     } catch (error) {
       console.error("Error signing out:", error);
-      toast.error("Failed to sign out. Please try again.");
+      toast.error("Failed to sign out");
     }
   };
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="sm"
-          className="flex items-center gap-1 group transition-all duration-300"
-        >
-          <Menu className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform duration-300" />
-          <span className="font-medium">Menu</span>
-          <ChevronDown className="h-3 w-3 opacity-50 group-hover:opacity-100 transition-opacity duration-300" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-sm border-border/50 shadow-lg">
-        {user ? (
-          <>
-            <DropdownMenuLabel className="flex items-center gap-2 px-3 py-2">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="truncate text-sm font-medium">{user.email}</span>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-border/50" />
-            <DropdownMenuItem asChild className="hover:bg-accent/50 transition-colors">
-              <Link to="/dashboard" className="cursor-pointer w-full flex items-center">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Dashboard</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="hover:bg-accent/50 transition-colors">
-              <Link to="/liked" className="cursor-pointer w-full flex items-center">
-                <Heart className="mr-2 h-4 w-4" />
-                <span>Liked Diagrams</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="hover:bg-accent/50 transition-colors">
-              <Link to="/account" className="cursor-pointer w-full flex items-center">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-border/50" />
-            <DropdownMenuItem onClick={handleSignOut} className="hover:bg-accent/50 transition-colors text-destructive">
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Sign Out</span>
-            </DropdownMenuItem>
-          </>
-        ) : (
-          <>
-            <DropdownMenuLabel className="px-3 py-2">Diagramr</DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-border/50" />
-            <DropdownMenuItem asChild className="hover:bg-accent/50 transition-colors">
-              <Link to="/auth" className="cursor-pointer w-full flex items-center">
-                <User className="mr-2 h-4 w-4" />
-                <span>Sign In</span>
-              </Link>
-            </DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="relative inline-block">
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative h-8 w-8 rounded-full"
+          >
+            {user ? (
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user.image || ""} alt={user.name || "User"} />
+                <AvatarFallback className="text-xs">
+                  {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <User className="h-5 w-5" />
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56 mt-1 p-1.5">
+          {user ? (
+            <>
+              <div className="flex flex-col gap-1.5 p-3">
+                <div className="text-sm font-medium">
+                  {user.name || "User"}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {user.email}
+                </div>
+              </div>
+              <DropdownMenuSeparator className="bg-border/20 my-1" />
+              <DropdownMenuItem asChild className="py-1.5 px-3 text-sm">
+                <Link to="/dashboard" className="cursor-pointer w-full flex items-center">
+                  <User className="mr-2 h-3.5 w-3.5 opacity-70" />
+                  <span>Dashboard</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="py-1.5 px-3 text-sm">
+                <Link to="/liked" className="cursor-pointer w-full flex items-center">
+                  <Heart className="mr-2 h-3.5 w-3.5 opacity-70" />
+                  <span>Liked Diagrams</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="py-1.5 px-3 text-sm">
+                <Link to="/account" className="cursor-pointer w-full flex items-center">
+                  <Settings className="mr-2 h-3.5 w-3.5 opacity-70" />
+                  <span>Account</span>
+                </Link>
+              </DropdownMenuItem>
+              {isAdmin && (
+              <DropdownMenuItem asChild className="py-1.5 px-3 text-sm text-blue-600 dark:text-blue-400">
+                <Link to="/admin/api-status" className="cursor-pointer w-full flex items-center">
+                  <Settings className="mr-2 h-3.5 w-3.5 opacity-70" />
+                  <span>Admin Dashboard</span>
+                </Link>
+              </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator className="bg-border/20 my-1" />
+              <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive py-1.5 px-3 text-sm">
+                <LogOut className="mr-2 h-3.5 w-3.5 opacity-70" />
+                <span>Sign Out</span>
+              </DropdownMenuItem>
+            </>
+          ) : (
+            <>
+              <DropdownMenuItem asChild className="py-1.5 px-3 text-sm">
+                <Link to="/pricing" className="cursor-pointer w-full flex items-center">
+                  <span>Pricing</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="py-1.5 px-3 text-sm">
+                <Link to="/auth" className="cursor-pointer w-full flex items-center">
+                  <span>Sign In</span>
+                </Link>
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }

@@ -1,9 +1,9 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { searchDiagrams } from '@/utils/search-service';
 import { searchGoogleImages } from '@/utils/googleSearch';
 import { toast } from 'sonner';
 import { useSearchLimit } from '@/hooks/use-search-limit';
+import { useNavigate } from 'react-router-dom';
 
 export interface DiagramResult {
   id: string | number;
@@ -19,7 +19,7 @@ export interface DiagramResult {
 
 export function useInfiniteSearch({
   initialQuery = '',
-  pageSize = 24 
+  pageSize = 15 
 }: {
   initialQuery?: string;
   pageSize?: number;
@@ -42,10 +42,12 @@ export function useInfiniteSearch({
   const [searchTerm, setSearchTerm] = useState(initialQuery);
   
   const { incrementCount } = useSearchLimit();
+  const navigate = useNavigate();
   
   const allResults = useRef<DiagramResult[]>([]);
   const currentSearchKey = useRef<string>('');
   const isLoadingMore = useRef<boolean>(false);
+  const knownImageUrls = useRef<Set<string>>(new Set());
   
   const resetSearch = useCallback(() => {
     setResults([]);
@@ -56,6 +58,23 @@ export function useInfiniteSearch({
     setError(null);
     allResults.current = [];
     currentSearchKey.current = '';
+    knownImageUrls.current = new Set();
+  }, []);
+  
+  // Helper function to deduplicate results
+  const deduplicateResults = useCallback((newResults: DiagramResult[]): DiagramResult[] => {
+    const uniqueResults: DiagramResult[] = [];
+    
+    for (const result of newResults) {
+      const normalizedUrl = result.imageSrc.split('?')[0]; // Remove query parameters
+      
+      if (!knownImageUrls.current.has(normalizedUrl)) {
+        knownImageUrls.current.add(normalizedUrl);
+        uniqueResults.push(result);
+      }
+    }
+    
+    return uniqueResults;
   }, []);
   
   const searchFor = useCallback(async (query: string) => {
@@ -70,65 +89,97 @@ export function useInfiniteSearch({
     setCurrentSearchPage(1);
     allResults.current = [];
     currentSearchKey.current = `search:${query}`;
+    knownImageUrls.current = new Set();
     
     try {
       console.log("Searching for images with query:", query);
       
-      const initialBatchPages = 5; // Fetch 5 pages initially for more results
+      // Reduce initial batch pages to limit results to 15-20 items
+      const initialBatchPages = 2; // Fetch only 2 pages initially (about 15-20 results)
       let batchedResults: DiagramResult[] = [];
       
+      // First page - primary importance
       const firstPageResults = await searchDiagrams(query, 1);
       console.log(`Got ${firstPageResults.length} search results from first page`);
       batchedResults = [...firstPageResults];
       
-      const additionalPagesPromises = [];
-      for (let p = 2; p <= initialBatchPages; p++) {
-        additionalPagesPromises.push(searchDiagrams(query, p));
+      // Add all first page image URLs to known set
+      firstPageResults.forEach(result => {
+        const normalizedUrl = result.imageSrc.split('?')[0];
+        knownImageUrls.current.add(normalizedUrl);
+      });
+      
+      // Only fetch second page if we need more results to meet the 15-20 target
+      if (batchedResults.length < 15) {
+        console.log("Fetching second page to reach target result count");
+        try {
+          const secondPageResults = await searchDiagrams(query, 2);
+          
+          // Add only non-duplicate results
+          const uniqueResults = secondPageResults.filter(item => {
+            const normalizedUrl = item.imageSrc.split('?')[0];
+            if (!knownImageUrls.current.has(normalizedUrl)) {
+              knownImageUrls.current.add(normalizedUrl);
+              return true;
+            }
+            return false;
+          });
+          
+          batchedResults = [...batchedResults, ...uniqueResults];
+          console.log(`Total results after second page: ${batchedResults.length}`);
+        } catch (error) {
+          console.error("Error fetching second page:", error);
+          // Continue with just first page results
+        }
       }
       
-      const additionalPagesResults = await Promise.allSettled(additionalPagesPromises);
-      
-      additionalPagesResults.forEach((result, index) => {
-        if (result.status === 'fulfilled' && result.value.length > 0) {
-          console.log(`Got ${result.value.length} search results from page ${index + 2}`);
-          batchedResults = [...batchedResults, ...result.value];
-        }
-      });
-      
-      const uniqueUrls = new Set();
-      const uniqueResults = batchedResults.filter(item => {
-        if (!uniqueUrls.has(item.imageSrc)) {
-          uniqueUrls.add(item.imageSrc);
-          return true;
-        }
-        return false;
-      });
-      
-      allResults.current = uniqueResults.sort((a, b) => {
+      // Sort results by relevance score
+      const sortedResults = batchedResults.sort((a, b) => {
         const scoreA = a.relevanceScore || 0;
         const scoreB = b.relevanceScore || 0;
         return scoreB - scoreA;
       });
       
-      setResults(allResults.current.slice(0, pageSize));
+      allResults.current = sortedResults;
+      
+      // Limit the number of results to pageSize (15-20)
+      const resultSlice = allResults.current.slice(0, pageSize);
+      setResults(resultSlice);
       setHasMore(allResults.current.length > pageSize);
       
       if (allResults.current.length > 0) {
-        toast.success(`Found ${allResults.current.length} diagrams for "${query}"`);
+        toast.success(`Found ${Math.min(allResults.current.length, pageSize)} diagrams for "${query}"`);
+        
+        // Don't automatically load more in the background
+        // This is removed to prevent loading too many results
       } else {
-        const fallbackResults = await searchGoogleImages(query);
-        if (fallbackResults.length > 0) {
-          allResults.current = fallbackResults;
-          setResults(fallbackResults.slice(0, pageSize));
-          setHasMore(fallbackResults.length > pageSize);
-          toast.success(`Found ${fallbackResults.length} images for "${query}"`);
-        } else {
-          toast.info("No results found. Try a different search term.");
+        // Try direct Google search as fallback if search-service returns no results
+        try {
+          const fallbackResults = await searchGoogleImages(query);
+          const uniqueFallbackResults = deduplicateResults(fallbackResults);
+          
+          if (uniqueFallbackResults.length > 0) {
+            allResults.current = uniqueFallbackResults;
+            setResults(uniqueFallbackResults.slice(0, pageSize));
+            setHasMore(uniqueFallbackResults.length > pageSize);
+            toast.success(`Found ${uniqueFallbackResults.length} diagrams for "${query}"`);
+          } else {
+            toast.info("No results found. Try a different search term or check your spelling.", {
+              action: {
+                label: "Home",
+                onClick: () => navigate('/')
+              }
+            });
+          }
+        } catch (fallbackError) {
+          console.error("Fallback search failed:", fallbackError);
+          toast.error("Search failed. Please try again with a different term.", {
+            action: {
+              label: "Home",
+              onClick: () => navigate('/')
+            }
+          });
         }
-      }
-      
-      if (allResults.current.length > 0) {
-        fetchAdditionalPages(query, initialBatchPages + 1);
       }
       
     } catch (err: any) {
@@ -137,38 +188,56 @@ export function useInfiniteSearch({
       
       if (err.message && err.message.includes('quota exceeded')) {
         toast.error("API quota issue. Trying with alternate sources...", {
-          duration: 3000
+          duration: 5000
         });
         
         try {
           const fallbackResults = await searchGoogleImages(query);
-          if (fallbackResults.length > 0) {
-            allResults.current = fallbackResults;
-            setResults(fallbackResults.slice(0, pageSize));
-            setHasMore(fallbackResults.length > pageSize);
+          const uniqueFallbackResults = deduplicateResults(fallbackResults);
+          
+          if (uniqueFallbackResults.length > 0) {
+            allResults.current = uniqueFallbackResults;
+            setResults(uniqueFallbackResults.slice(0, pageSize));
+            setHasMore(uniqueFallbackResults.length > pageSize);
             setError(null);
-            toast.success(`Found ${fallbackResults.length} images using alternative source`);
+            toast.success(`Found ${uniqueFallbackResults.length} diagrams using alternative source`);
           } else {
             setResults([]);
-            toast.error('Could not find results with available APIs. Please try again later.');
+            toast.error('Could not find results with available APIs', {
+              description: "Please try again later or try a different search term.",
+              action: {
+                label: "Home",
+                onClick: () => navigate('/')
+              }
+            });
           }
         } catch (fallbackErr) {
           console.error('Fallback search failed:', fallbackErr);
           setResults([]);
           setHasMore(false);
-          toast.error('All API sources exhausted. Please try again later.');
+          toast.error('All API sources exhausted', {
+            description: "We're experiencing technical difficulties. Please try again later.",
+            action: {
+              label: "Home",
+              onClick: () => navigate('/')
+            }
+          });
         }
       } else {
-        toast.error('Search failed. Please try again.');
+        toast.error('Search failed', {
+          description: "Please try again or go back to home.",
+          action: {
+            label: "Home",
+            onClick: () => navigate('/')
+          }
+        });
         setResults([]);
         setHasMore(false);
       }
-      
-      throw err;
     } finally {
       setIsLoading(false);
     }
-  }, [pageSize]);
+  }, [pageSize, deduplicateResults, navigate]);
   
   const fetchAdditionalPages = async (query: string, startPage: number) => {
     const maxAdditionalPages = 10; // Increased from 8 to 10 to get more results
@@ -180,129 +249,110 @@ export function useInfiniteSearch({
       if (additionalResults.length > 0) {
         console.log(`Got ${additionalResults.length} results for page ${startPage}`);
         
-        const existingUrls = new Set(allResults.current.map(r => r.imageSrc));
-        const newResults = additionalResults.filter(r => !existingUrls.has(r.imageSrc));
+        // Add only unique results not already in our collection
+        const uniqueNewResults = additionalResults.filter(result => {
+          const normalizedUrl = result.imageSrc.split('?')[0];
+          if (!knownImageUrls.current.has(normalizedUrl)) {
+            knownImageUrls.current.add(normalizedUrl);
+            return true;
+          }
+          return false;
+        });
         
-        if (newResults.length > 0) {
-          console.log(`Adding ${newResults.length} new unique results from page ${startPage}`);
-          allResults.current = [...allResults.current, ...newResults];
+        if (uniqueNewResults.length > 0) {
+          console.log(`Adding ${uniqueNewResults.length} new unique results from page ${startPage}`);
+          
+          // Merge new results with existing and resort
+          allResults.current = [...allResults.current, ...uniqueNewResults].sort((a, b) => {
+            const scoreA = a.relevanceScore || 0;
+            const scoreB = b.relevanceScore || 0;
+            return scoreB - scoreA;
+          });
+          
           setHasMore(true);
         }
         
+        // Continue fetching additional pages in background
         fetchAdditionalPages(query, startPage + 1);
       } else {
         console.log(`No more results found for page ${startPage}`);
       }
     } catch (err) {
       console.error(`Error fetching page ${startPage}:`, err);
+      // Don't show error to user for background fetches
     }
   };
   
+  // Load more results function
   const loadMore = useCallback(async () => {
+    // If we're already loading or there are no more results, do nothing
     if (isLoading || isLoadingMore.current || !hasMore) {
-      console.log("Cannot load more because isLoading:", isLoading, "isLoadingMore:", isLoadingMore.current, "hasMore:", hasMore);
       return;
     }
     
-    console.log("Loading more results...");
+    // If we have more results in our current batch, just show more from there
+    if (allResults.current.length > results.length) {
+      console.log(`Loading ${pageSize} more results from existing cache of ${allResults.current.length} results`);
+      const nextBatchStart = results.length;
+      const nextBatchEnd = nextBatchStart + pageSize;
+      // Only load 8-10 more results at a time to maintain the smaller batches
+      const nextBatch = allResults.current.slice(nextBatchStart, nextBatchStart + 8);
+      
+      setResults(prevResults => [...prevResults, ...nextBatch]);
+      setHasMore(nextBatchEnd < allResults.current.length);
+      return;
+    }
+    
+    // Otherwise, fetch new results
     isLoadingMore.current = true;
     
     try {
-      const nextPage = page + 1;
-      const startIndex = (nextPage - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
+      setCurrentSearchPage(prevPage => prevPage + 1);
       
-      if (endIndex < allResults.current.length) {
-        console.log(`Loading more results from memory (${startIndex}-${endIndex})`);
-        const nextBatch = allResults.current.slice(startIndex, endIndex);
-        setResults(prev => [...prev, ...nextBatch]);
-        setPage(nextPage);
-        setHasMore(allResults.current.length > endIndex);
-        console.log(`Added ${nextBatch.length} more results, hasMore:`, allResults.current.length > endIndex);
+      const newResults = await searchDiagrams(searchTerm, currentSearchPage + 1);
+      
+      if (newResults.length === 0) {
+        setHasMore(false);
         return;
-      } 
-      
-      // Need to fetch more external results
-      const nextSearchPage = currentSearchPage + 1;
-      console.log(`Need to fetch more results for page ${nextSearchPage}`);
-      
-      try {
-        // Try searching from primary source first
-        console.log("Fetching from primary source for page:", nextSearchPage);
-        const newPageResults = await searchDiagrams(searchTerm, nextSearchPage);
-        
-        if (newPageResults && newPageResults.length > 0) {
-          const existingUrls = new Set(results.map(r => r.imageSrc));
-          const uniqueNewResults = newPageResults.filter(r => !existingUrls.has(r.imageSrc));
-          
-          if (uniqueNewResults.length > 0) {
-            console.log(`Adding ${uniqueNewResults.length} new unique results to display`);
-            allResults.current = [...allResults.current, ...uniqueNewResults];
-            setResults(prev => [...prev, ...uniqueNewResults]);
-            setHasMore(true);
-            setCurrentSearchPage(nextSearchPage);
-            return;
-          }
-        }
-        
-        // If no results or all duplicates, try Google fallback
-        console.log("No new results from primary source, trying Google fallback");
-        const fallbackResults = await searchGoogleImages(searchTerm, String(nextSearchPage));
-        
-        if (fallbackResults && fallbackResults.length > 0) {
-          const existingUrls = new Set(results.map(r => r.imageSrc));
-          const uniqueFallbackResults = fallbackResults.filter(r => !existingUrls.has(r.imageSrc));
-          
-          if (uniqueFallbackResults.length > 0) {
-            console.log(`Adding ${uniqueFallbackResults.length} new unique results from fallback source`);
-            allResults.current = [...allResults.current, ...uniqueFallbackResults];
-            setResults(prev => [...prev, ...uniqueFallbackResults]);
-            setHasMore(uniqueFallbackResults.length >= 5);
-            setCurrentSearchPage(nextSearchPage);
-            return;
-          }
-        }
-        
-        // If we get here, no new results were found
-        console.log("No new unique results found from either source");
-        setHasMore(false);
-        
-      } catch (error: any) {
-        console.error("Error loading more results:", error);
-        
-        // Try fallback on error
-        if (error.message && error.message.includes('quota exceeded')) {
-          console.log("API quota exceeded, trying fallback source");
-          
-          try {
-            const fallbackResults = await searchGoogleImages(`${searchTerm} diagram`, String(nextSearchPage));
-            const existingUrls = new Set(results.map(r => r.imageSrc));
-            const uniqueFallbackResults = fallbackResults.filter(r => !existingUrls.has(r.imageSrc));
-            
-            if (uniqueFallbackResults.length > 0) {
-              console.log(`Adding ${uniqueFallbackResults.length} new unique results from fallback after error`);
-              allResults.current = [...allResults.current, ...uniqueFallbackResults];
-              setResults(prev => [...prev, ...uniqueFallbackResults]);
-              setHasMore(uniqueFallbackResults.length >= 5);
-              setCurrentSearchPage(nextSearchPage);
-              return;
-            }
-          } catch (fallbackError) {
-            console.error("Fallback search also failed:", fallbackError);
-          }
-        }
-        
-        // If all attempts failed
-        setHasMore(false);
-        throw error;
       }
-    } catch (error) {
-      console.error("Error loading more results:", error);
-      throw error;
+      
+      // Deduplicate new results
+      const uniqueNewResults = deduplicateResults(newResults);
+      
+      // Limit to just 8-10 new results
+      const limitedNewResults = uniqueNewResults.slice(0, 8);
+      
+      // If we got unique results, add them
+      if (limitedNewResults.length > 0) {
+        // Add to all results reference
+        allResults.current = [...allResults.current, ...limitedNewResults];
+        
+        // Update visible results
+        setResults(prevResults => [...prevResults, ...limitedNewResults]);
+        
+        // If we didn't get the full requested batch, assume there are no more
+        setHasMore(limitedNewResults.length >= 8);
+      } else {
+        setHasMore(false);
+      }
+      
+    } catch (err) {
+      console.error('Error loading more results:', err);
+      setError(err instanceof Error ? err : new Error('Failed to load more results'));
+      toast.error('Failed to load more results');
     } finally {
       isLoadingMore.current = false;
     }
-  }, [isLoading, hasMore, page, pageSize, searchTerm, results, currentSearchPage]);
+  }, [
+    isLoading, 
+    hasMore, 
+    results.length, 
+    allResults.current.length, 
+    pageSize, 
+    searchTerm, 
+    currentSearchPage, 
+    deduplicateResults
+  ]);
   
   useEffect(() => {
     if (initialQuery) {

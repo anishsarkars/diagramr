@@ -38,7 +38,7 @@ function cleanCache() {
 // Run cache cleanup every 5 minutes
 setInterval(cleanCache, 5 * 60 * 1000);
 
-// Main search function with improved fallback strategies
+// Main search function with improved fallback strategies and educational focus
 export async function searchDiagrams(
   query: string,
   page: number = 1
@@ -47,23 +47,45 @@ export async function searchDiagrams(
     return [];
   }
   
+  // Check cache first
+  const cacheKey = `${query}:${page}`;
+  if (searchCache.has(cacheKey)) {
+    const cachedResult = searchCache.get(cacheKey);
+    if (cachedResult && cachedResult.results.length > 0) {
+      const cacheAge = Date.now() - cachedResult.timestamp;
+      const CACHE_FRESH_THRESHOLD = 10 * 60 * 1000; // 10 minutes
+      
+      if (cacheAge < CACHE_FRESH_THRESHOLD) {
+        console.log(`[SearchService] Using cached results for "${query}" (page ${page}), age: ${Math.round(cacheAge/1000)}s`);
+        // Return only first 10 results to help maintain 15-20 total result target
+        return cachedResult.results.slice(0, 10);
+      }
+    }
+  }
+  
   console.log(`[SearchService] Searching for "${query}" (page ${page})`);
   
   try {
-    // Direct search without filtering or modifying the query
-    console.log(`[SearchService] Fetching results for "${query}" page ${page}`);
-    let results = await searchGoogleImages(query);
+    // Educational search query enhancement
+    // Add educational/research/professional context to the query for better results
+    const enhancementTerms = ["diagram", "illustration", "schematic", "chart", "graphic", "visual"];
+    const randomEnhancementTerm = enhancementTerms[Math.floor(Math.random() * enhancementTerms.length)];
+    const enhancedQuery = query.includes("diagram") || query.includes("chart") ? query : `${query} ${randomEnhancementTerm}`;
     
-    // If no results, try a more generic query
+    // Direct search with enhancement for better results
+    console.log(`[SearchService] Fetching results for "${enhancedQuery}" page ${page}`);
+    let results = await searchGoogleImages(enhancedQuery, undefined, undefined, page);
+    
+    // If no results, try a more specific query
     if (results.length === 0) {
-      console.log('[SearchService] No results with primary query, trying with more generic terms');
-      results = await searchGoogleImages(`${query} diagram image`);
+      console.log('[SearchService] No results with primary query, trying with more specific terms');
+      results = await searchGoogleImages(`${query} diagram`, undefined, undefined, page);
     }
     
-    // If still no results, try another variation
+    // If still no results, try another variation for visual content
     if (results.length === 0) {
-      console.log('[SearchService] No results with generic terms, trying with visualization');
-      results = await searchGoogleImages(`${query} visualization`);
+      console.log('[SearchService] No results with specific terms, trying with visual terms');
+      results = await searchGoogleImages(`${query} visualization infographic`, undefined, undefined, page);
     }
     
     if (results.length === 0) {
@@ -72,20 +94,365 @@ export async function searchDiagrams(
       return [];
     }
     
-    console.log(`[SearchService] Found ${results.length} results for "${query}"`);
-    return results;
+    // Deduplicate results based on image URL
+    const uniqueImageUrls = new Set<string>();
+    const deduplicatedResults = results.filter(result => {
+      const normalizedUrl = result.imageSrc.split('?')[0]; // Remove query parameters
+      if (!uniqueImageUrls.has(normalizedUrl)) {
+        uniqueImageUrls.add(normalizedUrl);
+        return true;
+      }
+      return false;
+    });
+    
+    // Prioritize results - boost all types of relevant diagrams
+    const prioritizedResults = deduplicatedResults.sort((a, b) => {
+      // First prioritize by diagram relevance
+      const aDiagramRelevance = calculateDiagramRelevance(a, query);
+      const bDiagramRelevance = calculateDiagramRelevance(b, query);
+      
+      if (aDiagramRelevance > bDiagramRelevance) return -1;
+      if (aDiagramRelevance < bDiagramRelevance) return 1;
+      
+      // Then by content type - educational, professional, creative, etc.
+      const aContentScore = getContentTypeScore(a);
+      const bContentScore = getContentTypeScore(b);
+      
+      if (aContentScore > bContentScore) return -1;
+      if (aContentScore < bContentScore) return 1;
+      
+      // Default to the original relevance score
+      return (b.relevanceScore || 0) - (a.relevanceScore || 0);
+    });
+    
+    // Limit to 10 results per page to help maintain the 15-20 total result target
+    const limitedResults = prioritizedResults.slice(0, 10);
+    
+    console.log(`[SearchService] Found ${limitedResults.length} results for "${query}" (limited from ${prioritizedResults.length})`);
+    
+    // Cache successful results (store full results set)
+    searchCache.set(cacheKey, {
+      timestamp: Date.now(),
+      results: prioritizedResults
+    });
+    
+    return limitedResults;
     
   } catch (error) {
     console.error(`[SearchService] Error searching for "${query}":`, error);
     
-    if (error.message && error.message.includes('quota exceeded')) {
-      toast.error("Search quota exceeded. Please try again later.");
+    // More detailed error handling
+    if (error.message) {
+      if (error.message.includes('quota exceeded') || error.message.includes('API quota')) {
+        console.log('[SearchService] API quota exceeded, trying with fallback approach');
+        
+        try {
+          // Last attempt with a different query format that might work with a different key
+          const fallbackResults = await searchGoogleImages(
+            `${query} diagram`, 
+            undefined, 
+            undefined, 
+            page,
+            3 // Max retries already attempted
+          );
+          
+          if (fallbackResults && fallbackResults.length > 0) {
+            console.log(`[SearchService] Fallback search successful with ${fallbackResults.length} results`);
+            
+            // Deduplicate fallback results
+            const uniqueImageUrls = new Set<string>();
+            const deduplicatedResults = fallbackResults.filter(result => {
+              const normalizedUrl = result.imageSrc.split('?')[0]; // Remove query parameters
+              if (!uniqueImageUrls.has(normalizedUrl)) {
+                uniqueImageUrls.add(normalizedUrl);
+                return true;
+              }
+              return false;
+            });
+            
+            // Cache successful results
+            searchCache.set(cacheKey, {
+              timestamp: Date.now(),
+              results: deduplicatedResults
+            });
+            
+            return deduplicatedResults;
+          }
+        } catch (fallbackError) {
+          console.error('[SearchService] Fallback search also failed:', fallbackError);
+        }
+        
+        toast.error("Search quota exceeded. The system will use alternative API keys for subsequent searches.", {
+          duration: 5000,
+          action: {
+            label: "Home",
+            onClick: () => window.location.href = "/"
+          }
+        });
+      } else {
+        toast.error("Search failed. Please try again.", {
+          duration: 5000,
+          action: {
+            label: "Home",
+            onClick: () => window.location.href = "/"
+          }
+        });
+      }
     } else {
-      toast.error("Search failed. Please try again.");
+      toast.error("Search failed. Please try again.", {
+        duration: 5000,
+        action: {
+          label: "Home",
+          onClick: () => window.location.href = "/"
+        }
+      });
+    }
+    
+    // Check if we have cached results, even if they're stale
+    if (searchCache.has(cacheKey)) {
+      const staleCache = searchCache.get(cacheKey);
+      if (staleCache && staleCache.results.length > 0) {
+        console.log(`[SearchService] Returning stale cached results for "${query}" after error`);
+        toast.info("Showing cached results while search service recovers", {
+          description: "These results may not be the latest.",
+          duration: 3000
+        });
+        return staleCache.results;
+      }
     }
     
     return [];
   }
+}
+
+// Helper function to determine if content is likely educational
+function isEducationalContent(result: DiagramResult): boolean {
+  // Check title for educational keywords
+  const educationalKeywords = [
+    "diagram", "schematic", "educational", "academic", "lecture", "study", 
+    "course", "lesson", "university", "college", "school", "research",
+    "science", "scientific", "theory", "concept", "illustration", "textbook"
+  ];
+  
+  // Check in title
+  if (result.title) {
+    for (const keyword of educationalKeywords) {
+      if (result.title.toLowerCase().includes(keyword)) {
+        return true;
+      }
+    }
+  }
+  
+  // Check in tags
+  if (result.tags && result.tags.length > 0) {
+    for (const tag of result.tags) {
+      for (const keyword of educationalKeywords) {
+        if (tag.toLowerCase().includes(keyword)) {
+          return true;
+        }
+      }
+    }
+  }
+  
+  // Check domain (if available) for .edu, academic, etc.
+  if (result.sourceUrl) {
+    const educationalDomains = [".edu", "academic", "university", "college", "school", "research"];
+    for (const domain of educationalDomains) {
+      if (result.sourceUrl.toLowerCase().includes(domain)) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
+
+// Helper function to determine diagram relevance score
+function calculateDiagramRelevance(result: DiagramResult, query: string): number {
+  let score = 0;
+  const normalizedQuery = query.toLowerCase();
+  
+  // Check if title contains the query terms (highest importance)
+  if (result.title && result.title.toLowerCase().includes(normalizedQuery)) {
+    score += 5;
+  }
+  
+  // Check for exact diagram type match in query
+  const diagramTypes = [
+    // Standard diagrams
+    "flowchart", "process flow", "uml", "class diagram", "sequence diagram",
+    "er diagram", "entity relationship", "mind map", "concept map", "org chart",
+    "gantt chart", "architecture diagram", "network diagram", "data flow",
+    "system diagram", "circuit diagram", "state diagram", "activity diagram",
+    
+    // Business & Strategy
+    "swot analysis", "business model canvas", "value chain", "marketing funnel", 
+    "customer journey", "stakeholder map", "porters five forces", "pest analysis",
+    "decision tree", "process map", "value stream mapping", "kanban board",
+    
+    // Design & Creative
+    "wireframe", "mockup", "design layout", "user flow", "sitemap", "storyboard",
+    "mood board", "color palette", "typography scale", "interaction diagram",
+    "user interface", "information architecture", "service blueprint",
+    
+    // Data & Analytics
+    "bar chart", "pie chart", "line graph", "histogram", "scatter plot", 
+    "area chart", "bubble chart", "waterfall chart", "heat map", "tree map",
+    "radar chart", "sankey diagram", "funnel chart", "candlestick chart",
+    
+    // Science & Engineering
+    "circuit schematic", "wiring diagram", "blueprint", "floor plan", "p&id",
+    "mechanical drawing", "assembly diagram", "exploded view", "schematic",
+    "hydraulic system", "pneumatic system", "molecular structure", "genetic map",
+    
+    // Math & Logic
+    "venn diagram", "set diagram", "euler diagram", "logic circuit", 
+    "truth table", "geometric diagram", "function graph", "number line",
+    "coordinate system", "vector field", "probability tree", 
+    
+    // Computer & Technology
+    "network topology", "database schema", "sitemap", "deployment diagram",
+    "component diagram", "package diagram", "object diagram", "use case diagram",
+    "api flow", "data model", "infrastructure diagram", "devops pipeline"
+  ];
+  
+  for (const type of diagramTypes) {
+    if (normalizedQuery.includes(type)) {
+      // If the diagram has this type in title or tags
+      if (result.title && result.title.toLowerCase().includes(type)) {
+        score += 3;
+      }
+      
+      if (result.tags && result.tags.some(tag => 
+        tag.toLowerCase().includes(type) || 
+        type.includes(tag.toLowerCase())
+      )) {
+        score += 2;
+      }
+    }
+  }
+  
+  // Add points for high-quality sources
+  if (result.sourceUrl) {
+    const url = result.sourceUrl.toLowerCase();
+    // Educational sources
+    if (url.includes('.edu') || 
+        url.includes('academic') || 
+        url.includes('university') ||
+        url.includes('school') ||
+        url.includes('research')) {
+      score += 2;
+    }
+    
+    // Well-known diagram/documentation sites
+    if (url.includes('lucidchart') ||
+        url.includes('draw.io') ||
+        url.includes('miro') ||
+        url.includes('diagrams.net') ||
+        url.includes('visio') ||
+        url.includes('docs.')) {
+      score += 2;
+    }
+    
+    // Books and publications
+    if (url.includes('book') ||
+        url.includes('publication') ||
+        url.includes('journal') ||
+        url.includes('article') ||
+        url.includes('paper')) {
+      score += 1;
+    }
+  }
+  
+  // Boost for results with complete metadata
+  if (result.title && result.author && result.tags && result.tags.length > 0) {
+    score += 1;
+  }
+  
+  return score;
+}
+
+// Helper function to determine content type score - gives weight to different content types
+function getContentTypeScore(result: DiagramResult): number {
+  let score = 0;
+  
+  // Check title and tags for content type indicators
+  const contentTypes = {
+    educational: ["educational", "academic", "lecture", "study", "university", "college", "school", "research", "textbook"],
+    professional: ["business", "professional", "workflow", "process", "corporate", "enterprise", "project", "organization", "company"],
+    technical: ["technical", "engineering", "architecture", "system", "protocol", "network", "code", "algorithm", "software"],
+    creative: ["creative", "design", "art", "concept", "idea", "brainstorm", "mind map", "sketch", "visual", "infographic"],
+    informational: ["information", "data", "statistics", "analytics", "comparison", "timeline", "chart", "graph"]
+  };
+  
+  // Check title
+  if (result.title) {
+    const title = result.title.toLowerCase();
+    
+    for (const [type, keywords] of Object.entries(contentTypes)) {
+      for (const keyword of keywords) {
+        if (title.includes(keyword)) {
+          score += 1;
+          break; // Only count once per type
+        }
+      }
+    }
+  }
+  
+  // Check tags with higher weight
+  if (result.tags && result.tags.length > 0) {
+    for (const [type, keywords] of Object.entries(contentTypes)) {
+      for (const tag of result.tags) {
+        const tagLower = tag.toLowerCase();
+        for (const keyword of keywords) {
+          if (tagLower.includes(keyword) || keyword.includes(tagLower)) {
+            score += 2; // Tags have higher weight than title
+            break; // Only count once per tag
+          }
+        }
+      }
+    }
+  }
+  
+  // Check source URL
+  if (result.sourceUrl) {
+    const url = result.sourceUrl.toLowerCase();
+    
+    // Quality diagram sites
+    if (url.includes('diagram') || 
+        url.includes('chart') || 
+        url.includes('visual') ||
+        url.includes('draw.io') ||
+        url.includes('lucidchart') ||
+        url.includes('miro') ||
+        url.includes('figma') ||
+        url.includes('canva')) {
+      score += 3;
+    }
+    
+    // Educational sources still get a boost
+    if (url.includes('.edu') || 
+        url.includes('academic') || 
+        url.includes('university')) {
+      score += 2;
+    }
+    
+    // Professional/business sources
+    if (url.includes('business') ||
+        url.includes('enterprise') ||
+        url.includes('company') ||
+        url.includes('corporate') ||
+        url.includes('professional')) {
+      score += 2;
+    }
+  }
+  
+  // Quality indicators - diagrams with complete metadata are usually better
+  if (result.title && result.tags && result.tags.length > 0) {
+    score += 1;
+  }
+  
+  return score;
 }
 
 // Function to get search suggestions
@@ -196,28 +563,86 @@ export function getSearchSuggestions(query: string): string[] {
   return Array.from(new Set(sortedSuggestions)).slice(0, 10);
 }
 
-// Diverse example searches for educational diagrams
+// Diverse example searches for all types of diagrams
 function getExampleSearches(): string[] {
-  return [
-    "circuit diagram",
-    "human anatomy",
-    "photosynthesis process",
-    "UML class diagram",
-    "network topology",
-    "data structure visualization",
-    "business process model",
-    "entity relationship diagram",
-    "molecular structure",
-    "decision tree",
-    "climate system",
-    "data flow diagram",
-    "mechanical assembly",
-    "organization chart",
-    "free body diagram",
-    "cpu architecture",
-    "protein synthesis",
-    "organic chemistry"
-  ];
+  const categories = {
+    technology: [
+      "network topology diagram",
+      "system architecture diagram",
+      "database schema",
+      "uml class diagram",
+      "software deployment diagram"
+    ],
+    business: [
+      "business process model",
+      "organization chart",
+      "swot analysis diagram",
+      "marketing funnel",
+      "customer journey map"
+    ],
+    design: [
+      "wireframe diagram",
+      "user flow diagram",
+      "sitemap diagram",
+      "interaction diagram",
+      "service blueprint"
+    ],
+    science: [
+      "circuit diagram",
+      "molecular structure",
+      "human anatomy diagram",
+      "chemical reaction diagram",
+      "cell structure diagram"
+    ],
+    engineering: [
+      "mechanical assembly drawing",
+      "blueprint drawing",
+      "p&id diagram",
+      "hydraulic system diagram",
+      "electrical wiring diagram"
+    ],
+    math: [
+      "venn diagram",
+      "function graph",
+      "geometric diagram",
+      "statistical plot",
+      "probability tree"
+    ],
+    dataViz: [
+      "bar chart comparison",
+      "trend line graph",
+      "pie chart breakdown",
+      "heat map visualization",
+      "scatter plot correlation"
+    ],
+    planning: [
+      "gantt chart project",
+      "mind map brainstorm",
+      "decision tree",
+      "critical path diagram",
+      "concept map"
+    ]
+  };
+  
+  // Select random examples from each category
+  const examples: string[] = [];
+  for (const category of Object.values(categories)) {
+    // Pick 2-3 random items from each category
+    const numToSelect = Math.floor(Math.random() * 2) + 2; // 2 or 3
+    const selectedIndices = new Set<number>();
+    
+    while (selectedIndices.size < numToSelect && selectedIndices.size < category.length) {
+      const randomIndex = Math.floor(Math.random() * category.length);
+      selectedIndices.add(randomIndex);
+    }
+    
+    for (const index of selectedIndices) {
+      examples.push(category[index]);
+    }
+  }
+  
+  // Shuffle the array to mix categories
+  return examples.sort(() => Math.random() - 0.5).slice(0, 18);
 }
 
 // Function to find additional resources based on a search term

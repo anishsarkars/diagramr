@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,7 @@ import { ResultsSection } from "@/components/results-section";
 import { useAuth } from "@/components/auth-context";
 import { useNavigate } from "react-router-dom";
 import { DiagramrLogo } from "@/components/diagramr-logo";
-import { Search, ArrowUp, Loader2, MessageSquare, X, Settings, Heart, User, TrendingUp, Sparkles } from "lucide-react";
+import { Search, ArrowUp, Loader2, MessageSquare, X, Settings, Heart, User, TrendingUp, Sparkles, Info, Send, ArrowRight, ArrowLeft, ArrowDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { ConfettiCelebration } from "@/components/confetti-celebration";
@@ -35,11 +36,16 @@ export default function ChatDashboard() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [showTips, setShowTips] = useState(false);
   const [userGreeting, setUserGreeting] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+  const [currentDescriptionIndex, setCurrentDescriptionIndex] = useState(0);
+  const [suggestionScrollPosition, setSuggestionScrollPosition] = useState(0);
+  const [typingSuggestions, setTypingSuggestions] = useState<string[]>([]);
+  const [showTypingSuggestions, setShowTypingSuggestions] = useState(false);
   
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, signOut, profile } = useAuth();
   const { incrementCount, hasReachedLimit, remainingSearches } = useSearchLimit();
   
   const { 
@@ -68,8 +74,10 @@ export default function ChatDashboard() {
       greeting = "Good evening";
     }
     
-    // Add user name if available
-    if (user?.user_metadata?.name) {
+    // Add user name if available - prioritize profile username
+    if (profile?.username) {
+      greeting += `, ${profile.username}`;
+    } else if (user?.user_metadata?.name) {
       greeting += `, ${user.user_metadata.name}`;
     } else if (user?.email) {
       // Use the part before @ in email
@@ -78,7 +86,7 @@ export default function ChatDashboard() {
     }
     
     return greeting;
-  }, [user]);
+  }, [user, profile]);
   
   useEffect(() => {
     // Load search history from localStorage
@@ -120,24 +128,16 @@ export default function ChatDashboard() {
     }
   }, [user, getGreeting]);
   
-  // Create an observer for infinite scrolling
-  const lastDiagramRef = useCallback((node: HTMLDivElement | null) => {
-    if (!node || !hasMore || isLoading) return;
-    
-    const observer = new IntersectionObserver(
-      entries => {
-        if (entries[0].isIntersecting) {
-          console.log("Intersection observed, loading more...");
-          loadMore();
-        }
-      },
-      { threshold: 0.1 }
-    );
-    
-    observer.observe(node);
-    
-    return () => observer.disconnect();
-  }, [hasMore, isLoading, loadMore]);
+  // Update greeting when profile changes
+  useEffect(() => {
+    setUserGreeting(getGreeting());
+  }, [profile, getGreeting]);
+  
+  // Simple empty function as placeholder since we're not using intersection observer
+  const lastDiagramRef = useCallback(() => {
+    // Intentionally empty - we're not using infinite scroll anymore
+    // Only using the Load More button
+  }, []);
   
   const fetchLikedDiagrams = async () => {
     if (!user) return;
@@ -258,7 +258,7 @@ export default function ChatDashboard() {
           
           toast.success("Diagram saved to favorites");
           setShowConfetti(true);
-          setTimeout(() => setShowConfetti(false), 1500);
+          setTimeout(() => setShowConfetti(false), 3000);
         }
       }
     } catch (error) {
@@ -273,424 +273,585 @@ export default function ChatDashboard() {
     console.log("Has more:", hasMore);
   }, [results, hasMore]);
 
-  return (
-    <div className="flex flex-col min-h-screen bg-background overflow-hidden">
-      {/* Top navigation bar */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm">
-        <div className="container flex h-14 items-center">
-          <div className="flex items-center gap-2">
-            <DiagramrLogo size="sm" />
-          </div>
-          
-          <div className="flex-1"></div>
-          
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="rounded-full"
-              onClick={() => navigate('/liked')}
-            >
-              <Heart className="h-5 w-5" />
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="rounded-full"
-              onClick={() => navigate('/account')}
-            >
-              <Settings className="h-5 w-5" />
-            </Button>
-            
-            <ThemeToggle />
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="rounded-full h-9 w-9 p-0 overflow-hidden">
-                  <Avatar className="h-9 w-9 transition-all hover:ring-2 hover:ring-primary/20">
-                    <AvatarImage src="" alt={user?.email || "User"} />
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      {user?.email ? user.email.substring(0, 2).toUpperCase() : "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem disabled className="font-medium">
-                  {user?.email}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/liked')}>
-                  <Heart className="mr-2 h-4 w-4" />
-                  <span>Liked Diagrams</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/account')}>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Account</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => signOut()}>
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </header>
+  // Add effect to check for mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Rotating descriptions
+  const descriptions = [
+    "Visualize complex academic concepts",
+    "Access high-quality educational resources",
+    "Discover scientific illustrations & charts",
+    "Enhance your learning with visual aids",
+    "Find educational diagrams for your studies"
+  ];
+  
+  // Add description rotation effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentDescriptionIndex((prevIndex) => (prevIndex + 1) % descriptions.length);
+    }, 3000);
+    
+    return () => clearInterval(interval);
+  }, [descriptions.length]);
+
+  // Simplified scrolling suggestions with only the requested tags
+  const scrollingSuggestions = [
+    "human anatomy diagrams",
+    "molecular structure visualization", 
+    "physics force diagrams", 
+    "data structures and algorithms",
+    "circuit design diagrams",
+    "neural network architecture",
+    "plant cell structure",
+    "solar system model"
+  ];
+
+  // Add effect for scrolling animation with slower speed for more fluid motion
+  useEffect(() => {
+    if (!searchTerm) {
+      const scrollInterval = setInterval(() => {
+        setSuggestionScrollPosition((prev) => prev + 0.15);
+      }, 40);
       
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col">
-        <div className="container max-w-4xl mx-auto px-4 pt-8 pb-20 flex-1 flex flex-col">
-          {!searchTerm ? (
-            // Empty state with Grok-like interface
-            <div className="flex-1 flex flex-col items-center justify-center">
-              <div className="w-full max-w-2xl mx-auto text-center">
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="mb-6"
-                >
-                  <h1 className="text-4xl font-serif font-medium mb-2">{userGreeting}</h1>
-                  <p className="text-2xl text-muted-foreground">
-                    How can I help you find diagrams today?
-                  </p>
-                </motion.div>
+      return () => clearInterval(scrollInterval);
+    }
+  }, [searchTerm]);
+
+  // Generate typing suggestions based on input
+  useEffect(() => {
+    if (query.trim().length > 1) {
+      // Filter suggestions that include the current query
+      const matchedSuggestions = [
+        ...scrollingSuggestions,
+        "Medical diagrams", 
+        "Computer networks",
+        "Database schemas",
+        "Machine learning models",
+        "Ecosystem diagrams",
+        "System architecture",
+        "Design patterns",
+        "Web technologies",
+        "Cloud infrastructure"
+      ].filter(suggestion => 
+        suggestion.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 5);
+      
+      setTypingSuggestions(matchedSuggestions);
+      setShowTypingSuggestions(matchedSuggestions.length > 0);
+    } else {
+      setShowTypingSuggestions(false);
+    }
+  }, [query, scrollingSuggestions]);
+
+  return (
+    <div className="min-h-screen font-sans antialiased relative overflow-hidden bg-transparent">
+      {/* Enhanced animated background gradients for premium feel */}
+      <div className="fixed inset-0 bg-gradient-to-br from-background/80 via-background to-blue-950/10 z-[-2]" />
+      
+      <motion.div
+        className="fixed right-0 top-0 w-full h-full bg-blue-500/5 blur-[120px] z-[-1]"
+        animate={{
+          borderRadius: [
+            '70% 30% 70% 30% / 30% 30% 70% 70%',
+            '60% 40% 60% 40% / 40% 30% 70% 60%',
+            '70% 30% 70% 30% / 30% 30% 70% 70%'
+          ],
+          opacity: [0.5, 0.7, 0.5]
+        }}
+        transition={{
+          duration: 15,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      />
+      
+      <motion.div
+        className="fixed left-0 bottom-0 w-1/2 h-1/2 bg-purple-500/5 blur-[120px] z-[-1]"
+        animate={{
+          borderRadius: [
+            '30% 70% 30% 70% / 70% 30% 70% 30%',
+            '40% 60% 40% 60% / 60% 40% 60% 40%',
+            '30% 70% 30% 70% / 70% 30% 70% 30%'
+          ],
+          x: [0, -20, 0],
+          y: [0, 20, 0]
+        }}
+        transition={{
+          duration: 18,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      />
+      
+      {/* Additional subtle gradient blob for premium feel */}
+      <motion.div
+        className="fixed left-1/4 top-1/3 w-1/3 h-1/3 bg-primary/3 blur-[150px] z-[-1]"
+        animate={{
+          scale: [1, 1.2, 1],
+          opacity: [0.3, 0.5, 0.3],
+          x: [0, 30, 0]
+        }}
+        transition={{
+          duration: 25,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      />
+      
+      <Header />
+      
+      <main className="flex-1">
+        {!searchTerm && (
+          <div className="flex flex-col items-center justify-center min-h-[80vh] container max-w-2xl mx-auto px-4 md:px-6 py-4">
+            <div className="text-center mb-16">
+              <motion.h1 
+                className="text-[28px] md:text-[32px] font-normal mb-2 tracking-tight text-foreground"
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                {userGreeting}
+              </motion.h1>
+              
+              {/* Animated rotating descriptions */}
+              <motion.div
+                className="h-6 overflow-hidden relative"
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentDescriptionIndex}
+                    className="text-lg md:text-xl text-muted-foreground/70 font-normal"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -20, opacity: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    {descriptions[currentDescriptionIndex]}
+                  </motion.div>
+                </AnimatePresence>
+              </motion.div>
+            </div>
+            
+            <motion.div 
+              className="w-full max-w-2xl mx-auto mb-12 relative"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <div className="relative z-10">
+                {/* Subtle glow effect behind input */}
+                <div className="absolute -inset-3 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-[28px] blur-xl opacity-70"></div>
                 
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="mb-10"
-                >
-                  <div className="relative w-full mb-8">
-                    <div className="relative flex items-center">
-                      <Input
-                        ref={inputRef}
-                        type="text"
-                        placeholder="What diagrams are you looking for?"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        className="w-full pl-12 pr-14 py-7 text-lg rounded-2xl border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 shadow-md bg-background"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && query.trim()) {
-                            handleSearch(query);
-                          }
-                        }}
-                      />
-                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-                      
-                      {query ? (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="absolute right-4 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                          onClick={() => setQuery("")}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      ) : null}
-                    </div>
+                <div className="flex items-center relative overflow-hidden rounded-[22px] shadow-md border border-border/40 focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/20 dark:border-gray-700/50 bg-background/90 dark:bg-[#1d1e20]/90 backdrop-blur-sm">
+                  <Input
+                    ref={inputRef}
+                    type="text"
+                    placeholder="What diagrams are you looking for?"
+                    value={query}
+                    onChange={(e) => {
+                      setQuery(e.target.value);
+                      // Immediately show suggestions if at least 2 characters typed
+                      if (e.target.value.trim().length > 1) {
+                        setShowTypingSuggestions(true);
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSearch(query);
+                        setShowTypingSuggestions(false);
+                      }
+                    }}
+                    className="w-full pl-14 pr-28 py-7 text-base md:text-lg rounded-[22px] border-0 shadow-none focus:ring-0 focus:outline-none dark:bg-transparent"
+                  />
+                  <div className="absolute left-5 top-1/2 transform -translate-y-1/2">
+                    <Search className="text-primary/80 h-5 w-5" />
                   </div>
+                  
+                  {query && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuery('');
+                        setShowTypingSuggestions(false);
+                      }}
+                      className="absolute right-24 top-1/2 transform -translate-y-1/2 p-1.5 hover:bg-muted/50 rounded-full"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground/70" />
+                    </button>
+                  )}
                   
                   <Button
-                    onClick={() => handleSearch(query)}
+                    onClick={() => {
+                      handleSearch(query);
+                      setShowTypingSuggestions(false);
+                    }}
                     disabled={!query.trim() || isLoading}
-                    className="px-8 py-6 text-base rounded-xl"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 rounded-full px-6 py-2.5 bg-primary/90 hover:bg-primary dark:bg-primary/90 dark:hover:bg-primary shadow-sm"
                   >
                     {isLoading ? (
-                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
                     ) : (
-                      <Search className="h-5 w-5 mr-2" />
+                      <span className="font-normal">Search</span>
                     )}
-                    Search Diagrams
                   </Button>
-                  
-                  <div className="mt-4">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-muted-foreground hover:text-primary"
-                      onClick={() => setShowTips(true)}
-                    >
-                      <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                      Search Tips
-                    </Button>
-                  </div>
-                </motion.div>
+                </div>
                 
-                {/* Recent searches */}
-                {searchHistory.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
+                {/* Enhanced Typing suggestions */}
+                {showTypingSuggestions && (
+                  <motion.div 
+                    className="absolute left-0 right-0 top-full mt-2 bg-background/95 dark:bg-[#1d1e20]/95 backdrop-blur-sm rounded-xl shadow-sm border border-border/30 dark:border-gray-700/50 py-2 z-20"
+                    initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
-                    className="mt-6"
+                    exit={{ opacity: 0, y: -10 }}
                   >
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                      <div className="h-px flex-1 bg-border/50"></div>
-                      <span className="text-sm text-muted-foreground px-2">Recent Searches</span>
-                      <div className="h-px flex-1 bg-border/50"></div>
-                    </div>
-                    
-                    <div className="flex flex-wrap justify-center gap-2 max-w-xl mx-auto">
-                      {searchHistory.slice(0, 5).map((item, index) => (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, y: 10 }}
+                    <ul className="max-h-64 overflow-auto">
+                      {typingSuggestions.map((suggestion, index) => (
+                        <motion.li 
+                          key={suggestion} 
+                          className="px-4 py-2 hover:bg-muted/50 dark:hover:bg-gray-800/50 cursor-pointer"
+                          initial={{ opacity: 0, x: -5 }}
                           animate={{ 
                             opacity: 1, 
-                            y: 0,
-                            transition: { delay: 0.4 + (index * 0.1) }
+                            x: 0,
+                            transition: { delay: index * 0.05 }
                           }}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
+                          onClick={() => {
+                            handleSearch(suggestion);
+                            setShowTypingSuggestions(false);
+                          }}
                         >
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="rounded-full text-sm"
-                            onClick={() => handleSearch(item)}
-                          >
-                            {item}
-                          </Button>
-                        </motion.div>
+                          <div className="flex items-center">
+                            <Search className="h-3 w-3 mr-2 text-muted-foreground/70" />
+                            <span className="font-normal">
+                              {query && suggestion.toLowerCase().includes(query.toLowerCase()) ? (
+                                <>
+                                  {suggestion.substring(0, suggestion.toLowerCase().indexOf(query.toLowerCase()))}
+                                  <span className="font-medium text-primary/80">
+                                    {query}
+                                  </span>
+                                  {suggestion.substring(suggestion.toLowerCase().indexOf(query.toLowerCase()) + query.length)}
+                                </>
+                              ) : (
+                                suggestion
+                              )}
+                            </span>
+                          </div>
+                        </motion.li>
                       ))}
-                    </div>
+                    </ul>
                   </motion.div>
                 )}
-
-                {/* Popular searches bento grid */}
-                <PopularSearches onSelect={handleSearch} />
               </div>
-            </div>
-          ) : (
-            // Results section
-            <div className="w-full">
-              <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-medium mb-1">Results for "{searchTerm}"</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Showing {results.length} diagrams
-                  </p>
+              
+              <div className="flex justify-between items-center text-xs text-muted-foreground/70 mt-3 px-2">
+                <div className="flex items-center">
+                  <Info className="h-3 w-3 mr-1" />
+                  <span>
+                    {remainingSearches !== undefined ? 
+                      `${remainingSearches} searches remaining today` : 
+                      "Unlimited searches"}
+                  </span>
                 </div>
+                
+                <button 
+                  onClick={() => setShowTips(true)}
+                  className="flex items-center hover:text-primary/80 transition-colors"
+                >
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  <span>Search tips</span>
+                </button>
+              </div>
+            </motion.div>
+            
+            {/* Example/recent searches */}
+            <motion.div
+              className="w-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              {/* Single row of scrolling suggestions */}
+              <div className="w-full max-w-xl mx-auto">
+                <motion.div
+                  className="flex overflow-hidden py-2"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                  <div 
+                    className="flex gap-3"
+                    style={{
+                      width: "300%",
+                      transform: `translateX(-${suggestionScrollPosition % 66.6}%)`,
+                      transition: "transform 30s linear infinite"
+                    }}
+                  >
+                    {[...scrollingSuggestions, ...scrollingSuggestions, ...scrollingSuggestions].map((suggestion, index) => (
+                      <motion.div
+                        key={`${suggestion}-${index}`}
+                        whileHover={{ 
+                          scale: 1.08,
+                          rotate: [0, 1, 0, -1, 0],
+                          transition: { rotate: { repeat: 0, duration: 0.3 } }
+                        }}
+                        whileTap={{ scale: 0.95 }}
+                        className="origin-center"
+                      >
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-full text-sm py-2 px-4 h-auto border-primary/20 hover:border-primary/60 hover:bg-primary/5 whitespace-nowrap dark:border-gray-600 dark:bg-gray-800/60 dark:hover:bg-gray-800"
+                          onClick={() => handleSearch(suggestion)}
+                        >
+                          {suggestion}
+                        </Button>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+        
+        {searchTerm && (
+          <div className="container max-w-7xl mx-auto px-4 py-6">
+            <div className="flex flex-wrap items-center gap-3 mb-6">
+              {/* Back button */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full gap-1 border-border/40 dark:border-gray-700/60"
+                onClick={handleNewSearch}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>New Search</span>
+              </Button>
+              
+              {/* Current search term with highlight */}
+              <div className="text-lg sm:text-xl font-medium flex items-center">
+                <span className="text-sm text-muted-foreground mr-2">Results for</span>
+                <span className="text-foreground">{searchTerm}</span>
+              </div>
+
+              {/* Tag filter */}
+              {selectedTagFilter && (
+                <Badge
+                  variant="outline"
+                  className="ml-2 rounded-full pl-2 pr-1 py-1 border-primary/30 bg-primary/5 hover:bg-primary/10 flex items-center gap-1 text-xs"
+                >
+                  <span>{selectedTagFilter}</span>
+                  <button
+                    className="rounded-full w-4 h-4 flex items-center justify-center"
+                    onClick={() => setSelectedTagFilter(null)}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              
+              {/* Remaining searches badge */}
+              {remainingSearches !== undefined && remainingSearches < 10 && (
+                <Badge variant="outline" className="bg-background/50 dark:bg-gray-900/50 text-xs ml-auto">
+                  {remainingSearches} searches left today
+                </Badge>
+              )}
+            </div>
+            
+            <ResultsSection 
+              results={results}
+              isLoading={isLoading}
+              searchTerm={searchTerm}
+              lastDiagramRef={lastDiagramRef}
+              onLike={handleLikeDiagram}
+              likedDiagrams={likedDiagrams}
+              selectedTagFilter={selectedTagFilter}
+              onTagFilterSelect={setSelectedTagFilter}
+              hasMore={hasMore}
+              loadMore={loadMore}
+              error={error}
+            />
+            
+            {/* Load more button */}
+            {results.length > 0 && hasMore && !isLoading && (
+              <div className="flex justify-center mt-8 mb-4">
                 <Button 
                   variant="outline" 
-                  onClick={handleNewSearch}
-                  className="self-start"
+                  size="lg"
+                  className="rounded-full border-primary/30 bg-primary/5 hover:bg-primary/10 dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/20"
+                  onClick={loadMore}
                 >
-                  New Search
+                  Load more results
+                  <ArrowDown className="ml-2 h-4 w-4" />
                 </Button>
               </div>
-              
-              {/* Debug info for load more troubleshooting */}
-              {/* <div className="text-xs text-muted-foreground mb-4">
-                Results: {results.length} | Has more: {hasMore ? "Yes" : "No"} | Loading: {isLoading ? "Yes" : "No"}
-              </div> */}
-              
-              {/* Bento grid layout for search results */}
-              {results.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-                  {results.map((diagram, index) => {
-                    // Add ref to last item for infinite scroll
-                    const isLastItem = index === results.length - 1;
-                    
-                    return (
-                      <motion.div 
-                        key={diagram.id}
-                        ref={isLastItem ? lastDiagramRef : null}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ 
-                          opacity: 1, 
-                          y: 0,
-                          transition: { 
-                            delay: Math.min(0.1 * (index % 6), 0.5)
-                          }
-                        }}
-                        className="group relative"
-                      >
-                        <div className="diagram-card overflow-hidden rounded-xl border hover:border-primary/50 transition-all">
-                          <div className="diagram-card-image">
-                            <img 
-                              src={diagram.imageSrc} 
-                              alt={diagram.title}
-                              className="object-cover w-full h-full aspect-video"
-                              loading={index < 6 ? "eager" : "lazy"}
-                            />
-                            
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            
-                            <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <h3 className="text-white font-medium line-clamp-1">{diagram.title}</h3>
-                            </div>
-                            
-                            <Button
-                              variant="default"
-                              size="icon"
-                              className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 h-8 w-8 ${
-                                likedDiagrams.has(String(diagram.id)) ? 'bg-primary/90 hover:bg-primary/80' : 'bg-primary/80 hover:bg-primary'
-                              }`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleLikeDiagram(diagram.id);
-                              }}
-                            >
-                              <Heart 
-                                className={`h-4 w-4 ${likedDiagrams.has(String(diagram.id)) ? 'fill-white' : ''}`} 
-                              />
-                            </Button>
-                          </div>
-                          
-                          <div className="p-3">
-                            <h3 className="font-medium line-clamp-1 mb-1">{diagram.title}</h3>
-                            <div className="flex gap-1 flex-wrap mt-2">
-                              {diagram.tags && diagram.tags.slice(0, 3).map((tag: string, tagIndex: number) => (
-                                <Button
-                                  key={tagIndex}
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-6 px-2 text-xs rounded-full border-primary/30 hover:bg-primary/10"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedTagFilter(tag);
-                                  }}
-                                >
-                                  {tag}
-                                </Button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              ) : isLoading ? (
-                <div className="flex justify-center items-center py-20">
-                  <div className="flex flex-col items-center">
-                    <div className="h-10 w-10 rounded-full border-4 border-primary/30 border-t-primary animate-spin mb-4"></div>
-                    <p className="text-muted-foreground">Searching for diagrams...</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex justify-center items-center py-20">
-                  <div className="text-center">
-                    <p className="text-lg font-medium mb-2">No diagrams found</p>
-                    <p className="text-muted-foreground mb-6">Try a different search term or check out some suggested topics</p>
-                    <Button onClick={handleNewSearch}>Try Another Search</Button>
-                  </div>
-                </div>
-              )}
-              
-              {/* Load more indicator */}
-              {hasMore && results.length > 0 && (
-                <div className="flex justify-center py-8">
-                  {isLoading ? (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span>Loading more...</span>
-                    </div>
-                  ) : (
-                    <Button 
-                      variant="outline" 
-                      onClick={loadMore}
-                      className="px-8"
-                    >
-                      Load More
-                    </Button>
-                  )}
-                </div>
-              )}
-              
-              {/* Debug element for intersection observer */}
-              <div ref={resultsEndRef} className="h-4 mb-8"></div>
-            </div>
-          )}
-        </div>
-        
-        {/* Search input at bottom for quick access */}
-        {searchTerm && (
-          <div className="sticky bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t z-40">
-            <div className="container max-w-2xl mx-auto">
-              <div className="relative flex items-center">
-                <Input
-                  ref={inputRef}
-                  type="text"
-                  placeholder="Search for more diagrams..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="w-full pl-12 pr-16 py-5 rounded-full border-border/50 focus:border-primary focus:ring-1 focus:ring-primary shadow-md"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && query.trim()) {
-                      handleSearch(query);
-                    }
-                  }}
-                />
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-                <Button
-                  onClick={() => handleSearch(query)}
-                  disabled={!query.trim() || isLoading}
-                  size="icon"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full h-10 w-10"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <ArrowUp className="h-5 w-5" />
-                  )}
-                </Button>
-              </div>
-            </div>
+            )}
           </div>
         )}
       </main>
       
-      {/* Confetti celebration */}
-      {showConfetti && <ConfettiCelebration particleCount={25} duration={1500} onComplete={() => setShowConfetti(false)} />}
+      {showConfetti && (
+        <ConfettiCelebration 
+          duration={3000} 
+          particleCount={150} 
+          onComplete={() => setShowConfetti(false)} 
+        />
+      )}
       
-      {/* Tips dialog */}
       <Dialog open={showTips} onOpenChange={setShowTips}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Tips for better search results</DialogTitle>
+            <DialogTitle>Tips for better results</DialogTitle>
             <DialogDescription>
-              Get the most out of Diagramr with these search strategies
+              Here are some tips to get better diagram search results
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="h-[300px] pr-4">
-            <div className="space-y-4 pr-2">
-              <div>
-                <h3 className="font-medium mb-1">Be specific about diagram type</h3>
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-4 px-1 py-2">
+              <div className="space-y-2">
+                <h3 className="font-medium">Be specific</h3>
                 <p className="text-sm text-muted-foreground">
-                  Example: "UML class diagram for e-commerce" instead of just "e-commerce diagram"
+                  Instead of "biology diagrams", try "human respiratory system diagram"
                 </p>
               </div>
-              <div>
-                <h3 className="font-medium mb-1">Include domain or industry</h3>
+              <div className="space-y-2">
+                <h3 className="font-medium">Include the type</h3>
                 <p className="text-sm text-muted-foreground">
-                  Example: "Database schema for healthcare app" or "Network topology for financial institutions"
+                  Specify the type like "flowchart", "ER diagram", "concept map"
                 </p>
               </div>
-              <div>
-                <h3 className="font-medium mb-1">Specify complexity level</h3>
+              <div className="space-y-2">
+                <h3 className="font-medium">Use field terminology</h3>
                 <p className="text-sm text-muted-foreground">
-                  Example: "Simple flowchart for beginner programming" or "Advanced system architecture diagram"
-                </p>
-              </div>
-              <div>
-                <h3 className="font-medium mb-1">Use technical terms</h3>
-                <p className="text-sm text-muted-foreground">
-                  AI understands technical language, so use precise terminology when possible
+                  Include field-specific terms like "UML class diagram for e-commerce"
                 </p>
               </div>
             </div>
           </ScrollArea>
-          <div className="flex justify-end mt-4">
-            <Button onClick={() => setShowTips(false)}>Got it</Button>
-          </div>
         </DialogContent>
       </Dialog>
+      
+      {/* Mobile search input fixed to bottom */}
+      {isMobile && !searchTerm && (
+        <motion.div 
+          className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t border-border/40 dark:border-gray-800/40 z-10"
+          initial={{ y: 100 }}
+          animate={{ y: 0 }}
+          transition={{ type: "spring", damping: 20, stiffness: 100 }}
+        >
+          <div className="relative">
+            <div className="flex items-center relative overflow-hidden rounded-[22px] shadow-md border border-border/40 focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/20 dark:border-gray-700/50 bg-background/90 dark:bg-[#1d1e20]/90 backdrop-blur-sm">
+              <Input
+                type="text"
+                placeholder="What diagrams are you looking for?"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  if (e.target.value.trim().length > 1) {
+                    setShowTypingSuggestions(true);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch(query);
+                    setShowTypingSuggestions(false);
+                  }
+                }}
+                className="w-full pl-14 pr-28 py-6 text-base rounded-[22px] border-0 shadow-none focus:ring-0 focus:outline-none dark:bg-transparent"
+              />
+              <div className="absolute left-5 top-1/2 transform -translate-y-1/2">
+                <Search className="text-primary/80 h-5 w-5" />
+              </div>
+              
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery('');
+                    setShowTypingSuggestions(false);
+                  }}
+                  className="absolute right-24 top-1/2 transform -translate-y-1/2 p-1.5 hover:bg-muted/50 rounded-full"
+                >
+                  <X className="h-4 w-4 text-muted-foreground/70" />
+                </button>
+              )}
+              
+              <Button
+                onClick={() => {
+                  handleSearch(query);
+                  setShowTypingSuggestions(false);
+                }}
+                disabled={!query.trim() || isLoading}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 rounded-full px-6 py-2.5 bg-primary/90 hover:bg-primary dark:bg-primary/90 dark:hover:bg-primary shadow-sm"
+              >
+                {isLoading ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                ) : (
+                  <span className="font-normal">Search</span>
+                )}
+              </Button>
+            </div>
+            
+            {/* Typing suggestions for mobile */}
+            {showTypingSuggestions && (
+              <motion.div 
+                className="absolute left-0 right-0 bottom-full mb-2 bg-background/95 dark:bg-[#1d1e20]/95 backdrop-blur-sm rounded-xl shadow-sm border border-border/30 dark:border-gray-700/50 py-2 z-20"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+              >
+                <ul className="max-h-64 overflow-auto">
+                  {typingSuggestions.map((suggestion, index) => (
+                    <motion.li 
+                      key={suggestion} 
+                      className="px-4 py-2 hover:bg-muted/50 dark:hover:bg-gray-800/50 cursor-pointer"
+                      initial={{ opacity: 0, x: -5 }}
+                      animate={{ 
+                        opacity: 1, 
+                        x: 0,
+                        transition: { delay: index * 0.05 }
+                      }}
+                      onClick={() => {
+                        handleSearch(suggestion);
+                        setShowTypingSuggestions(false);
+                      }}
+                    >
+                      <div className="flex items-center">
+                        <Search className="h-3 w-3 mr-2 text-muted-foreground/70" />
+                        <span className="font-normal">
+                          {query && suggestion.toLowerCase().includes(query.toLowerCase()) ? (
+                            <>
+                              {suggestion.substring(0, suggestion.toLowerCase().indexOf(query.toLowerCase()))}
+                              <span className="font-medium text-primary/80">
+                                {query}
+                              </span>
+                              {suggestion.substring(suggestion.toLowerCase().indexOf(query.toLowerCase()) + query.length)}
+                            </>
+                          ) : (
+                            suggestion
+                          )}
+                        </span>
+                      </div>
+                    </motion.li>
+                  ))}
+                </ul>
+              </motion.div>
+            )}
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }
