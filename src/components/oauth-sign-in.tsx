@@ -26,16 +26,20 @@ export function OAuthSignIn({
         <Button 
           variant="outline" 
           type="button" 
-          disabled={true}
+          disabled={isLoading}
+          onClick={onGoogleLogin}
           className={`w-full transition-all duration-300 flex items-center justify-center ${
             isPremium 
               ? "border-primary/20 hover:border-primary/30 hover:bg-primary/5 hover:shadow-sm" 
               : "hover:border-primary/30 hover:shadow-sm"
           }`}
         >
-          <Icons.google className="mr-2 h-4 w-4" />
+          {isLoading ? (
+            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Icons.google className="mr-2 h-4 w-4" />
+          )}
           Continue with Google
-          <span className="ml-2 text-xs font-medium bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Coming Soon</span>
         </Button>
       </motion.div>
 
