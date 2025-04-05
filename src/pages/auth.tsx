@@ -19,29 +19,69 @@ const authSchema = z.object({
   password: z.string().min(8, { message: "Password must be at least 8 characters" }),
 });
 
-// Maximum number of accounts allowed
-const MAX_ACCOUNTS = 25;
+// Batch management settings
+const BATCH_SIZE = 25; // Number of accounts per batch
+const INITIAL_BATCH_COUNT = 1; // Starting with batch #1
 
-// Temporary waitlist storage (in production, this would be in your database)
+// Temporary waitlist storage and batch management
+const getWaitlist = (): { emails: string[], currentBatch: number, batchLimit: number } => {
+  try {
+    const waitlistJSON = localStorage.getItem('waitlist') || JSON.stringify({
+      emails: [],
+      currentBatch: INITIAL_BATCH_COUNT,
+      batchLimit: BATCH_SIZE * INITIAL_BATCH_COUNT
+    });
+    return JSON.parse(waitlistJSON);
+  } catch (error) {
+    console.error("Error getting waitlist:", error);
+    return { emails: [], currentBatch: INITIAL_BATCH_COUNT, batchLimit: BATCH_SIZE * INITIAL_BATCH_COUNT };
+  }
+};
+
 const saveToWaitlist = (email: string): boolean => {
   try {
     // Get existing waitlist
-    const waitlistJSON = localStorage.getItem('waitlist') || '[]';
-    const waitlist = JSON.parse(waitlistJSON) as string[];
+    const waitlist = getWaitlist();
     
     // Check if email is already in waitlist
-    if (waitlist.includes(email)) {
+    if (waitlist.emails.includes(email)) {
       return false;
     }
     
     // Add email to waitlist
-    waitlist.push(email);
+    waitlist.emails.push(email);
     localStorage.setItem('waitlist', JSON.stringify(waitlist));
     return true;
   } catch (error) {
     console.error("Error saving to waitlist:", error);
     return false;
   }
+};
+
+// Update batch limits when we decide to accept a new batch
+const increaseAccountLimit = (): number => {
+  try {
+    const waitlist = getWaitlist();
+    waitlist.currentBatch += 1;
+    waitlist.batchLimit = BATCH_SIZE * waitlist.currentBatch;
+    localStorage.setItem('waitlist', JSON.stringify(waitlist));
+    return waitlist.batchLimit;
+  } catch (error) {
+    console.error("Error increasing account limit:", error);
+    return BATCH_SIZE * INITIAL_BATCH_COUNT;
+  }
+};
+
+// Check if user count exceeds current batch limit
+const isRegistrationOpen = (userCount: number): boolean => {
+  const { batchLimit } = getWaitlist();
+  return userCount < batchLimit;
+};
+
+// Get current batch limit
+const getCurrentBatchLimit = (): number => {
+  const { batchLimit } = getWaitlist();
+  return batchLimit;
 };
 
 export default function Auth() {
@@ -59,6 +99,7 @@ export default function Auth() {
   const [isWaitlistMode, setIsWaitlistMode] = useState(false);
   const [waitlistEmail, setWaitlistEmail] = useState("");
   const [isSubmittingWaitlist, setIsSubmittingWaitlist] = useState(false);
+  const [currentBatchLimit, setCurrentBatchLimit] = useState(getCurrentBatchLimit());
   
   const returnTo = location.state?.returnTo || "/dashboard";
 
@@ -90,8 +131,16 @@ export default function Auth() {
           return;
         }
         
-        console.log(`Current user count: ${count} of ${MAX_ACCOUNTS} allowed`);
+        const batchLimit = getCurrentBatchLimit();
+        setCurrentBatchLimit(batchLimit);
+        
+        console.log(`Current user count: ${count} of ${batchLimit} allowed (Batch size: ${BATCH_SIZE})`);
         setCurrentUserCount(count || 0);
+        
+        // Auto update to waitlist mode if registration is closed
+        if (count && !isRegistrationOpen(count)) {
+          setIsWaitlistMode(isSignUp);
+        }
       } catch (error) {
         console.error("Error checking user count:", error);
       } finally {
@@ -100,7 +149,7 @@ export default function Auth() {
     };
     
     checkUserCount();
-  }, [user, navigate, returnTo]);
+  }, [user, navigate, returnTo, isSignUp]);
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,10 +176,10 @@ export default function Auth() {
       const { supabase } = await import("@/integrations/supabase/client");
       
       if (isSignUp) {
-        // Check if we've reached the user limit
-        if (currentUserCount >= MAX_ACCOUNTS) {
+        // Check if we've reached the current batch limit
+        if (!isRegistrationOpen(currentUserCount)) {
           toast.error("Registration limit reached", {
-            description: "We've reached our account limit. Please join our waitlist."
+            description: `We've reached our limit of ${currentBatchLimit} accounts for the current batch. Please join our waitlist.`
           });
           setIsWaitlistMode(true);
           setIsSubmitting(false);
@@ -232,11 +281,11 @@ export default function Auth() {
       
       if (!isNewEmail) {
         toast.info("You're already on our waitlist", {
-          description: "We'll notify you when we have available spots"
+          description: "We'll notify you when we release the next batch of accounts"
         });
       } else {
         toast.success("Added to waitlist", {
-          description: "We'll notify you when we have available spots"
+          description: "We'll notify you when we release the next batch of accounts"
         });
         setWaitlistEmail("");
       }
@@ -246,6 +295,19 @@ export default function Auth() {
     } finally {
       setIsSubmittingWaitlist(false);
     }
+  };
+
+  const startNewBatch = () => {
+    const newLimit = increaseAccountLimit();
+    setCurrentBatchLimit(newLimit);
+    toast.success(`New batch opened!`, {
+      description: `Registration limit increased to ${newLimit} accounts`
+    });
+    setIsWaitlistMode(false);
+  };
+
+  const getBatchNumber = () => {
+    return Math.ceil(currentBatchLimit / BATCH_SIZE);
   };
 
   return (
@@ -267,19 +329,19 @@ export default function Auth() {
             </CardTitle>
             <CardDescription className="text-center text-muted-foreground/90">
               {isWaitlistMode
-                ? "Get notified when we have available spots"
+                ? "Get notified when we release the next batch of accounts"
                 : isSignUp 
                   ? "Create your Diagramr account to start finding amazing diagrams" 
                   : "Enter your credentials to access your account"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {isSignUp && !isWaitlistMode && !isLoadingUserCount && currentUserCount >= MAX_ACCOUNTS && (
+            {isSignUp && !isWaitlistMode && !isLoadingUserCount && !isRegistrationOpen(currentUserCount) && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Registration Limit Reached</AlertTitle>
+                <AlertTitle>Batch {getBatchNumber()} Limit Reached</AlertTitle>
                 <AlertDescription>
-                  We've reached our account limit due to high demand. Please join our waitlist and we'll notify you when spots become available.
+                  We've reached our account limit of {currentBatchLimit} for the current batch. Please join our waitlist and we'll notify you when the next batch opens.
                 </AlertDescription>
               </Alert>
             )}
@@ -309,12 +371,12 @@ export default function Auth() {
                       Joining Waitlist...
                     </>
                   ) : (
-                    <>Join Waitlist</>
+                    <>Join Waitlist for Batch {getBatchNumber() + 1}</>
                   )}
                 </Button>
                 
                 <p className="text-xs text-center text-muted-foreground mt-2">
-                  We're working at full capacity to handle the high demand. We'll notify you as soon as spots become available.
+                  We're working at full capacity to handle the high demand. We'll notify you as soon as the next batch of accounts opens.
                 </p>
                 
                 <div className="text-center">
@@ -329,6 +391,21 @@ export default function Auth() {
                     Already have an account? Sign in
                   </Button>
                 </div>
+
+                {/* Admin tools - in production, replace with proper admin-only access */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+                    <p className="text-xs text-muted-foreground mb-2">Admin Tools (Development Only)</p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={startNewBatch}
+                      className="w-full text-xs"
+                    >
+                      Start Batch {getBatchNumber() + 1} (Increase to {currentBatchLimit + BATCH_SIZE} accounts)
+                    </Button>
+                  </div>
+                )}
               </form>
             ) : (
               <div className="space-y-4">
@@ -367,7 +444,7 @@ export default function Auth() {
                   <Button 
                     type="submit" 
                     className="w-full shadow-md hover:shadow-lg transition-all duration-200"
-                    disabled={isSubmitting || (isSignUp && currentUserCount >= MAX_ACCOUNTS)}
+                    disabled={isSubmitting || (isSignUp && !isRegistrationOpen(currentUserCount))}
                   >
                     {isSubmitting ? (
                       <>
@@ -378,6 +455,15 @@ export default function Auth() {
                       <>{isSignUp ? "Create Account" : "Sign In"}</>
                     )}
                   </Button>
+
+                  {isSignUp && !isLoadingUserCount && (
+                    <p className="text-xs text-center text-muted-foreground/90">
+                      {isRegistrationOpen(currentUserCount) 
+                        ? `Batch ${getBatchNumber()}: ${currentUserCount} of ${currentBatchLimit} accounts created`
+                        : `Batch ${getBatchNumber()} is full (${currentBatchLimit} accounts). Join the waitlist for the next batch.`
+                      }
+                    </p>
+                  )}
                 </form>
               </div>
             )}
@@ -470,10 +556,10 @@ export default function Auth() {
                       variant="link" 
                       className="p-0 h-auto font-medium"
                       onClick={() => {
-                        if (currentUserCount >= MAX_ACCOUNTS) {
+                        if (!isRegistrationOpen(currentUserCount)) {
                           setIsWaitlistMode(true);
                           toast.info("Registration limit reached", {
-                            description: "We've reached our account limit. Please join our waitlist."
+                            description: `We've reached our limit of ${currentBatchLimit} accounts for the current batch. Please join our waitlist.`
                           });
                         } else {
                           setIsSignUp(true);
