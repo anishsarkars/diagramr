@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { ApiStatusMonitor } from '@/components/api-status-monitor';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,7 +12,7 @@ const ADMIN_USERS = [
 ];
 
 export default function ApiStatusPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [isAuthorized, setIsAuthorized] = useState(true); // Simplified for now
   const [isChecking, setIsChecking] = useState(false);
 
@@ -39,7 +39,7 @@ export default function ApiStatusPage() {
         <div className="py-10 flex flex-col items-center justify-center">
           <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
           <p className="mb-6">You are not authorized to view this page.</p>
-          <Button onClick={() => router.push('/')}>Return to Home</Button>
+          <Button onClick={() => navigate('/')}>Return to Home</Button>
         </div>
       </div>
     );
@@ -50,7 +50,7 @@ export default function ApiStatusPage() {
       <div className="py-10">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <Button variant="outline" onClick={() => router.push('/')}>Back to App</Button>
+          <Button variant="outline" onClick={() => navigate('/')}>Back to App</Button>
         </div>
 
         <Tabs defaultValue="api-status">
