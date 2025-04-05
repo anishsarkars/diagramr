@@ -8,15 +8,20 @@ import { toast } from "sonner";
 import { BadgeLayout } from "@/components/badge-layout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { DiagramrLogo } from "@/components/diagramr-logo";
-import { Loader2, Users } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { OAuthSignIn } from "@/components/oauth-sign-in";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { WaitlistForm } from "@/components/waitlist-form";
+import { supabase } from "@/integrations/supabase/client";
 
 const authSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(8, { message: "Password must be at least 8 characters" }),
 });
+
+// Maximum number of users allowed
+const USER_LIMIT = 70;
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -28,10 +33,8 @@ export default function Auth() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOAuthLoading, setIsOAuthLoading] = useState(false);
-  const [isWaitlistMode, setIsWaitlistMode] = useState(false);
-  const [userCount, setUserCount] = useState(43);
-  const [isCheckingUsers, setIsCheckingUsers] = useState(true);
-  const USER_LIMIT = 70;
+  const [userCount, setUserCount] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   const returnTo = location.state?.returnTo || "/dashboard";
 
@@ -47,38 +50,27 @@ export default function Auth() {
       navigate(returnTo, { replace: true });
     }
 
-    // Check current user count
-    const checkUserLimit = async () => {
+    // Get current user count
+    const fetchUserCount = async () => {
       try {
-        setIsCheckingUsers(true);
-        const { supabase } = await import("@/integrations/supabase/client");
         const { count, error } = await supabase
           .from('profiles')
           .select('*', { count: 'exact', head: true });
         
         if (error) {
-          console.error("Error checking user count:", error);
-          return;
-        }
-        
-        setUserCount(count || 43);
-        
-        // Set waitlist mode if count exceeds or equals limit
-        if (count && count >= USER_LIMIT) {
-          setIsWaitlistMode(true);
-          // If trying to sign up, show waitlist mode
-          if (urlParams.get("signup") === "true") {
-            setIsSignUp(true);
-          }
+          console.error("Error fetching user count:", error);
+        } else {
+          console.log("Current user count:", count);
+          setUserCount(count || 0);
         }
       } catch (error) {
-        console.error("Error checking user count:", error);
+        console.error("Failed to fetch user count:", error);
       } finally {
-        setIsCheckingUsers(false);
+        setIsLoading(false);
       }
     };
-    
-    checkUserLimit();
+
+    fetchUserCount();
   }, [user, navigate, returnTo]);
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
@@ -106,23 +98,13 @@ export default function Auth() {
       const { supabase } = await import("@/integrations/supabase/client");
       
       if (isSignUp) {
-        // Check user limit before signup
-        const { count, error: countError } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true });
-          
-        if (countError) {
-          console.error("Error checking user count:", countError);
-          throw new Error("Unable to process registration at this time");
-        }
-        
-        if (count && count >= USER_LIMIT) {
-          setIsWaitlistMode(true);
-          setUserCount(count);
+        // Check if user limit reached
+        if (userCount !== null && userCount >= USER_LIMIT) {
+          toast.error("We've reached our user limit. Please join the waitlist.");
           setIsSubmitting(false);
           return;
         }
-      
+
         console.log("Starting sign up process");
         // Handle sign up with Supabase
         const { data, error } = await supabase.auth.signUp({
@@ -149,6 +131,9 @@ export default function Auth() {
             });
             
           if (profileError) console.error("Profile creation error:", profileError);
+          
+          // Increment user count
+          setUserCount(prev => prev !== null ? prev + 1 : null);
           
           // Check if email confirmation is required
           if (data.session) {
@@ -202,79 +187,50 @@ export default function Auth() {
     }
   };
 
-  const handleJoinWaitlist = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    try {
-      if (!email) {
-        setValidationErrors({
-          email: "Please enter your email address"
-        });
-        return;
-      }
-      
-      const emailCheck = z.string().email().safeParse(email);
-      if (!emailCheck.success) {
-        setValidationErrors({
-          email: "Please enter a valid email address"
-        });
-        return;
-      }
-      
-      setValidationErrors({});
-
-      // Add to waitlist table
-      const { supabase } = await import("@/integrations/supabase/client");
-      const { error } = await supabase
-        .from('waitlist')
-        .insert({ email: email });
-        
-      if (error) {
-        if (error.code === '23505') { // Unique violation
-          toast.success("You're already on our waitlist! We'll notify you when a spot opens up.");
-        } else {
-          throw error;
-        }
-      } else {
-        toast.success("You've been added to our waitlist! We'll notify you when a spot opens up.");
-      }
-      
-      setEmail("");
-    } catch (error) {
-      console.error("Waitlist error:", error);
-      toast.error("Failed to join waitlist. Please try again later.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Render waitlist UI when in waitlist mode
-  if (isSignUp && isWaitlistMode) {
+  // Show loader while checking user count
+  if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-background">
         <Header />
-        
-        <div className="flex-1 flex items-center justify-center py-8">
-          <Card className="w-[450px] max-w-[90%] shadow-xl">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="mt-2 text-sm text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show waitlist form if user limit reached
+  const showWaitlist = userCount !== null && userCount >= USER_LIMIT && isSignUp;
+
+  return (
+    <div className="flex flex-col min-h-screen bg-background">
+      <Header />
+      
+      <div className="flex-1 flex items-center justify-center py-8">
+        {showWaitlist ? (
+          <WaitlistForm />
+        ) : (
+          <Card className="w-[400px] max-w-[90%] shadow-xl">
             <CardHeader className="space-y-1 flex items-center">
               <div className="w-full flex justify-center mb-4">
                 <DiagramrLogo className="h-10 w-auto" />
               </div>
               <CardTitle className="text-2xl text-center font-serif">
-                Join Our Waitlist
+                {isSignUp ? "Create an account" : "Sign in to Diagramr"}
               </CardTitle>
               <CardDescription className="text-center text-muted-foreground/90">
-                <div className="flex justify-center items-center gap-2 mb-2 text-primary">
-                  <Users className="h-5 w-5" />
-                  <span className="font-medium">{userCount}/{USER_LIMIT} users registered</span>
-                </div>
-                We've reached our current capacity. Join our waitlist to be notified when a spot opens up.
+                {isSignUp 
+                  ? "Create your Diagramr account to start finding amazing diagrams" 
+                  : "Enter your credentials to access your account"}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-4">
-                <form onSubmit={handleJoinWaitlist} className="space-y-4">
+                <form onSubmit={handleEmailSignIn} className="space-y-4">
                   <div className="space-y-2">
                     <Input
                       id="email"
@@ -290,6 +246,21 @@ export default function Auth() {
                       <p className="text-sm text-red-500">{validationErrors.email}</p>
                     )}
                   </div>
+                  <div className="space-y-2">
+                    <Input
+                      id="password"
+                      placeholder="Password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      aria-invalid={!!validationErrors.password}
+                      className="bg-white/80 dark:bg-gray-950/80 shadow-sm border-gray-200 dark:border-gray-800"
+                    />
+                    {validationErrors.password && (
+                      <p className="text-sm text-red-500">{validationErrors.password}</p>
+                    )}
+                  </div>
                   
                   <Button 
                     type="submit" 
@@ -299,207 +270,123 @@ export default function Auth() {
                     {isSubmitting ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Joining Waitlist...
+                        {isSignUp ? "Creating Account..." : "Signing In..."}
                       </>
                     ) : (
-                      <>Join Waitlist</>
+                      <>{isSignUp ? "Create Account" : "Sign In"}</>
                     )}
                   </Button>
                 </form>
               </div>
               
-              <div className="pt-2 text-center text-sm">
-                <div>
-                  Already have an account?{" "}
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto font-medium"
-                    onClick={() => setIsSignUp(false)}
-                  >
-                    Sign in
-                  </Button>
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-card text-muted-foreground/90">Or continue with</span>
                 </div>
               </div>
+              
+              <OAuthSignIn 
+                isLoading={isOAuthLoading}
+                onGoogleLogin={async () => {
+                  try {
+                    setIsOAuthLoading(true);
+                    const { supabase } = await import("@/integrations/supabase/client");
+                    
+                    const { data, error } = await supabase.auth.signInWithOAuth({
+                      provider: 'google',
+                      options: {
+                        redirectTo: window.location.origin + '/dashboard'
+                      }
+                    });
+                    
+                    if (error) throw error;
+                    
+                    // Set flag to trigger confetti on successful redirect back
+                    setIsNewLogin(true);
+                    
+                    // The redirect happens automatically through Supabase OAuth
+                  } catch (error) {
+                    console.error("Google login error:", error);
+                    toast.error("Google login failed. Please try again.");
+                  } finally {
+                    setIsOAuthLoading(false);
+                  }
+                }}
+                onLinkedInLogin={async () => {
+                  try {
+                    setIsOAuthLoading(true);
+                    const { supabase } = await import("@/integrations/supabase/client");
+                    
+                    const { data, error } = await supabase.auth.signInWithOAuth({
+                      provider: 'linkedin',
+                      options: {
+                        redirectTo: window.location.origin + '/dashboard'
+                      }
+                    });
+                    
+                    if (error) throw error;
+                    
+                    // Set flag to trigger confetti on successful redirect back
+                    setIsNewLogin(true);
+                    
+                    // The redirect happens automatically through Supabase OAuth
+                  } catch (error) {
+                    console.error("LinkedIn login error:", error);
+                    toast.error("LinkedIn login failed. Please try again.");
+                  } finally {
+                    setIsOAuthLoading(false);
+                  }
+                }}
+              />
             </CardContent>
-          </Card>
-        </div>
-        
-        <Footer />
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Header />
-      
-      <div className="flex-1 flex items-center justify-center py-8">
-        <Card className="w-[400px] max-w-[90%] shadow-xl">
-          <CardHeader className="space-y-1 flex items-center">
-            <div className="w-full flex justify-center mb-4">
-              <DiagramrLogo className="h-10 w-auto" />
-            </div>
-            <CardTitle className="text-2xl text-center font-serif">
-              {isSignUp ? "Create an account" : "Sign in to Diagramr"}
-            </CardTitle>
-            <CardDescription className="text-center text-muted-foreground/90">
-              {isSignUp 
-                ? "Create your Diagramr account to start finding amazing diagrams" 
-                : "Enter your credentials to access your account"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-4">
-              <form onSubmit={handleEmailSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Input
-                    id="email"
-                    placeholder="Email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    aria-invalid={!!validationErrors.email}
-                    className="bg-white/80 dark:bg-gray-950/80 shadow-sm border-gray-200 dark:border-gray-800"
-                  />
-                  {validationErrors.email && (
-                    <p className="text-sm text-red-500">{validationErrors.email}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Input
-                    id="password"
-                    placeholder="Password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    aria-invalid={!!validationErrors.password}
-                    className="bg-white/80 dark:bg-gray-950/80 shadow-sm border-gray-200 dark:border-gray-800"
-                  />
-                  {validationErrors.password && (
-                    <p className="text-sm text-red-500">{validationErrors.password}</p>
-                  )}
-                </div>
-                
+            <CardFooter className="flex flex-col space-y-4">
+              <div className="text-center text-sm">
+                {isSignUp ? (
+                  <div>
+                    Already have an account?{" "}
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto font-medium"
+                      onClick={() => setIsSignUp(false)}
+                    >
+                      Sign in
+                    </Button>
+                  </div>
+                ) : (
+                  <div>
+                    Don't have an account?{" "}
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto font-medium"
+                      onClick={() => setIsSignUp(true)}
+                    >
+                      Create one
+                    </Button>
+                  </div>
+                )}
+              </div>
+              
+              {!isSignUp && (
                 <Button 
-                  type="submit" 
-                  className="w-full shadow-md hover:shadow-lg transition-all duration-200"
-                  disabled={isSubmitting}
+                  variant="link" 
+                  className="p-0 h-auto text-sm text-muted-foreground/90 font-normal"
+                  onClick={() => navigate("/reset-password")}
                 >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {isSignUp ? "Creating Account..." : "Signing In..."}
-                    </>
-                  ) : (
-                    <>{isSignUp ? "Create Account" : "Sign In"}</>
-                  )}
+                  Forgot password?
                 </Button>
-              </form>
-            </div>
-            
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-card text-muted-foreground/90">Or continue with</span>
-              </div>
-            </div>
-            
-            <OAuthSignIn 
-              isLoading={isOAuthLoading}
-              onGoogleLogin={async () => {
-                try {
-                  setIsOAuthLoading(true);
-                  const { supabase } = await import("@/integrations/supabase/client");
-                  
-                  const { data, error } = await supabase.auth.signInWithOAuth({
-                    provider: 'google',
-                    options: {
-                      redirectTo: window.location.origin + '/auth/callback'
-                    }
-                  });
-                  
-                  if (error) throw error;
-                  
-                  // Set flag to trigger confetti on successful redirect back
-                  setIsNewLogin(true);
-                  
-                  // The redirect happens automatically through Supabase OAuth
-                } catch (error) {
-                  console.error("Google login error:", error);
-                  toast.error("Google login failed. Please try again.");
-                } finally {
-                  setIsOAuthLoading(false);
-                }
-              }}
-              onLinkedInLogin={async () => {
-                try {
-                  setIsOAuthLoading(true);
-                  const { supabase } = await import("@/integrations/supabase/client");
-                  
-                  const { data, error } = await supabase.auth.signInWithOAuth({
-                    provider: 'linkedin',
-                    options: {
-                      redirectTo: window.location.origin + '/dashboard'
-                    }
-                  });
-                  
-                  if (error) throw error;
-                  
-                  // Set flag to trigger confetti on successful redirect back
-                  setIsNewLogin(true);
-                  
-                  // The redirect happens automatically through Supabase OAuth
-                } catch (error) {
-                  console.error("LinkedIn login error:", error);
-                  toast.error("LinkedIn login failed. Please try again.");
-                } finally {
-                  setIsOAuthLoading(false);
-                }
-              }}
-            />
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <div className="text-center text-sm">
-              {isSignUp ? (
-                <div>
-                  Already have an account?{" "}
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto font-medium"
-                    onClick={() => setIsSignUp(false)}
-                  >
-                    Sign in
-                  </Button>
-                </div>
-              ) : (
-                <div>
-                  Don't have an account?{" "}
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto font-medium"
-                    onClick={() => setIsSignUp(true)}
-                  >
-                    Create one
-                  </Button>
+              )}
+
+              {isSignUp && userCount !== null && (
+                <div className="text-center text-xs text-muted-foreground mt-4">
+                  <p>{USER_LIMIT - userCount} spots remaining</p>
                 </div>
               )}
-            </div>
-            
-            {!isSignUp && (
-              <Button 
-                variant="link" 
-                className="p-0 h-auto text-sm text-muted-foreground/90 font-normal"
-                onClick={() => navigate("/reset-password")}
-              >
-                Forgot password?
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
+            </CardFooter>
+          </Card>
+        )}
       </div>
       
       <Footer />

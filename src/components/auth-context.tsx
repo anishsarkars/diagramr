@@ -68,7 +68,6 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        console.log("User from initial session:", session.user);
         fetchProfile(session.user.id);
         // Store the user ID to detect changes
         setPrevUserId(session.user.id);
@@ -85,12 +84,11 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session) => {
-        console.log("Auth state change event:", event, session ? "with session" : "no session");
+        console.log("Auth state change event:", event);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          console.log("User from auth state change:", session.user);
           // Check for login, signup, or user switching
           const isUserChanged = prevUserId !== session.user.id;
           
@@ -109,8 +107,7 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
           setPrevUserId(session.user.id);
           
           // Create profile if this is a new user
-          if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
-            console.log("Creating profile if it doesn't exist for", session.user.id);
+          if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
             const profileCreated = await createProfileIfNotExists(session.user);
             if (profileCreated) {
               console.log("New profile created, showing confetti");
@@ -135,7 +132,6 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
 
   const fetchProfile = async (userId: string) => {
     try {
-      console.log("Fetching profile for user:", userId);
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -145,7 +141,6 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
       if (error) {
         if (error.code === 'PGRST116') {
           // Profile not found, attempt to create it
-          console.log("Profile not found, trying to create one");
           await createProfileIfNotExists({ id: userId });
           // Retry fetch after creation
           const { data: retryData } = await supabase
@@ -211,7 +206,6 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
 
   const createProfileIfNotExists = async (user: User | { id: string }): Promise<boolean> => {
     try {
-      console.log("Checking if profile exists for user:", user.id);
       // First check if profile exists
       const { data, error } = await supabase
         .from("profiles")
@@ -226,36 +220,21 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
       
       // If profile doesn't exist, create it
       if (!data) {
-        console.log("No profile found, creating new one");
         // Get full user data if only ID was provided
         let fullUser = user as User;
         if (!('user_metadata' in user)) {
-          console.log("Fetching full user data");
           const { data: userData } = await supabase.auth.getUser(user.id);
           if (userData?.user) {
             fullUser = userData.user;
-            console.log("Got full user data:", fullUser);
           }
         }
         
         // Use metadata name if available, otherwise use email prefix or generate random name
         let username = '';
-        let avatarUrl = null;
         
-        // For Google OAuth users
-        if (fullUser.app_metadata?.provider === 'google') {
-          console.log("Google user detected");
-          if (fullUser.user_metadata?.full_name) {
-            username = fullUser.user_metadata.full_name;
-          } else if (fullUser.user_metadata?.name) {
-            username = fullUser.user_metadata.name;
-          }
-          avatarUrl = fullUser.user_metadata?.avatar_url || null;
-        } 
         // First priority: user_metadata.name if available
-        else if (fullUser.user_metadata?.name) {
+        if (fullUser.user_metadata?.name) {
           username = fullUser.user_metadata.name;
-          avatarUrl = fullUser.user_metadata?.avatar_url || null;
         } 
         // Second priority: email prefix
         else if (fullUser.email) {
@@ -266,14 +245,14 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
           username = `user_${Math.floor(Math.random() * 10000)}`;
         }
         
-        console.log("Creating new profile with username:", username, "and avatar:", avatarUrl);
+        console.log("Creating new profile with username:", username);
         
         const { error: createError } = await supabase
           .from("profiles")
           .insert({
             id: user.id,
             username: username, 
-            avatar_url: avatarUrl,
+            avatar_url: fullUser.user_metadata?.avatar_url || null,
             is_premium: false
           });
         
@@ -282,11 +261,9 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
           return false;
         }
         
-        console.log("Profile created successfully");
         return true;
       }
       
-      console.log("Profile already exists");
       return false;
     } catch (error) {
       console.error("Error in profile creation:", error);

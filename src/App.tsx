@@ -17,7 +17,6 @@ import { SiteLoader } from "./components/site-loader";
 import { FeedbackButton } from "./components/feedback-button";
 import ChatDashboard from "./pages/ChatDashboard";
 import { LoginConfetti } from "./components/login-confetti";
-import OAuthCallback from "./pages/OAuthCallback";
 
 // Lazy load admin pages
 const AdminApiStatus = lazy(() => import('./pages/admin/api-status'));
@@ -124,7 +123,6 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<Index onLoginClick={handleLoginClick} />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/auth/callback" element={<OAuthCallback />} />
             <Route path="/liked" element={<Liked />} />
             <Route path="/account" element={<Account />} />
             <Route path="/pricing" element={<Pricing />} />

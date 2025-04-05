@@ -65,19 +65,22 @@ export type Database = {
       }
       waitlist: {
         Row: {
-          created_at: string
-          email: string
           id: string
+          email: string
+          name: string | null
+          created_at: string
         }
         Insert: {
-          created_at?: string
-          email: string
           id?: string
+          email: string
+          name?: string | null
+          created_at?: string
         }
         Update: {
-          created_at?: string
-          email?: string
           id?: string
+          email?: string
+          name?: string | null
+          created_at?: string
         }
         Relationships: []
       }
