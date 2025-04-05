@@ -10,7 +10,7 @@ import { ResultsSection } from "@/components/results-section";
 import { useAuth } from "@/components/auth-context";
 import { useNavigate } from "react-router-dom";
 import { DiagramrLogo } from "@/components/diagramr-logo";
-import { Search, ArrowUp, Loader2, MessageSquare, X, Settings, Heart, User, TrendingUp, Sparkles, Info, Send, ArrowRight, ArrowLeft, ArrowDown } from "lucide-react";
+import { Search, ArrowUp, Loader2, MessageSquare, X, Settings, Heart, User, TrendingUp, Sparkles, Info, Send, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { ConfettiCelebration } from "@/components/confetti-celebration";
@@ -27,6 +27,9 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { PopularSearches } from "@/components/popular-searches";
+import { Footer } from "@/components/footer";
+import { NameCollectionDialog } from "@/components/name-collection-dialog";
+import { Compact3DMarquee } from "@/components/compact-3d-marquee";
 
 export default function ChatDashboard() {
   const [query, setQuery] = useState("");
@@ -41,11 +44,12 @@ export default function ChatDashboard() {
   const [suggestionScrollPosition, setSuggestionScrollPosition] = useState(0);
   const [typingSuggestions, setTypingSuggestions] = useState<string[]>([]);
   const [showTypingSuggestions, setShowTypingSuggestions] = useState(false);
+  const [marqueeImages, setMarqueeImages] = useState<string[]>([]);
   
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { user, signOut, profile } = useAuth();
+  const { user, signOut, isNewLogin, setIsNewLogin, profile } = useAuth();
   const { incrementCount, hasReachedLimit, remainingSearches } = useSearchLimit();
   
   const { 
@@ -74,8 +78,8 @@ export default function ChatDashboard() {
       greeting = "Good evening";
     }
     
-    // Add user name if available - prioritize profile username
-    if (profile?.username) {
+    // Add user name if available - prioritize the profile username
+    if (profile?.username && !profile.username.startsWith('user_')) {
       greeting += `, ${profile.username}`;
     } else if (user?.user_metadata?.name) {
       greeting += `, ${user.user_metadata.name}`;
@@ -87,6 +91,206 @@ export default function ChatDashboard() {
     
     return greeting;
   }, [user, profile]);
+  
+  // Update greeting whenever profile changes
+  useEffect(() => {
+    setUserGreeting(getGreeting());
+  }, [profile, getGreeting]);
+  
+  // Enhanced NLP-based search suggestions
+  const generateSearchSuggestions = (query: string) => {
+    if (query.trim().length < 2) return [];
+    
+    // Base suggestions for popular domains
+    const baseSuggestions = [
+      ...scrollingSuggestions,
+      "Medical diagrams", 
+      "Computer networks",
+      "Database schemas",
+      "Machine learning models",
+      "Ecosystem diagrams",
+      "System architecture",
+      "Design patterns",
+      "Web technologies",
+      "Cloud infrastructure"
+    ];
+    
+    // Semantic expansions for common topics
+    const semanticExpansions: Record<string, string[]> = {
+      "anatomy": ["human anatomy", "brain structure", "skeletal system", "muscle anatomy", "nervous system"],
+      "biology": ["cell structure", "dna replication", "protein synthesis", "ecosystem", "phylogenetic tree"],
+      "chemistry": ["molecular structure", "periodic table", "reaction mechanisms", "organic compounds", "electron configuration"],
+      "physics": ["force diagrams", "circuit diagrams", "wave patterns", "quantum models", "electromagnetic fields"],
+      "math": ["geometric shapes", "function graphs", "statistical distributions", "number theory", "calculus concepts"],
+      "computer": ["network topology", "data structures", "algorithm flowcharts", "system architecture", "database schema"],
+      "business": ["process flow", "organizational chart", "marketing funnel", "supply chain", "business model canvas"],
+      "system": ["system architecture", "component diagrams", "data flow", "state machines", "deployment diagrams"],
+      "neural": ["neural network", "deep learning architecture", "convolutional networks", "recurrent networks", "transformer models"]
+    };
+    
+    // Check for semantic matches
+    const queryLower = query.toLowerCase();
+    let semanticMatches: string[] = [];
+    
+    Object.keys(semanticExpansions).forEach(key => {
+      if (queryLower.includes(key)) {
+        semanticMatches = [...semanticMatches, ...semanticExpansions[key]];
+      }
+    });
+    
+    // Combine direct matches and semantic matches
+    const directMatches = baseSuggestions.filter(suggestion => 
+      suggestion.toLowerCase().includes(queryLower)
+    );
+    
+    // Add contextual suggestions based on query patterns
+    let contextualSuggestions: string[] = [];
+    
+    // If query starts with "how" or "what", suggest explanatory diagrams
+    if (queryLower.startsWith("how") || queryLower.startsWith("what")) {
+      contextualSuggestions = [
+        "process flow diagram",
+        "conceptual model",
+        "explanatory illustration",
+        "step-by-step visual guide"
+      ];
+    }
+    
+    // If query contains education-related terms
+    if (queryLower.includes("learn") || queryLower.includes("study") || queryLower.includes("education")) {
+      contextualSuggestions.push(
+        "educational diagram",
+        "learning concept map",
+        "study guide visualization",
+        "teaching aid illustration"
+      );
+    }
+    
+    // Combine all suggestions and filter for relevance
+    const allSuggestions = [...directMatches, ...semanticMatches, ...contextualSuggestions];
+    
+    // Remove duplicates and limit results
+    return [...new Set(allSuggestions)]
+      .slice(0, 5)
+      .map(suggestion => queryLower.length > 6 && suggestion.length > 30 ? suggestion.substring(0, 30) + "..." : suggestion);
+  };
+
+  // Generate typing suggestions based on input
+  useEffect(() => {
+    if (query.trim().length > 1) {
+      const smartSuggestions = generateSearchSuggestions(query);
+      setTypingSuggestions(smartSuggestions);
+      setShowTypingSuggestions(smartSuggestions.length > 0);
+    } else {
+      setShowTypingSuggestions(false);
+    }
+  }, [query]);
+
+  // Fetch sample images for the marquee with better image selection
+  useEffect(() => {
+    const fetchSampleImages = async () => {
+      try {
+        // Curated high-quality diagram images for marquee display
+        setMarqueeImages([
+          // Anatomy and medicine
+          "https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          "https://images.unsplash.com/photo-1559757175-7b21671636f4?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          "https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          
+          // Tech and computer science
+          "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          "https://images.unsplash.com/photo-1542903660-eedba2cda473?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          "https://images.unsplash.com/photo-1516110833967-0b5716ca1387?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          
+          // Science diagrams
+          "https://images.unsplash.com/photo-1453733190371-0a9bedd82893?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          "https://images.unsplash.com/photo-1507413245164-6160d8298b31?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          "https://images.unsplash.com/photo-1628595351029-c2bf17511435?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          
+          // Geography and maps
+          "https://images.unsplash.com/photo-1524661135-423995f22d0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          "https://images.unsplash.com/photo-1521295121783-8a321d551ad2?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          "https://images.unsplash.com/photo-1566288623394-377af472d81b?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          
+          // Business and process flows
+          "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          "https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          
+          // Mathematics and formulas
+          "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          "https://images.unsplash.com/photo-1509228468518-180dd4864904?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          "https://images.unsplash.com/photo-1596495577886-d920f1fb7238?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          
+          // More computer science
+          "https://images.unsplash.com/photo-1504639725590-34d0984388bd?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          "https://images.unsplash.com/photo-1488229297570-58520851e868?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700",
+          "https://images.unsplash.com/photo-1581093196277-9f6e9b96cc00?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700"
+        ]);
+      } catch (err) {
+        console.error('Error setting marquee images:', err);
+        // Set fallback images if something goes wrong
+        setMarqueeImages([
+          'https://placehold.co/970x700/f8fafc/e2e8f0?text=Diagram+1',
+          'https://placehold.co/970x700/f8fafc/e2e8f0?text=Diagram+2',
+          'https://placehold.co/970x700/f8fafc/e2e8f0?text=Diagram+3',
+        ]);
+      }
+    };
+    
+    fetchSampleImages();
+  }, []);
+  
+  // Check for post-login celebration
+  useEffect(() => {
+    // Only attempt to show confetti if we have a user
+    if (!user) return;
+    
+    const confettiKey = `diagramr-last-login`;
+    const lastLogin = sessionStorage.getItem(confettiKey);
+    const confettiShown = sessionStorage.getItem('confetti_shown');
+    const currentTime = new Date().getTime();
+    
+    // Check localStorage for authentication events
+    const lastAuthEvent = localStorage.getItem('last_login_time');
+    const authEventTime = lastAuthEvent ? parseInt(lastAuthEvent) : 0;
+    const isRecentAuth = (currentTime - authEventTime) < 10000; // Within last 10 seconds
+    
+    // Show confetti if:
+    // 1. This is flagged as a new login from auth context
+    // 2. There was a recent login but confetti hasn't been shown yet in this session
+    // 3. This is the first view of dashboard in this session 
+    const shouldShowConfetti = 
+      isNewLogin || 
+      (isRecentAuth && confettiShown !== 'true') ||
+      (!lastLogin && user);
+    
+    if (shouldShowConfetti) {
+      console.log("Dashboard detected login event - showing confetti celebration");
+      
+      // Set a small delay to ensure DOM is ready
+      setTimeout(() => {
+        setShowConfetti(true);
+        
+        // Mark confetti as shown in this session
+        sessionStorage.setItem('confetti_shown', 'true');
+        
+        // Reset the new login flag
+        if (isNewLogin) {
+          setIsNewLogin(false);
+        }
+        
+        // Mark this login time in session storage
+        sessionStorage.setItem(confettiKey, currentTime.toString());
+        
+        // Show welcome toast with profile name if available
+        toast.success(`Welcome ${profile?.username || 'back'}!`, {
+          description: "Ready to discover amazing diagrams?",
+          duration: 3000,
+        });
+      }, 300);
+    }
+  }, [user, isNewLogin, setIsNewLogin, profile]);
   
   useEffect(() => {
     // Load search history from localStorage
@@ -100,9 +304,6 @@ export default function ChatDashboard() {
       }
     }
     
-    // Set user greeting
-    setUserGreeting(getGreeting());
-    
     // Fetch liked diagrams
     if (user) {
       fetchLikedDiagrams();
@@ -114,24 +315,7 @@ export default function ChatDashboard() {
         inputRef.current.focus();
       }
     }, 500);
-    
-    // Show welcome confetti for new users
-    const hasSeenWelcome = localStorage.getItem('diagramr-welcomed');
-    if (!hasSeenWelcome && user) {
-      setShowConfetti(true);
-      localStorage.setItem('diagramr-welcomed', 'true');
-      
-      toast.success("Welcome to Diagramr!", {
-        description: "Find beautiful diagrams with AI assistance",
-        duration: 3000,
-      });
-    }
-  }, [user, getGreeting]);
-  
-  // Update greeting when profile changes
-  useEffect(() => {
-    setUserGreeting(getGreeting());
-  }, [profile, getGreeting]);
+  }, [user]);
   
   // Simple empty function as placeholder since we're not using intersection observer
   const lastDiagramRef = useCallback(() => {
@@ -176,11 +360,21 @@ export default function ChatDashboard() {
     const success = await incrementCount();
     if (!success) return;
     
+    // Clear input
     setQuery("");
+    setShowTypingSuggestions(false);
     
     console.log(`Starting search for: "${searchQuery}"`);
     
     try {
+      // Clear session storage for search results to ensure fresh results
+      Object.keys(sessionStorage).forEach(key => {
+        if (key.startsWith('diagramr-search-')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      
+      // Start search
       await searchFor(searchQuery);
       
       // Update search history
@@ -188,9 +382,32 @@ export default function ChatDashboard() {
       setSearchHistory(newHistory);
       localStorage.setItem('diagramr-search-history', JSON.stringify(newHistory));
       
+      // Show remaining searches toast if low
+      if (remainingSearches <= 5 && remainingSearches > 0) {
+        toast.info(`${remainingSearches} searches remaining today`, {
+          description: "Upgrade to Pro for more searches",
+          action: {
+            label: "Upgrade",
+            onClick: () => navigate("/pricing")
+          }
+        });
+      }
     } catch (error) {
       console.error("Search error:", error);
       toast.error("Search failed. Please try again.");
+      
+      // Offer a simplified search if the search fails
+      if (searchQuery.split(' ').length > 2) {
+        const simplifiedQuery = searchQuery.split(' ').slice(0, 2).join(' ');
+        toast.error("Search failed", {
+          description: "Try a simplified search term",
+          action: {
+            label: `Try "${simplifiedQuery}"`,
+            onClick: () => handleSearch(simplifiedQuery)
+          },
+          duration: 8000
+        });
+      }
     }
   };
   
@@ -257,8 +474,10 @@ export default function ChatDashboard() {
           setLikedDiagrams(newLiked);
           
           toast.success("Diagram saved to favorites");
+          
+          // Small confetti celebration when adding to favorites
           setShowConfetti(true);
-          setTimeout(() => setShowConfetti(false), 3000);
+          setTimeout(() => setShowConfetti(false), 1500);
         }
       }
     } catch (error) {
@@ -287,11 +506,11 @@ export default function ChatDashboard() {
 
   // Rotating descriptions
   const descriptions = [
-    "Visualize complex academic concepts",
-    "Access high-quality educational resources",
-    "Discover scientific illustrations & charts",
-    "Enhance your learning with visual aids",
-    "Find educational diagrams for your studies"
+    "How can I help you today?",
+    "Find the perfect diagrams for your needs",
+    "Discover visual learning resources",
+    "Search for educational diagrams",
+    "What would you like to learn about?"
   ];
   
   // Add description rotation effect
@@ -310,9 +529,7 @@ export default function ChatDashboard() {
     "physics force diagrams", 
     "data structures and algorithms",
     "circuit design diagrams",
-    "neural network architecture",
-    "plant cell structure",
-    "solar system model"
+    "neural network architecture"
   ];
 
   // Add effect for scrolling animation with slower speed for more fluid motion
@@ -326,157 +543,75 @@ export default function ChatDashboard() {
     }
   }, [searchTerm]);
 
-  // Generate typing suggestions based on input
-  useEffect(() => {
-    if (query.trim().length > 1) {
-      // Filter suggestions that include the current query
-      const matchedSuggestions = [
-        ...scrollingSuggestions,
-        "Medical diagrams", 
-        "Computer networks",
-        "Database schemas",
-        "Machine learning models",
-        "Ecosystem diagrams",
-        "System architecture",
-        "Design patterns",
-        "Web technologies",
-        "Cloud infrastructure"
-      ].filter(suggestion => 
-        suggestion.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 5);
-      
-      setTypingSuggestions(matchedSuggestions);
-      setShowTypingSuggestions(matchedSuggestions.length > 0);
-    } else {
-      setShowTypingSuggestions(false);
-    }
-  }, [query, scrollingSuggestions]);
-
   return (
-    <div className="min-h-screen font-sans antialiased relative overflow-hidden bg-transparent">
-      {/* Enhanced animated background gradients for premium feel */}
-      <div className="fixed inset-0 bg-gradient-to-br from-background/80 via-background to-blue-950/10 z-[-2]" />
-      
-      <motion.div
-        className="fixed right-0 top-0 w-full h-full bg-blue-500/5 blur-[120px] z-[-1]"
-        animate={{
-          borderRadius: [
-            '70% 30% 70% 30% / 30% 30% 70% 70%',
-            '60% 40% 60% 40% / 40% 30% 70% 60%',
-            '70% 30% 70% 30% / 30% 30% 70% 70%'
-          ],
-          opacity: [0.5, 0.7, 0.5]
-        }}
-        transition={{
-          duration: 15,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      />
-      
-      <motion.div
-        className="fixed left-0 bottom-0 w-1/2 h-1/2 bg-purple-500/5 blur-[120px] z-[-1]"
-        animate={{
-          borderRadius: [
-            '30% 70% 30% 70% / 70% 30% 70% 30%',
-            '40% 60% 40% 60% / 60% 40% 60% 40%',
-            '30% 70% 30% 70% / 70% 30% 70% 30%'
-          ],
-          x: [0, -20, 0],
-          y: [0, 20, 0]
-        }}
-        transition={{
-          duration: 18,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      />
-      
-      {/* Additional subtle gradient blob for premium feel */}
-      <motion.div
-        className="fixed left-1/4 top-1/3 w-1/3 h-1/3 bg-primary/3 blur-[150px] z-[-1]"
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3],
-          x: [0, 30, 0]
-        }}
-        transition={{
-          duration: 25,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      />
-      
+    <div className="min-h-screen font-sans antialiased relative overflow-hidden bg-transparent flex flex-col">
       <Header />
+      
+      {/* Name collection dialog for new users */}
+      <NameCollectionDialog />
       
       <main className="flex-1">
         {!searchTerm && (
-          <div className="flex flex-col items-center justify-center min-h-[80vh] container max-w-2xl mx-auto px-4 md:px-6 py-4">
+          <div className="flex flex-col items-center justify-center min-h-[70vh] container max-w-2xl mx-auto px-4 md:px-6 py-4">
             <div className="text-center mb-16">
-              <motion.h1 
+            <motion.h1 
                 className="text-[28px] md:text-[32px] font-normal mb-2 tracking-tight text-foreground"
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.5 }}
-              >
-                {userGreeting}
-              </motion.h1>
-              
-              {/* Animated rotating descriptions */}
-              <motion.div
-                className="h-6 overflow-hidden relative"
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-              >
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentDescriptionIndex}
-                    className="text-lg md:text-xl text-muted-foreground/70 font-normal"
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: -20, opacity: 0 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    {descriptions[currentDescriptionIndex]}
-                  </motion.div>
-                </AnimatePresence>
-              </motion.div>
-            </div>
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              {userGreeting}
+            </motion.h1>
             
-            <motion.div 
-              className="w-full max-w-2xl mx-auto mb-12 relative"
+            {/* Animated rotating descriptions */}
+            <motion.div
+                className="h-6 overflow-hidden relative"
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentDescriptionIndex}
+                    className="text-lg md:text-xl text-muted-foreground/70 font-normal"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -20, opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  {descriptions[currentDescriptionIndex]}
+                </motion.div>
+              </AnimatePresence>
+                </motion.div>
+            </div>
+                
+                <motion.div
+              className="w-full max-w-2xl mx-auto mb-12 relative hidden md:block"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
               <div className="relative z-10">
                 {/* Subtle glow effect behind input */}
                 <div className="absolute -inset-3 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-[28px] blur-xl opacity-70"></div>
                 
                 <div className="flex items-center relative overflow-hidden rounded-[22px] shadow-md border border-border/40 focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/20 dark:border-gray-700/50 bg-background/90 dark:bg-[#1d1e20]/90 backdrop-blur-sm">
-                  <Input
-                    ref={inputRef}
-                    type="text"
-                    placeholder="What diagrams are you looking for?"
-                    value={query}
-                    onChange={(e) => {
-                      setQuery(e.target.value);
-                      // Immediately show suggestions if at least 2 characters typed
-                      if (e.target.value.trim().length > 1) {
-                        setShowTypingSuggestions(true);
-                      }
-                    }}
-                    onKeyDown={(e) => {
+                      <Input
+                        ref={inputRef}
+                        type="text"
+                        placeholder="What diagrams are you looking for?"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onKeyDown={(e) => {
                       if (e.key === 'Enter') {
-                        handleSearch(query);
+                            handleSearch(query);
                         setShowTypingSuggestions(false);
                       }
                     }}
                     className="w-full pl-14 pr-28 py-7 text-base md:text-lg rounded-[22px] border-0 shadow-none focus:ring-0 focus:outline-none dark:bg-transparent"
                   />
                   <div className="absolute left-5 top-1/2 transform -translate-y-1/2">
-                    <Search className="text-primary/80 h-5 w-5" />
+                    <Search className="text-primary h-6 w-6" />
                   </div>
                   
                   {query && (
@@ -486,9 +621,9 @@ export default function ChatDashboard() {
                         setQuery('');
                         setShowTypingSuggestions(false);
                       }}
-                      className="absolute right-24 top-1/2 transform -translate-y-1/2 p-1.5 hover:bg-muted/50 rounded-full"
+                      className="absolute right-24 top-1/2 transform -translate-y-1/2 p-1.5 hover:bg-muted rounded-full"
                     >
-                      <X className="h-4 w-4 text-muted-foreground/70" />
+                      <X className="h-5 w-5 text-muted-foreground" />
                     </button>
                   )}
                   
@@ -498,20 +633,20 @@ export default function ChatDashboard() {
                       setShowTypingSuggestions(false);
                     }}
                     disabled={!query.trim() || isLoading}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 rounded-full px-6 py-2.5 bg-primary/90 hover:bg-primary dark:bg-primary/90 dark:hover:bg-primary shadow-sm"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 rounded-full px-6 py-3 h-12 bg-primary/90 hover:bg-primary dark:bg-primary dark:hover:bg-primary/90 shadow-md"
                   >
                     {isLoading ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-background border-t-transparent" />
                     ) : (
-                      <span className="font-normal">Search</span>
+                      <span className="text-base">Search</span>
                     )}
                   </Button>
                 </div>
                 
-                {/* Enhanced Typing suggestions */}
+                {/* Typing suggestions */}
                 {showTypingSuggestions && (
                   <motion.div 
-                    className="absolute left-0 right-0 top-full mt-2 bg-background/95 dark:bg-[#1d1e20]/95 backdrop-blur-sm rounded-xl shadow-sm border border-border/30 dark:border-gray-700/50 py-2 z-20"
+                    className="absolute left-0 right-0 top-full mt-2 bg-background dark:bg-[#1d1e20] rounded-xl shadow-lg border border-border/50 dark:border-gray-700 py-2 z-20"
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -520,7 +655,7 @@ export default function ChatDashboard() {
                       {typingSuggestions.map((suggestion, index) => (
                         <motion.li 
                           key={suggestion} 
-                          className="px-4 py-2 hover:bg-muted/50 dark:hover:bg-gray-800/50 cursor-pointer"
+                          className="px-4 py-2 hover:bg-muted dark:hover:bg-gray-800 cursor-pointer"
                           initial={{ opacity: 0, x: -5 }}
                           animate={{ 
                             opacity: 1, 
@@ -533,20 +668,8 @@ export default function ChatDashboard() {
                           }}
                         >
                           <div className="flex items-center">
-                            <Search className="h-3 w-3 mr-2 text-muted-foreground/70" />
-                            <span className="font-normal">
-                              {query && suggestion.toLowerCase().includes(query.toLowerCase()) ? (
-                                <>
-                                  {suggestion.substring(0, suggestion.toLowerCase().indexOf(query.toLowerCase()))}
-                                  <span className="font-medium text-primary/80">
-                                    {query}
-                                  </span>
-                                  {suggestion.substring(suggestion.toLowerCase().indexOf(query.toLowerCase()) + query.length)}
-                                </>
-                              ) : (
-                                suggestion
-                              )}
-                            </span>
+                            <Search className="h-3 w-3 mr-2 text-muted-foreground" />
+                            <span>{suggestion}</span>
                           </div>
                         </motion.li>
                       ))}
@@ -555,19 +678,23 @@ export default function ChatDashboard() {
                 )}
               </div>
               
-              <div className="flex justify-between items-center text-xs text-muted-foreground/70 mt-3 px-2">
+              <div className="flex justify-between items-center text-xs text-muted-foreground mt-3 px-2">
                 <div className="flex items-center">
                   <Info className="h-3 w-3 mr-1" />
                   <span>
-                    {remainingSearches !== undefined ? 
+                    {user ? (
+                      remainingSearches !== undefined ? 
                       `${remainingSearches} searches remaining today` : 
-                      "Unlimited searches"}
+                      "Unlimited searches"
+                    ) : (
+                      "Sign in for more searches"
+                    )}
                   </span>
                 </div>
                 
                 <button 
-                  onClick={() => setShowTips(true)}
-                  className="flex items-center hover:text-primary/80 transition-colors"
+                      onClick={() => setShowTips(true)}
+                  className="flex items-center hover:text-primary transition-colors"
                 >
                   <Sparkles className="h-3 w-3 mr-1" />
                   <span>Search tips</span>
@@ -575,139 +702,223 @@ export default function ChatDashboard() {
               </div>
             </motion.div>
             
-            {/* Example/recent searches */}
-            <motion.div
-              className="w-full"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              {/* Single row of scrolling suggestions */}
-              <div className="w-full max-w-xl mx-auto">
-                <motion.div
-                  className="flex overflow-hidden py-2"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
-                >
-                  <div 
-                    className="flex gap-3"
-                    style={{
-                      width: "300%",
-                      transform: `translateX(-${suggestionScrollPosition % 66.6}%)`,
-                      transition: "transform 30s linear infinite"
-                    }}
-                  >
-                    {[...scrollingSuggestions, ...scrollingSuggestions, ...scrollingSuggestions].map((suggestion, index) => (
-                      <motion.div
-                        key={`${suggestion}-${index}`}
-                        whileHover={{ 
-                          scale: 1.08,
-                          rotate: [0, 1, 0, -1, 0],
-                          transition: { rotate: { repeat: 0, duration: 0.3 } }
-                        }}
-                        whileTap={{ scale: 0.95 }}
-                        className="origin-center"
-                      >
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="rounded-full text-sm py-2 px-4 h-auto border-primary/20 hover:border-primary/60 hover:bg-primary/5 whitespace-nowrap dark:border-gray-600 dark:bg-gray-800/60 dark:hover:bg-gray-800"
-                          onClick={() => handleSearch(suggestion)}
-                        >
-                          {suggestion}
-                        </Button>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-        
-        {searchTerm && (
-          <div className="container max-w-7xl mx-auto px-4 py-6">
-            <div className="flex flex-wrap items-center gap-3 mb-6">
-              {/* Back button */}
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-full gap-1 border-border/40 dark:border-gray-700/60"
-                onClick={handleNewSearch}
+            {/* Single row of scrolling suggestions */}
+            <div className="w-full max-w-xl mx-auto">
+              <motion.div 
+                className="flex overflow-hidden py-2"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
               >
-                <ArrowLeft className="h-4 w-4" />
-                <span>New Search</span>
-              </Button>
-              
-              {/* Current search term with highlight */}
-              <div className="text-lg sm:text-xl font-medium flex items-center">
-                <span className="text-sm text-muted-foreground mr-2">Results for</span>
-                <span className="text-foreground">{searchTerm}</span>
-              </div>
-
-              {/* Tag filter */}
-              {selectedTagFilter && (
-                <Badge
-                  variant="outline"
-                  className="ml-2 rounded-full pl-2 pr-1 py-1 border-primary/30 bg-primary/5 hover:bg-primary/10 flex items-center gap-1 text-xs"
+                <div 
+                  className="flex gap-3"
+                  style={{
+                    width: "300%",
+                    transform: `translateX(-${suggestionScrollPosition % 66.6}%)`,
+                    transition: "transform 1.5s ease-out"
+                  }}
                 >
-                  <span>{selectedTagFilter}</span>
-                  <button
-                    className="rounded-full w-4 h-4 flex items-center justify-center"
-                    onClick={() => setSelectedTagFilter(null)}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              )}
-              
-              {/* Remaining searches badge */}
-              {remainingSearches !== undefined && remainingSearches < 10 && (
-                <Badge variant="outline" className="bg-background/50 dark:bg-gray-900/50 text-xs ml-auto">
-                  {remainingSearches} searches left today
-                </Badge>
-              )}
+                  {[...scrollingSuggestions, ...scrollingSuggestions, ...scrollingSuggestions].map((suggestion, index) => (
+                    <motion.div
+                      key={`${suggestion}-${index}`}
+                      whileHover={{ 
+                        scale: 1.08,
+                        rotate: [0, 1, 0, -1, 0],
+                        transition: { rotate: { repeat: 0, duration: 0.3 } }
+                      }}
+                      whileTap={{ scale: 0.95 }}
+                      className="origin-center"
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-full text-sm py-2 px-4 h-auto border-primary/20 hover:border-primary/60 hover:bg-primary/5 whitespace-nowrap dark:border-gray-600 dark:bg-gray-800/60 dark:hover:bg-gray-800"
+                        onClick={() => handleSearch(suggestion)}
+                      >
+                        {suggestion}
+                      </Button>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
             </div>
             
-            <ResultsSection 
-              results={results}
-              isLoading={isLoading}
-              searchTerm={searchTerm}
-              lastDiagramRef={lastDiagramRef}
-              onLike={handleLikeDiagram}
-              likedDiagrams={likedDiagrams}
-              selectedTagFilter={selectedTagFilter}
-              onTagFilterSelect={setSelectedTagFilter}
-              hasMore={hasMore}
-              loadMore={loadMore}
-              error={error}
-            />
-            
-            {/* Load more button */}
-            {results.length > 0 && hasMore && !isLoading && (
-              <div className="flex justify-center mt-8 mb-4">
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  className="rounded-full border-primary/30 bg-primary/5 hover:bg-primary/10 dark:border-primary/40 dark:bg-primary/10 dark:hover:bg-primary/20"
-                  onClick={loadMore}
-                >
-                  Load more results
-                  <ArrowDown className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
+            {/* Recent searches - now with improved styling */}
+                {searchHistory.length > 0 && (
+                  <motion.div
+                className="w-full max-w-xl mx-auto mt-10"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-px flex-1 bg-border"></div>
+                  <span className="text-xs text-muted-foreground">Recent searches</span>
+                  <div className="h-px flex-1 bg-border"></div>
+                    </div>
+                    
+                <div className="flex flex-wrap justify-center gap-2">
+                      {searchHistory.slice(0, 5).map((item, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ 
+                            opacity: 1, 
+                            y: 0,
+                        transition: { delay: 0.5 + (index * 0.05) }
+                      }}
+                      whileHover={{ 
+                        y: -3,
+                        boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
+                        transition: { duration: 0.2 }
+                      }}
+                        >
+                          <Button
+                        variant="ghost"
+                            size="sm"
+                        className="rounded-full text-xs h-7"
+                            onClick={() => handleSearch(item)}
+                          >
+                            {item}
+                          </Button>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
             )}
           </div>
         )}
+        
+        {/* Results section */}
+        {searchTerm && (
+          <div className="pt-4 container max-w-6xl mx-auto px-4 md:px-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-lg md:text-xl font-semibold">Results for "{searchTerm}"</h2>
+                <p className="text-xs text-muted-foreground">Found {results.length} diagrams</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleNewSearch} className="h-9 px-4 shadow-sm">
+                  New Search
+                </Button>
+              </div>
+              
+            <ResultsSection
+              results={results}
+              isLoading={isLoading}
+              error={error}
+              likedDiagrams={likedDiagrams}
+              onLike={handleLikeDiagram}
+              selectedTagFilter={selectedTagFilter}
+              onTagFilterSelect={setSelectedTagFilter}
+              lastDiagramRef={lastDiagramRef}
+              searchTerm={searchTerm}
+              onNewSearch={handleNewSearch}
+            />
+            </div>
+          )}
+        
+        {/* Compact 3D Marquee at the bottom, now better centered and larger */}
+        {!searchTerm && (
+          <div className="relative w-full overflow-hidden h-64 mt-auto">
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute left-0 right-0 h-28 bottom-0 bg-gradient-to-t from-background to-transparent z-10"></div>
+              <div className="absolute left-0 right-0 h-20 top-0 bg-gradient-to-b from-background to-transparent z-10"></div>
+              <div className="absolute inset-0 bg-gradient-radial from-primary/[0.03] via-transparent to-transparent opacity-30 mix-blend-overlay"></div>
+        </div>
+            <div className="flex justify-center items-center h-full relative">
+              <div className="absolute w-full h-full max-w-6xl mx-auto">
+                <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background opacity-20 z-5"></div>
+              </div>
+              <Compact3DMarquee 
+                images={marqueeImages} 
+                rows={3} 
+                className="h-64 opacity-85 hover:opacity-100 transition-opacity duration-700 w-full max-w-6xl mx-auto"
+              />
+            </div>
+          </div>
+        )}
       </main>
+        
+      {/* Mobile search input fixed to bottom */}
+      {isMobile && !searchTerm && (
+        <div className="fixed bottom-0 left-0 right-0 bg-[#f9f8f6]/95 dark:bg-[#1d1e20]/95 backdrop-blur-lg border-t border-border/30 dark:border-gray-800 p-3 pb-5 z-50 safe-bottom">
+          <div className="relative z-10">
+            {/* Subtle glow effect behind input */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-[18px] blur-md opacity-70"></div>
+            
+            <div className="relative overflow-hidden rounded-[18px] shadow-md border border-border/40 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 dark:border-gray-700/50 bg-background/90 dark:bg-[#1d1e20]/90 backdrop-blur-sm">
+                <Input
+                  ref={inputRef}
+                  type="text"
+              placeholder="What diagrams are you looking for?"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                      handleSearch(query);
+                  setShowTypingSuggestions(false);
+                    }
+                  }}
+                className="pr-20 pl-12 py-6 border-0 text-base shadow-none focus:ring-0 focus:outline-none dark:bg-transparent"
+                />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-primary h-5 w-5" />
+                <Button
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-10 rounded-full px-5 bg-primary/90 hover:bg-primary dark:bg-primary dark:hover:bg-primary/90 shadow"
+              onClick={() => {
+                handleSearch(query);
+                setShowTypingSuggestions(false);
+              }}
+              disabled={!query.trim()}
+            >
+                <span className="text-sm">Search</span>
+                </Button>
+            
+            {/* Mobile typing suggestions */}
+            {showTypingSuggestions && isMobile && (
+              <motion.div 
+                  className="absolute left-0 right-0 bottom-full mb-2 bg-background/95 dark:bg-[#1d1e20]/95 rounded-xl shadow-lg border border-border/50 dark:border-gray-700 py-2 z-20 backdrop-blur-sm"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+              >
+                <ul className="max-h-64 overflow-auto">
+                  {typingSuggestions.map((suggestion, index) => (
+                    <motion.li 
+                      key={suggestion} 
+                      className="px-4 py-2 hover:bg-muted dark:hover:bg-gray-800 cursor-pointer"
+                      initial={{ opacity: 0, x: -5 }}
+                      animate={{ 
+                        opacity: 1, 
+                        x: 0,
+                        transition: { delay: index * 0.05 }
+                      }}
+                      onClick={() => {
+                        handleSearch(suggestion);
+                        setShowTypingSuggestions(false);
+                      }}
+                    >
+                      <div className="flex items-center">
+                        <Search className="h-3 w-3 mr-2 text-muted-foreground" />
+                        <span className="text-sm">{suggestion}</span>
+              </div>
+                    </motion.li>
+                  ))}
+                </ul>
+              </motion.div>
+            )}
+            </div>
+          </div>
+          </div>
+        )}
       
       {showConfetti && (
+        <div className="fixed inset-0 pointer-events-none z-[1000]">
         <ConfettiCelebration 
-          duration={3000} 
-          particleCount={150} 
+            duration={1500} 
+            particleCount={50} 
           onComplete={() => setShowConfetti(false)} 
         />
+        </div>
       )}
       
       <Dialog open={showTips} onOpenChange={setShowTips}>
@@ -743,115 +954,7 @@ export default function ChatDashboard() {
         </DialogContent>
       </Dialog>
       
-      {/* Mobile search input fixed to bottom */}
-      {isMobile && !searchTerm && (
-        <motion.div 
-          className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t border-border/40 dark:border-gray-800/40 z-10"
-          initial={{ y: 100 }}
-          animate={{ y: 0 }}
-          transition={{ type: "spring", damping: 20, stiffness: 100 }}
-        >
-          <div className="relative">
-            <div className="flex items-center relative overflow-hidden rounded-[22px] shadow-md border border-border/40 focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/20 dark:border-gray-700/50 bg-background/90 dark:bg-[#1d1e20]/90 backdrop-blur-sm">
-              <Input
-                type="text"
-                placeholder="What diagrams are you looking for?"
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  if (e.target.value.trim().length > 1) {
-                    setShowTypingSuggestions(true);
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch(query);
-                    setShowTypingSuggestions(false);
-                  }
-                }}
-                className="w-full pl-14 pr-28 py-6 text-base rounded-[22px] border-0 shadow-none focus:ring-0 focus:outline-none dark:bg-transparent"
-              />
-              <div className="absolute left-5 top-1/2 transform -translate-y-1/2">
-                <Search className="text-primary/80 h-5 w-5" />
-              </div>
-              
-              {query && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQuery('');
-                    setShowTypingSuggestions(false);
-                  }}
-                  className="absolute right-24 top-1/2 transform -translate-y-1/2 p-1.5 hover:bg-muted/50 rounded-full"
-                >
-                  <X className="h-4 w-4 text-muted-foreground/70" />
-                </button>
-              )}
-              
-              <Button
-                onClick={() => {
-                  handleSearch(query);
-                  setShowTypingSuggestions(false);
-                }}
-                disabled={!query.trim() || isLoading}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 rounded-full px-6 py-2.5 bg-primary/90 hover:bg-primary dark:bg-primary/90 dark:hover:bg-primary shadow-sm"
-              >
-                {isLoading ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
-                ) : (
-                  <span className="font-normal">Search</span>
-                )}
-              </Button>
-            </div>
-            
-            {/* Typing suggestions for mobile */}
-            {showTypingSuggestions && (
-              <motion.div 
-                className="absolute left-0 right-0 bottom-full mb-2 bg-background/95 dark:bg-[#1d1e20]/95 backdrop-blur-sm rounded-xl shadow-sm border border-border/30 dark:border-gray-700/50 py-2 z-20"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-              >
-                <ul className="max-h-64 overflow-auto">
-                  {typingSuggestions.map((suggestion, index) => (
-                    <motion.li 
-                      key={suggestion} 
-                      className="px-4 py-2 hover:bg-muted/50 dark:hover:bg-gray-800/50 cursor-pointer"
-                      initial={{ opacity: 0, x: -5 }}
-                      animate={{ 
-                        opacity: 1, 
-                        x: 0,
-                        transition: { delay: index * 0.05 }
-                      }}
-                      onClick={() => {
-                        handleSearch(suggestion);
-                        setShowTypingSuggestions(false);
-                      }}
-                    >
-                      <div className="flex items-center">
-                        <Search className="h-3 w-3 mr-2 text-muted-foreground/70" />
-                        <span className="font-normal">
-                          {query && suggestion.toLowerCase().includes(query.toLowerCase()) ? (
-                            <>
-                              {suggestion.substring(0, suggestion.toLowerCase().indexOf(query.toLowerCase()))}
-                              <span className="font-medium text-primary/80">
-                                {query}
-                              </span>
-                              {suggestion.substring(suggestion.toLowerCase().indexOf(query.toLowerCase()) + query.length)}
-                            </>
-                          ) : (
-                            suggestion
-                          )}
-                        </span>
-                      </div>
-                    </motion.li>
-                  ))}
-                </ul>
-              </motion.div>
-            )}
-          </div>
-        </motion.div>
-      )}
+      <Footer />
     </div>
   );
 }

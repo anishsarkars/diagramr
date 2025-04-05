@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth-context";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { DiagramrLogo } from "@/components/diagramr-logo";
 import { Loader2 } from "lucide-react";
 import { OAuthSignIn } from "@/components/oauth-sign-in";
-import { ConfettiCelebration } from "@/components/confetti-celebration";
+import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
 
 const authSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -20,27 +21,15 @@ const authSchema = z.object({
 export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, setIsNewLogin } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOAuthLoading, setIsOAuthLoading] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
   
   const returnTo = location.state?.returnTo || "/dashboard";
-
-  // Helper function for showing confetti and navigating after delay
-  const showConfettiAndNavigate = useCallback((destination: string, message: string) => {
-    setShowConfetti(true);
-    toast.success(message);
-    
-    // Give time for confetti to show before navigating
-    setTimeout(() => {
-      navigate(destination, { replace: true });
-    }, 1500); // Increased delay to ensure confetti is visible
-  }, [navigate]);
 
   useEffect(() => {
     // Check if the URL has a signup parameter
@@ -111,7 +100,15 @@ export default function Auth() {
           if (data.session) {
             // User is already confirmed and signed in
             console.log("User authenticated immediately after signup");
-            showConfettiAndNavigate('/dashboard', "Account created successfully! Welcome to Diagramr!");
+            
+            // Set the new login flag to trigger confetti
+            setIsNewLogin(true);
+            toast.success("Account created successfully! Welcome to Diagramr!");
+            
+            // Delay navigation slightly to allow confetti to appear
+            setTimeout(() => {
+              navigate('/dashboard');
+            }, 300);
           } else {
             // Email confirmation required
             console.log("Email confirmation required");
@@ -130,7 +127,12 @@ export default function Auth() {
         
         if (error) throw error;
         
-        showConfettiAndNavigate(returnTo, "Welcome back to Diagramr!");
+        // Set flag to trigger confetti through auth-context
+        setIsNewLogin(true);
+        toast.success("Welcome back to Diagramr!");
+        
+        // Navigate to the destination
+        navigate(returnTo, { replace: true });
       }
     } catch (error) {
       console.error("Authentication error:", error);
@@ -147,10 +149,11 @@ export default function Auth() {
   };
 
   return (
-    <BadgeLayout>
-      {showConfetti && <ConfettiCelebration duration={3000} particleCount={150} />}
-      <div className="p-4">
-        <Card className="w-full shadow-lg border-opacity-40 bg-card/95 backdrop-blur-sm dark:shadow-2xl dark:border-gray-800/50">
+    <div className="flex flex-col min-h-screen bg-background">
+      <Header />
+      
+      <div className="flex-1 flex items-center justify-center py-8">
+        <Card className="w-[400px] max-w-[90%] shadow-xl">
           <CardHeader className="space-y-1 flex items-center">
             <div className="w-full flex justify-center mb-4">
               <DiagramrLogo className="h-10 w-auto" />
@@ -160,7 +163,7 @@ export default function Auth() {
             </CardTitle>
             <CardDescription className="text-center text-muted-foreground/90">
               {isSignUp 
-                ? "Create your Diagramr account to start finding amazing diagrams. You'll be asked to set your name after signup." 
+                ? "Create your Diagramr account to start finding amazing diagrams" 
                 : "Enter your credentials to access your account"}
             </CardDescription>
           </CardHeader>
@@ -231,12 +234,6 @@ export default function Auth() {
                   setIsOAuthLoading(true);
                   const { supabase } = await import("@/integrations/supabase/client");
                   
-                  // Show confetti first before OAuth redirect
-                  setShowConfetti(true);
-                  
-                  // Small delay to allow confetti to be visible before redirect
-                  await new Promise(resolve => setTimeout(resolve, 800));
-                  
                   const { data, error } = await supabase.auth.signInWithOAuth({
                     provider: 'google',
                     options: {
@@ -246,11 +243,13 @@ export default function Auth() {
                   
                   if (error) throw error;
                   
-                  // The redirect happens automatically, so we don't need to navigate
+                  // Set flag to trigger confetti on successful redirect back
+                  setIsNewLogin(true);
+                  
+                  // The redirect happens automatically through Supabase OAuth
                 } catch (error) {
                   console.error("Google login error:", error);
                   toast.error("Google login failed. Please try again.");
-                  setShowConfetti(false);
                 } finally {
                   setIsOAuthLoading(false);
                 }
@@ -259,12 +258,6 @@ export default function Auth() {
                 try {
                   setIsOAuthLoading(true);
                   const { supabase } = await import("@/integrations/supabase/client");
-                  
-                  // Show confetti first before OAuth redirect
-                  setShowConfetti(true);
-                  
-                  // Small delay to allow confetti to be visible before redirect
-                  await new Promise(resolve => setTimeout(resolve, 800));
                   
                   const { data, error } = await supabase.auth.signInWithOAuth({
                     provider: 'linkedin',
@@ -275,11 +268,13 @@ export default function Auth() {
                   
                   if (error) throw error;
                   
-                  // The redirect happens automatically, so we don't need to navigate
+                  // Set flag to trigger confetti on successful redirect back
+                  setIsNewLogin(true);
+                  
+                  // The redirect happens automatically through Supabase OAuth
                 } catch (error) {
                   console.error("LinkedIn login error:", error);
                   toast.error("LinkedIn login failed. Please try again.");
-                  setShowConfetti(false);
                 } finally {
                   setIsOAuthLoading(false);
                 }
@@ -291,34 +286,42 @@ export default function Auth() {
               {isSignUp ? (
                 <div>
                   Already have an account?{" "}
-                  <Button variant="link" className="p-0 font-medium" onClick={() => setIsSignUp(false)}>
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto font-medium"
+                    onClick={() => setIsSignUp(false)}
+                  >
                     Sign in
                   </Button>
                 </div>
               ) : (
                 <div>
                   Don't have an account?{" "}
-                  <Button variant="link" className="p-0 font-medium" onClick={() => setIsSignUp(true)}>
-                    Create account
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto font-medium"
+                    onClick={() => setIsSignUp(true)}
+                  >
+                    Create one
                   </Button>
                 </div>
               )}
             </div>
             
-            <div className="text-center text-xs text-muted-foreground/80">
-              By continuing, you agree to our{" "}
-              <a href="/terms" className="underline underline-offset-4 hover:text-primary">
-                Terms of Service
-              </a>{" "}
-              and{" "}
-              <a href="/privacy" className="underline underline-offset-4 hover:text-primary">
-                Privacy Policy
-              </a>
-              .
-            </div>
+            {!isSignUp && (
+              <Button 
+                variant="link" 
+                className="p-0 h-auto text-sm text-muted-foreground/90 font-normal"
+                onClick={() => navigate("/reset-password")}
+              >
+                Forgot password?
+              </Button>
+            )}
           </CardFooter>
         </Card>
       </div>
-    </BadgeLayout>
+      
+      <Footer />
+    </div>
   );
 }

@@ -1,6 +1,6 @@
+@import "./styles/mobile.css";
 @tailwind base;
 @tailwind components;
-@import "./styles/mobile.css";
 @tailwind utilities;
 
 @layer base {
@@ -151,7 +151,7 @@
   
   .top-glow::before {
     content: '';
-    @apply fixed top-0 left-0 right-0 h-[450px] bg-gradient-to-b from-primary/25 to-transparent opacity-90 pointer-events-none blur-[100px] z-[1];
+    @apply fixed top-0 left-0 right-0 h-[400px] bg-gradient-to-b from-primary/10 to-transparent opacity-70 pointer-events-none blur-[120px] z-[1];
   }
   
   /* Fixed header styles */
@@ -310,15 +310,15 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 /* Hero section gradient */
 .hero-gradient {
   background: radial-gradient(circle at 50% 50%, 
-    rgba(255, 100, 80, 0.04) 0%, 
-    rgba(255, 100, 80, 0.02) 25%, 
+    rgba(255, 100, 80, 0.02) 0%, 
+    rgba(255, 100, 80, 0.01) 25%, 
     rgba(255, 255, 255, 0) 50%);
 }
 
 .dark .hero-gradient {
   background: radial-gradient(circle at 50% 50%, 
-    rgba(255, 100, 80, 0.08) 0%, 
-    rgba(255, 100, 80, 0.03) 25%, 
+    rgba(255, 100, 80, 0.04) 0%, 
+    rgba(255, 100, 80, 0.01) 25%, 
     rgba(0, 0, 0, 0) 50%);
 }
 

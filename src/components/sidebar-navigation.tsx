@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -40,9 +39,13 @@ export function SidebarNavigation() {
     },
   ];
 
-  const handleSignOut = () => {
-    signOut();
-    navigate('/');
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      // No need to navigate manually since auth-context will handle it
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
   return (

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "./auth-context";
 
@@ -15,17 +15,52 @@ import { User, LogOut, Settings, Heart } from "lucide-react";
 import { toast } from "sonner";
 
 export function HeaderMenu() {
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [userInitial, setUserInitial] = useState("U");
   
   // Admin emails for access control
   const adminEmails = ['admin@diagramr.com']; // Add your admin emails here
   const isAdmin = user && user.email && adminEmails.includes(user.email);
 
+  // Update display name and initials when user or profile changes
+  useEffect(() => {
+    if (profile?.username) {
+      setDisplayName(profile.username);
+      setUserInitial(profile.username.charAt(0).toUpperCase());
+    } else if (user?.email) {
+      setDisplayName(user.email.split('@')[0]);
+      setUserInitial(user.email.charAt(0).toUpperCase());
+    } else {
+      setDisplayName("User");
+      setUserInitial("U");
+    }
+  }, [user, profile]);
+
+  // Listen for profile updates
+  useEffect(() => {
+    const handleProfileUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const updatedProfile = customEvent.detail?.profile;
+      
+      if (updatedProfile?.username) {
+        setDisplayName(updatedProfile.username);
+        setUserInitial(updatedProfile.username.charAt(0).toUpperCase());
+      }
+    };
+
+    window.addEventListener('profile-updated', handleProfileUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('profile-updated', handleProfileUpdate as EventListener);
+    };
+  }, []);
+
   const handleSignOut = async () => {
     try {
       await signOut();
-      toast.success("You have been signed out");
+      // Navigation is now handled in auth-context
     } catch (error) {
       console.error("Error signing out:", error);
       toast.error("Failed to sign out");
@@ -43,9 +78,9 @@ export function HeaderMenu() {
           >
             {user ? (
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user.image || ""} alt={user.name || "User"} />
+                <AvatarImage src={profile?.avatar_url || ""} alt={displayName} />
                 <AvatarFallback className="text-xs">
-                  {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+                  {userInitial}
                 </AvatarFallback>
               </Avatar>
             ) : (
@@ -58,7 +93,7 @@ export function HeaderMenu() {
             <>
               <div className="flex flex-col gap-1.5 p-3">
                 <div className="text-sm font-medium">
-                  {user.name || "User"}
+                  {displayName}
                 </div>
                 <div className="text-xs text-muted-foreground">
                   {user.email}
