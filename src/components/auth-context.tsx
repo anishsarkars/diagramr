@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Session, User } from "@supabase/supabase-js";
+import { Session, User, AuthChangeEvent } from "@supabase/supabase-js";
 
 interface UserProfile {
   id: string;
@@ -83,7 +83,7 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: AuthChangeEvent, session) => {
         console.log("Auth state change event:", event);
         setSession(session);
         setUser(session?.user ?? null);
@@ -94,7 +94,7 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
           
           // Force confetti on explicit sign-in events
           if (initialSessionChecked && 
-              ((event === 'SIGNED_IN') || (isUserChanged || !prevUserId))) {
+              (event === 'SIGNED_IN' || isUserChanged || !prevUserId)) {
             console.log("New login or signup detected, triggering confetti celebration");
             setIsNewLogin(true);
             

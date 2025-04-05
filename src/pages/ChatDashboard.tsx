@@ -246,6 +246,9 @@ export default function ChatDashboard() {
     // Only attempt to show confetti if we have a user
     if (!user) return;
     
+    // Track if component is mounted to prevent state updates after unmount
+    let isMounted = true;
+    
     const confettiKey = `diagramr-last-login`;
     const lastLogin = sessionStorage.getItem(confettiKey);
     const confettiShown = sessionStorage.getItem('confetti_shown');
@@ -269,28 +272,46 @@ export default function ChatDashboard() {
       console.log("Dashboard detected login event - showing confetti celebration");
       
       // Set a small delay to ensure DOM is ready
-      setTimeout(() => {
-        setShowConfetti(true);
-        
-        // Mark confetti as shown in this session
-        sessionStorage.setItem('confetti_shown', 'true');
-        
-        // Reset the new login flag
-        if (isNewLogin) {
-          setIsNewLogin(false);
+      const timer = setTimeout(() => {
+        if (isMounted) {
+          setShowConfetti(true);
+          
+          // Mark confetti as shown in this session
+          sessionStorage.setItem('confetti_shown', 'true');
+          
+          // Reset the new login flag
+          if (isNewLogin) {
+            setIsNewLogin(false);
+          }
+          
+          // Mark this login time in session storage
+          sessionStorage.setItem(confettiKey, currentTime.toString());
+          
+          // Show welcome toast with profile name if available
+          toast.success(`Welcome ${profile?.username || 'back'}!`, {
+            description: "Ready to discover amazing diagrams?",
+            duration: 3000,
+          });
         }
-        
-        // Mark this login time in session storage
-        sessionStorage.setItem(confettiKey, currentTime.toString());
-        
-        // Show welcome toast with profile name if available
-        toast.success(`Welcome ${profile?.username || 'back'}!`, {
-          description: "Ready to discover amazing diagrams?",
-          duration: 3000,
-        });
-      }, 300);
+      }, 500); // Increased delay to ensure everything is initialized
+      
+      return () => {
+        clearTimeout(timer);
+        isMounted = false;
+      };
     }
+    
+    return () => {
+      isMounted = false;
+    };
   }, [user, isNewLogin, setIsNewLogin, profile]);
+
+  // Clean up confetti state when component unmounts
+  useEffect(() => {
+    return () => {
+      setShowConfetti(false);
+    };
+  }, []);
   
   useEffect(() => {
     // Load search history from localStorage

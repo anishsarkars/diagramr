@@ -25,20 +25,21 @@ export default function Account() {
 
   // Redirect if not logged in
   useEffect(() => {
-    if (!user) {
+    // Redirect to login page if no user is found
+    if (!user && !isLoading) {
       navigate('/auth');
-      return;
     }
     
-    // Initialize form with user data
+    // Set the form values when profile data is loaded
     if (profile) {
-      setUserName(profile.username || "");
+      setUserName(profile.username || '');
     }
     
-    if (user) {
-      setEmail(user.email || "");
+    // Set the email field if it exists
+    if (user?.email) {
+      setEmail(user.email);
     }
-  }, [user, profile, navigate]);
+  }, [user, profile, navigate, isLoading]);
 
   // Listen for profile updates
   useEffect(() => {
@@ -61,9 +62,16 @@ export default function Account() {
     try {
       setIsLoading(true);
       
-      // Use the new updateProfile method from auth context
+      // Validate inputs
+      if (!userName.trim()) {
+        toast.error("Display name cannot be empty");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Use the updateProfile method from auth context
       const success = await updateProfile({ 
-        username: userName 
+        username: userName.trim() 
       });
       
       if (!success) {

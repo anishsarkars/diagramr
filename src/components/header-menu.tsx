@@ -14,6 +14,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, LogOut, Settings, Heart } from "lucide-react";
 import { toast } from "sonner";
 
+interface ProfileUpdateEvent extends CustomEvent {
+  detail: {
+    profile: {
+      username: string;
+    }
+  }
+}
+
 export function HeaderMenu() {
   const { user, profile, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -41,12 +49,10 @@ export function HeaderMenu() {
   // Listen for profile updates
   useEffect(() => {
     const handleProfileUpdate = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const updatedProfile = customEvent.detail?.profile;
-      
-      if (updatedProfile?.username) {
-        setDisplayName(updatedProfile.username);
-        setUserInitial(updatedProfile.username.charAt(0).toUpperCase());
+      const customEvent = event as ProfileUpdateEvent;
+      if (customEvent.detail?.profile?.username) {
+        setDisplayName(customEvent.detail.profile.username);
+        setUserInitial(customEvent.detail.profile.username.charAt(0).toUpperCase());
       }
     };
 
@@ -127,7 +133,7 @@ export function HeaderMenu() {
               </DropdownMenuItem>
               )}
               <DropdownMenuSeparator className="bg-border/20 my-1" />
-              <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive py-1.5 px-3 text-sm">
+              <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive py-1.5 px-3 text-sm cursor-pointer">
                 <LogOut className="mr-2 h-3.5 w-3.5 opacity-70" />
                 <span>Sign Out</span>
               </DropdownMenuItem>
