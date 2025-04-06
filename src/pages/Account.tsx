@@ -43,11 +43,19 @@ export default function Account() {
 
   // Listen for profile updates
   useEffect(() => {
-    const handleProfileUpdate = () => {
-      if (profile) {
+    const handleProfileUpdate = (event: any) => {
+      console.log("Profile update detected in Account:", event.detail);
+      if (event.detail && event.detail.profile) {
+        setUserName(event.detail.profile.username || "");
+      } else if (profile) {
         setUserName(profile.username || "");
       }
     };
+
+    // Initial setup
+    if (profile) {
+      setUserName(profile.username || "");
+    }
 
     window.addEventListener('profile-updated', handleProfileUpdate);
     

@@ -50,6 +50,8 @@ export function HeaderMenu() {
   useEffect(() => {
     const handleProfileUpdate = (event: Event) => {
       const customEvent = event as ProfileUpdateEvent;
+      console.log("Header menu received profile update:", customEvent.detail);
+      
       if (customEvent.detail?.profile?.username) {
         setDisplayName(customEvent.detail.profile.username);
         setUserInitial(customEvent.detail.profile.username.charAt(0).toUpperCase());

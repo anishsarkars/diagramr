@@ -17,7 +17,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   isNewLogin: boolean;
   setIsNewLogin: (value: boolean) => void;
-  refreshProfile: () => Promise<void>;
+  refreshProfile: () => Promise<UserProfile | undefined>;
   updateProfile: (data: Partial<UserProfile>) => Promise<boolean>;
 }
 
@@ -42,19 +42,37 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
     if (!user) return false;
     
     try {
-      const { error } = await supabase
+      console.log("Updating profile with data:", data);
+      
+      const { data: updateData, error } = await supabase
         .from('profiles')
         .update(data)
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select();
       
       if (error) {
         console.error("Error updating profile:", error);
         return false;
       }
       
-      // Immediately refresh the profile to keep UI in sync
-      await refreshProfile();
-      return true;
+      console.log("Profile update response:", updateData);
+      
+      if (updateData && updateData.length > 0) {
+        // Update the local state immediately for faster UI updates
+        setProfile(prev => prev ? { ...prev, ...data } : null);
+        
+        // Dispatch event for immediate UI updates
+        window.dispatchEvent(new CustomEvent('profile-updated', { 
+          detail: { profile: { ...profile, ...data } } 
+        }));
+        
+        // Also refresh from database to ensure consistency
+        await refreshProfile();
+        return true;
+      } else {
+        console.error("No data returned from profile update");
+        return false;
+      }
     } catch (error) {
       console.error("Unexpected error updating profile:", error);
       return false;
@@ -191,12 +209,20 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
 
         if (data) {
           console.log("Profile refreshed successfully:", data);
+          
+          // Update the local profile state
           setProfile(data as UserProfile);
           
           // Dispatch an event that other components can listen to
-          window.dispatchEvent(new CustomEvent('profile-updated', { 
+          const event = new CustomEvent('profile-updated', { 
             detail: { profile: data } 
-          }));
+          });
+          console.log("Dispatching profile-updated event:", event);
+          window.dispatchEvent(event);
+          
+          return data;
+        } else {
+          console.error("No profile data found during refresh");
         }
       } catch (error) {
         console.error("Unexpected error refreshing profile:", error);

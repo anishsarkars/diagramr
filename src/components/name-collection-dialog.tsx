@@ -18,7 +18,7 @@ export function NameCollectionDialog() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, updateProfile } = useAuth();
 
   useEffect(() => {
     // Check if we should show this dialog - only for signed in users with default username
@@ -43,19 +43,17 @@ export function NameCollectionDialog() {
     setIsLoading(true);
     
     try {
-      // First update the profile in the database
-      const { error } = await supabase
-        .from('profiles')
-        .update({ username: name.trim() })
-        .eq('id', user.id);
+      // Use auth context's updateProfile instead of direct Supabase call
+      const success = await updateProfile({ 
+        username: name.trim() 
+      });
       
-      if (error) throw error;
+      if (!success) {
+        throw new Error("Failed to update profile");
+      }
       
       // Mark that the user has set their name (to avoid showing this dialog again)
       localStorage.setItem(`diagramr-has-set-name-${user.id}`, 'true');
-      
-      // Important: Refresh the profile data in the auth context to update UI everywhere
-      await refreshProfile();
       
       toast.success("Your name has been saved");
       setOpen(false);
