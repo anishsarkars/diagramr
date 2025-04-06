@@ -373,7 +373,7 @@ export default function Auth() {
                 <Button 
                   variant="link" 
                   className="p-0 h-auto text-sm text-muted-foreground/90 font-normal"
-                  onClick={() => navigate("/reset-password")}
+                  onClick={() => navigate("/forgot-password")}
                 >
                   Forgot password?
                 </Button>

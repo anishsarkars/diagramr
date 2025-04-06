@@ -6,7 +6,7 @@ import { useAuth } from "@/components/auth-context";
 import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogIn, Settings, LogOut, Sparkles, Heart } from "lucide-react";
+import { LogIn, Settings, LogOut, Sparkles, Heart, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
   DropdownMenu,
@@ -184,8 +184,8 @@ export function Header() {
                 
                 <DropdownMenuItem asChild className="py-1.5 px-3 text-sm">
                   <Link to="/account" className="cursor-pointer flex items-center">
-                    <Settings className="mr-2 h-3.5 w-3.5 opacity-70" />
-                    <span>Settings</span>
+                    <User className="mr-2 h-3.5 w-3.5 opacity-70" />
+                    <span>Profile</span>
                   </Link>
                 </DropdownMenuItem>
                 

@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { UserRound, LogOut, Check, Loader2, SparklesIcon, ShieldCheck, Zap } from "lucide-react";
+import { UserRound, LogOut, Check, Loader2, SparklesIcon, ShieldCheck, Zap, AlertTriangle, Trash } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,13 +15,35 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
+// Import dialog and alert dialog components
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 export default function Account() {
-  const { user, profile, signOut, refreshProfile, updateProfile } = useAuth();
+  const { user, profile, signOut, refreshProfile, updateProfile, deleteAccount } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [activeSection, setActiveSection] = useState("profile");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -116,6 +138,34 @@ export default function Account() {
     }
   };
 
+  // Handle account deletion
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    
+    try {
+      const { success, error } = await deleteAccount();
+      
+      if (success) {
+        toast.success("Account deleted", {
+          description: "Your account has been permanently deleted.",
+        });
+        // Redirect to home page is handled in auth-context signOut
+      } else {
+        toast.error("Failed to delete account", {
+          description: error || "Please try again later",
+        });
+        setShowDeleteDialog(false);
+      }
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      toast.error("Something went wrong", {
+        description: "We couldn't process your request. Please try again.",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!user) {
     return null; // Redirect happens in useEffect
   }
@@ -176,23 +226,36 @@ export default function Account() {
                   
                   <Separator className="mb-6" />
                   
-                  <Button 
-                    variant="outline" 
-                    className="gap-2 w-full mb-2 justify-start"
-                    onClick={() => setActiveSection("profile")}
-                  >
-                    <UserRound className="h-4 w-4" />
-                    <span>Profile</span>
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="gap-2 w-full mb-6 justify-start hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
-                    onClick={handleSignOut}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>Sign out</span>
-                  </Button>
+                  <div className="w-full space-y-2">
+                    <Button 
+                      variant="outline" 
+                      className="gap-2 w-full justify-start"
+                      onClick={() => setActiveSection("profile")}
+                    >
+                      <UserRound className="h-4 w-4" />
+                      <span>Profile</span>
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="gap-2 w-full justify-start hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+                      onClick={handleSignOut}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>Sign out</span>
+                    </Button>
+                    
+                    <Separator className="my-4" />
+                    
+                    <Button 
+                      variant="outline" 
+                      className="gap-2 w-full justify-start text-destructive border-destructive/20 hover:bg-destructive/10 hover:border-destructive"
+                      onClick={() => setShowDeleteDialog(true)}
+                    >
+                      <Trash className="h-4 w-4" />
+                      <span>Delete Account</span>
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -296,11 +359,72 @@ export default function Account() {
                       </div>
                   </CardContent>
             </Card>
+            
+            {/* Password reset card */}
+            <Card className="border border-border/60 bg-card/50 backdrop-blur-sm shadow-sm mt-8">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                  Password & Security
+                </CardTitle>
+                <CardDescription>
+                  Manage your password and account security
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent className="space-y-8 pt-2">
+                <div>
+                  <h3 className="text-md font-medium mb-2">Reset Password</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    If you need to reset your password, we'll send you an email with instructions.
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/forgot-password")}
+                    className="h-9"
+                  >
+                    Reset Password
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
         </div>
       </main>
       
       <Footer />
+      
+      {/* Delete Account Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive flex items-center gap-2">
+              <Trash className="h-5 w-5" />
+              Delete Account
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Account"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

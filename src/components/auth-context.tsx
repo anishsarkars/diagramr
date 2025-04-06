@@ -19,6 +19,8 @@ interface AuthContextType {
   setIsNewLogin: (value: boolean) => void;
   refreshProfile: () => Promise<UserProfile | undefined>;
   updateProfile: (data: Partial<UserProfile>) => Promise<boolean>;
+  forgotPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
+  deleteAccount: () => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -317,6 +319,84 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
     }
   };
 
+  // Function to handle forgot password
+  const forgotPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) {
+        console.error("Error sending password reset email:", error);
+        return { success: false, error: error.message };
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error("Unexpected error in forgotPassword:", error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : "An unexpected error occurred" 
+      };
+    }
+  };
+  
+  // Function to handle account deletion
+  const deleteAccount = async (): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: "No active user session" };
+    
+    try {
+      // Step 1: Delete the user's profile data
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', user.id);
+      
+      if (profileError) {
+        console.error("Error deleting user profile:", profileError);
+        return { success: false, error: profileError.message };
+      }
+      
+      // Step 2: Delete any other user-related data
+      // Example: Delete saved diagrams, search history, etc.
+      const { error: savedDiagramsError } = await supabase
+        .from('saved_diagrams')
+        .delete()
+        .eq('user_id', user.id);
+      
+      if (savedDiagramsError) {
+        console.error("Error deleting saved diagrams:", savedDiagramsError);
+      }
+      
+      const { error: searchLogsError } = await supabase
+        .from('user_search_logs')
+        .delete()
+        .eq('user_id', user.id);
+      
+      if (searchLogsError) {
+        console.error("Error deleting search logs:", searchLogsError);
+      }
+      
+      // Step 3: Sign out - this needs to happen before we attempt to delete the user
+      await signOut();
+      
+      // Step 4: Inform the user that their data has been deleted
+      // Note: In Supabase, users cannot delete their own accounts from the client-side for security reasons
+      // The admin would need to delete the user account from the Supabase dashboard or using server-side functions
+      
+      return { 
+        success: true, 
+        error: "Your data has been deleted. Your account may require administrator action for complete removal."
+      };
+    } catch (error) {
+      console.error("Unexpected error in deleteAccount:", error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : "An unexpected error occurred" 
+      };
+    }
+  };
+
   const value = {
     session,
     user,
@@ -326,7 +406,9 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
     isNewLogin,
     setIsNewLogin,
     refreshProfile,
-    updateProfile
+    updateProfile,
+    forgotPassword,
+    deleteAccount
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

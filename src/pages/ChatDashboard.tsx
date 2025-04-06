@@ -556,9 +556,33 @@ export default function ChatDashboard() {
   // Add effect for scrolling animation with slower speed for more fluid motion
   useEffect(() => {
     if (!searchTerm) {
-      const scrollInterval = setInterval(() => {
-        setSuggestionScrollPosition((prev) => prev + 0.15);
-      }, 40);
+      let scrollInterval = setInterval(() => {
+        setSuggestionScrollPosition((prev) => prev + 0.1); // Slower scrolling speed for smoother appearance
+      }, 50); // Adjusted interval for more consistent animation
+      
+      // Pause animation on hover
+      const suggestionContainer = document.querySelector('.suggestion-container');
+      if (suggestionContainer) {
+        const pauseAnimation = () => {
+          clearInterval(scrollInterval);
+        };
+        
+        const resumeAnimation = () => {
+          // This will restart the animation when mouse leaves
+          scrollInterval = setInterval(() => {
+            setSuggestionScrollPosition((prev) => prev + 0.1);
+          }, 50);
+        };
+        
+        suggestionContainer.addEventListener('mouseenter', pauseAnimation);
+        suggestionContainer.addEventListener('mouseleave', resumeAnimation);
+        
+        return () => {
+          clearInterval(scrollInterval);
+          suggestionContainer.removeEventListener('mouseenter', pauseAnimation);
+          suggestionContainer.removeEventListener('mouseleave', resumeAnimation);
+        };
+      }
       
       return () => clearInterval(scrollInterval);
     }
@@ -726,7 +750,7 @@ export default function ChatDashboard() {
             {/* Single row of scrolling suggestions */}
             <div className="w-full max-w-xl mx-auto">
               <motion.div 
-                className="flex overflow-hidden py-2"
+                className="flex overflow-hidden py-2 suggestion-container"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
@@ -749,12 +773,19 @@ export default function ChatDashboard() {
                       }}
                       whileTap={{ scale: 0.95 }}
                       className="origin-center"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => handleSearch(suggestion)}
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          handleSearch(suggestion);
+                        }
+                      }}
                     >
                       <Button
                         variant="outline"
                         size="sm"
-                        className="rounded-full text-sm py-2 px-4 h-auto border-primary/20 hover:border-primary/60 hover:bg-primary/5 whitespace-nowrap dark:border-gray-600 dark:bg-gray-800/60 dark:hover:bg-gray-800"
-                        onClick={() => handleSearch(suggestion)}
+                        className="rounded-full text-sm py-2 px-4 h-auto border-primary/20 hover:border-primary/60 hover:bg-primary/5 whitespace-nowrap dark:border-gray-600 dark:bg-gray-800/60 dark:hover:bg-gray-800 pointer-events-none"
                       >
                         {suggestion}
                       </Button>
@@ -813,15 +844,23 @@ export default function ChatDashboard() {
         {/* Results section */}
         {searchTerm && (
           <div className="pt-4 container max-w-6xl mx-auto px-4 md:px-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-lg md:text-xl font-semibold">Results for "{searchTerm}"</h2>
-                <p className="text-xs text-muted-foreground">Found {results.length} diagrams</p>
+            <div className="flex flex-row items-center justify-between mb-5 border-b border-border/30 pb-4">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl md:text-2xl font-medium">"{searchTerm}"</h2>
+                <p className="text-sm text-muted-foreground/80 px-2 py-1 bg-muted/50 rounded-md whitespace-nowrap">
+                  {results.length} of {Math.max(20, results.length)}
+                </p>
               </div>
-              <Button variant="outline" size="sm" onClick={handleNewSearch} className="h-9 px-4 shadow-sm">
-                  New Search
-                </Button>
-              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleNewSearch} 
+                className="flex items-center gap-1.5 h-8"
+              >
+                <Search className="h-3.5 w-3.5" />
+                <span>New Search</span>
+              </Button>
+            </div>
               
             <ResultsSection
               results={results}
@@ -835,8 +874,8 @@ export default function ChatDashboard() {
               searchTerm={searchTerm}
               onNewSearch={handleNewSearch}
             />
-            </div>
-          )}
+          </div>
+        )}
         
         {/* Compact 3D Marquee at the bottom, now better centered and larger */}
         {!searchTerm && (
@@ -865,39 +904,39 @@ export default function ChatDashboard() {
         <div className="fixed bottom-0 left-0 right-0 bg-[#f9f8f6]/95 dark:bg-[#1d1e20]/95 backdrop-blur-lg border-t border-border/30 dark:border-gray-800 p-3 pb-5 z-50 safe-bottom">
           <div className="relative z-10">
             {/* Subtle glow effect behind input */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-[18px] blur-md opacity-70"></div>
+            <div className="absolute -inset-4 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-full blur-xl opacity-70"></div>
             
             <div className="relative overflow-hidden rounded-[18px] shadow-md border border-border/40 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 dark:border-gray-700/50 bg-background/90 dark:bg-[#1d1e20]/90 backdrop-blur-sm">
                 <Input
                   ref={inputRef}
                   type="text"
-              placeholder="What diagrams are you looking for?"
+                  placeholder="What diagrams are you looking for?"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+                    if (e.key === 'Enter') {
                       handleSearch(query);
-                  setShowTypingSuggestions(false);
+                      setShowTypingSuggestions(false);
                     }
                   }}
-                className="pr-20 pl-12 py-6 border-0 text-base shadow-none focus:ring-0 focus:outline-none dark:bg-transparent"
+                  className="pr-20 pl-12 py-6 border-0 text-base shadow-none focus:ring-0 focus:outline-none dark:bg-transparent"
                 />
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-primary h-5 w-5" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-primary h-5 w-5" />
                 <Button
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-10 rounded-full px-5 bg-primary/90 hover:bg-primary dark:bg-primary dark:hover:bg-primary/90 shadow"
-              onClick={() => {
-                handleSearch(query);
-                setShowTypingSuggestions(false);
-              }}
-              disabled={!query.trim()}
-            >
-                <span className="text-sm">Search</span>
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-10 rounded-full px-5 bg-primary/90 hover:bg-primary dark:bg-primary dark:hover:bg-primary/90 shadow"
+                  onClick={() => {
+                    handleSearch(query);
+                    setShowTypingSuggestions(false);
+                  }}
+                  disabled={!query.trim()}
+                >
+                  <span className="text-sm">Search</span>
                 </Button>
             
             {/* Mobile typing suggestions */}
             {showTypingSuggestions && isMobile && (
               <motion.div 
-                  className="absolute left-0 right-0 bottom-full mb-2 bg-background/95 dark:bg-[#1d1e20]/95 rounded-xl shadow-lg border border-border/50 dark:border-gray-700 py-2 z-20 backdrop-blur-sm"
+                className="absolute left-0 right-0 bottom-full mb-2 bg-background/95 dark:bg-[#1d1e20]/95 rounded-xl shadow-lg border border-border/50 dark:border-gray-700 py-2 z-20 backdrop-blur-sm"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
@@ -921,7 +960,7 @@ export default function ChatDashboard() {
                       <div className="flex items-center">
                         <Search className="h-3 w-3 mr-2 text-muted-foreground" />
                         <span className="text-sm">{suggestion}</span>
-              </div>
+                      </div>
                     </motion.li>
                   ))}
                 </ul>
@@ -929,8 +968,8 @@ export default function ChatDashboard() {
             )}
             </div>
           </div>
-          </div>
-        )}
+        </div>
+      )}
       
       {showConfetti && (
         <div className="fixed inset-0 pointer-events-none z-[1000]">

@@ -13,6 +13,7 @@ import Liked from "./pages/Liked";
 import Account from "./pages/Account";
 import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
+import ForgotPassword from "./pages/ForgotPassword";
 import { SiteLoader } from "./components/site-loader";
 import { FeedbackButton } from "./components/feedback-button";
 import ChatDashboard from "./pages/ChatDashboard";
@@ -123,6 +124,7 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<Index onLoginClick={handleLoginClick} />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/liked" element={<Liked />} />
             <Route path="/account" element={<Account />} />
             <Route path="/pricing" element={<Pricing />} />
