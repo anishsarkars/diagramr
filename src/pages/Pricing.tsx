@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { useAuth } from "@/components/auth-context";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -16,11 +16,34 @@ const Pricing = () => {
   
   // Animation effects for logged-in users
   const [animateParticles, setAnimateParticles] = useState(false);
+  const [windowSize, setWindowSize] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
+    height: typeof window !== 'undefined' ? window.innerHeight : 800,
+  });
+
+  // Update window size on resize
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Trigger special animation effects when logged in
   useEffect(() => {
     if (user) {
-      setAnimateParticles(true);
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        setAnimateParticles(true);
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, [user]);
 
@@ -28,8 +51,15 @@ const Pricing = () => {
   const savingsText = "Save 20%";
   
   // Settings for animation particles
-  const particleCount = 20;
-  const particles = Array.from({ length: particleCount });
+  const particleCount = 15; // Reduced count to avoid performance issues
+  const particles = useMemo(() => {
+    return Array.from({ length: particleCount }).map((_, i) => ({
+      id: i,
+      x: Math.random() * windowSize.width,
+      y: Math.random() * windowSize.height,
+      delay: Math.random() * 10
+    }));
+  }, [windowSize, particleCount]);
 
   const plans = [
     {
@@ -128,25 +158,25 @@ const Pricing = () => {
         {/* Premium particles animation for logged-in users */}
         {user && animateParticles && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {particles.map((_, index) => (
+            {particles.map((particle) => (
               <motion.div
-                key={index}
+                key={particle.id}
                 className="absolute w-1 h-1 bg-primary/20 rounded-full"
                 initial={{ 
-                  x: Math.random() * window.innerWidth, 
-                  y: Math.random() * window.innerHeight,
+                  x: particle.x, 
+                  y: particle.y,
                   opacity: 0,
                   scale: 0
                 }}
                 animate={{ 
-                  y: [null, -Math.random() * 500], 
+                  y: [null, particle.y - 200 - (Math.random() * 300)], 
                   opacity: [0, 0.8, 0],
-                  scale: [0, 1 + Math.random(), 0]
+                  scale: [0, 1 + Math.random() * 0.5, 0]
                 }}
                 transition={{ 
-                  duration: 4 + Math.random() * 6,
+                  duration: 4 + Math.random() * 3,
                   repeat: Infinity,
-                  delay: Math.random() * 10
+                  delay: particle.delay
                 }}
               />
             ))}
@@ -242,7 +272,7 @@ const Pricing = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <AnimatePresence mode="wait">
+            <AnimatePresence>
               {plans.map((plan, index) => (
                 <motion.div
                   key={`${plan.name}-${activeTab}`}
