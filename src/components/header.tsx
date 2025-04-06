@@ -87,9 +87,19 @@ export function Header() {
       <div className="container flex h-14 sm:h-16 items-center px-3 sm:px-4">
         <div className="flex items-center mr-2 sm:mr-4">
           <Link to="/" className="flex items-center">
-            <DiagramrLogo size={isMobile ? "sm" : "lg"} />
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            >
+              <DiagramrLogo size={isMobile ? "sm" : "lg"} />
+            </motion.div>
           </Link>
         </div>
+        
+        {/* Premium subtle gradient accent for logged-in users */}
+        {user && (
+          <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+        )}
         
         <div className="flex-1"></div>
         
@@ -97,12 +107,15 @@ export function Header() {
           {user && !profile?.is_premium ? (
             <Link to="/pricing">
               <Button 
-                variant="premium" 
+                variant="ghost" 
                 size="sm" 
-                className="text-white font-medium h-8 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 border-0 shadow-md transition-all duration-200 hover:shadow-lg"
+                className="relative overflow-hidden group text-foreground/90 font-medium h-8 hover:text-primary transition-all duration-300"
               >
-                <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                <span>Upgrade</span>
+                <span className="relative z-10 flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-primary group-hover:animate-pulse" />
+                  <span>Upgrade</span>
+                </span>
+                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
               </Button>
             </Link>
           ) : !user ? (
@@ -140,16 +153,22 @@ export function Header() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="rounded-full p-0 h-8 w-8 sm:h-8 sm:w-8 overflow-hidden hover:bg-background/0 hover:opacity-90">
-                  <Avatar className="h-7 w-7 sm:h-7 sm:w-7 transition-opacity hover:opacity-90">
-                    <AvatarImage src={user.user_metadata?.avatar_url || ""} alt={profile?.username || user.email || "User"} />
-                    <AvatarFallback className="bg-primary/5 text-primary text-xs">
-                      {profileInitial}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button variant="ghost" className="rounded-full p-0 h-8 w-8 sm:h-8 sm:w-8 overflow-hidden hover:bg-background/0 hover:opacity-90">
+                    <Avatar className="h-7 w-7 sm:h-7 sm:w-7 transition-opacity hover:opacity-90">
+                      <AvatarImage src={user.user_metadata?.avatar_url || ""} alt={profile?.username || user.email || "User"} />
+                      <AvatarFallback className="bg-primary/5 text-primary text-xs">
+                        {profileInitial}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </motion.div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40 bg-background/95 backdrop-blur-sm border-border/30 rounded-md">
+              <DropdownMenuContent 
+                align="end" 
+                className="w-40 bg-background/95 backdrop-blur-sm border-border/30 rounded-lg shadow-lg animate-in fade-in-80 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:zoom-out-95"
+                sideOffset={6}
+              >
                 {isMobile && (
                   <>
                     <DropdownMenuItem asChild className="py-1.5 px-3 text-sm">

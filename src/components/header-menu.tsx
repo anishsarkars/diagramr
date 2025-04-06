@@ -131,17 +131,27 @@ export function HeaderMenu() {
               {user ? (
                 <>
                   <motion.div 
-                    className="flex flex-col gap-1.5 p-3"
+                    className="flex flex-col gap-1.5 p-3 relative"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.2, delay: 0.1 }}
                   >
-                    <div className="text-sm font-medium">
-                      {displayName}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {user.email}
-                    </div>
+                    {/* Subtle premium accent for logged-in users */}
+                    <div className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-primary/10 to-transparent"></div>
+                    
+                    <motion.div
+                      initial={{ scale: 0.95 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.15, type: "spring" }}
+                    >
+                      <div className="text-sm font-medium">
+                        {displayName}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {user.email}
+                      </div>
+                    </motion.div>
+                    
                     {!profile?.is_premium && (
                       <motion.div
                         initial={{ opacity: 0, y: 5 }}
@@ -151,13 +161,17 @@ export function HeaderMenu() {
                       >
                         <Button 
                           asChild 
-                          variant="premium" 
+                          variant="ghost" 
                           size="sm" 
-                          className="w-full h-8 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white font-medium"
+                          className="w-full group relative overflow-hidden h-8 border border-dashed border-primary/30 hover:border-primary/0 text-foreground/90 hover:text-primary transition-all duration-300"
                         >
                           <Link to="/pricing" className="flex items-center justify-center gap-1.5">
-                            <Sparkles className="h-3.5 w-3.5" />
-                            <span>Upgrade to Pro</span>
+                            <span className="relative z-10 flex items-center gap-1.5">
+                              <Sparkles className="h-3.5 w-3.5 text-primary group-hover:animate-pulse" />
+                              <span>Upgrade to Pro</span>
+                            </span>
+                            <span className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-indigo-500/50 via-purple-500/50 to-pink-500/50 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
+                            <span className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
                           </Link>
                         </Button>
                       </motion.div>
@@ -169,42 +183,66 @@ export function HeaderMenu() {
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.3, delay: 0.25 }}
                   >
-                    <DropdownMenuItem asChild className="py-1.5 px-3 text-sm focus:bg-primary/10 rounded-lg transition-colors duration-200">
-                      <Link to="/dashboard" className="cursor-pointer w-full flex items-center">
-                        <User className="mr-2 h-3.5 w-3.5 opacity-70" />
-                        <span>Dashboard</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="py-1.5 px-3 text-sm focus:bg-primary/10 rounded-lg transition-colors duration-200">
-                      <Link to="/liked" className="cursor-pointer w-full flex items-center">
-                        <Heart className="mr-2 h-3.5 w-3.5 opacity-70" />
-                        <span>Liked Diagrams</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="py-1.5 px-3 text-sm focus:bg-primary/10 rounded-lg transition-colors duration-200">
-                      <Link to="/account" className="cursor-pointer w-full flex items-center">
-                        <Settings className="mr-2 h-3.5 w-3.5 opacity-70" />
-                        <span>Account</span>
-                      </Link>
-                    </DropdownMenuItem>
+                    {[
+                      { 
+                        name: "Dashboard", 
+                        icon: User, 
+                        path: "/dashboard" 
+                      },
+                      { 
+                        name: "Liked Diagrams", 
+                        icon: Heart, 
+                        path: "/liked" 
+                      },
+                      { 
+                        name: "Account", 
+                        icon: Settings, 
+                        path: "/account" 
+                      }
+                    ].map((item, index) => (
+                      <motion.div
+                        key={item.name}
+                        initial={{ x: -5, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.1 * index + 0.3 }}
+                        whileHover={{ x: 2 }}
+                      >
+                        <DropdownMenuItem asChild className="py-1.5 px-3 text-sm focus:bg-primary/10 rounded-lg transition-colors duration-200">
+                          <Link to={item.path} className="cursor-pointer w-full flex items-center">
+                            <item.icon className="mr-2 h-3.5 w-3.5 opacity-70" />
+                            <span>{item.name}</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </motion.div>
+                    ))}
+                    
                     {isAdmin && (
-                    <DropdownMenuItem asChild className="py-1.5 px-3 text-sm text-blue-600 dark:text-blue-400 focus:bg-blue-100 dark:focus:bg-blue-900/20 rounded-lg transition-colors duration-200">
-                      <Link to="/admin/api-status" className="cursor-pointer w-full flex items-center">
-                        <Settings className="mr-2 h-3.5 w-3.5 opacity-70" />
-                        <span>Admin Dashboard</span>
-                      </Link>
-                    </DropdownMenuItem>
+                      <motion.div
+                        initial={{ x: -5, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.6 }}
+                        whileHover={{ x: 2 }}
+                      >
+                        <DropdownMenuItem asChild className="py-1.5 px-3 text-sm text-blue-600 dark:text-blue-400 focus:bg-blue-100 dark:focus:bg-blue-900/20 rounded-lg transition-colors duration-200">
+                          <Link to="/admin/api-status" className="cursor-pointer w-full flex items-center">
+                            <Settings className="mr-2 h-3.5 w-3.5 opacity-70" />
+                            <span>Admin Dashboard</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </motion.div>
                     )}
                   </motion.div>
                   <DropdownMenuSeparator className="bg-border/20 my-1" />
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3, delay: 0.3 }}
+                    transition={{ duration: 0.3, delay: 0.7 }}
+                    whileHover={{ x: 2 }}
                   >
                     <DropdownMenuItem 
                       onClick={handleSignOut} 
-                      className="text-destructive focus:text-destructive py-1.5 px-3 text-sm cursor-pointer focus:bg-destructive/10 rounded-lg transition-colors duration-200">
+                      className="text-destructive focus:text-destructive py-1.5 px-3 text-sm cursor-pointer focus:bg-destructive/10 rounded-lg transition-colors duration-200"
+                    >
                       <LogOut className="mr-2 h-3.5 w-3.5 opacity-70" />
                       <span>Sign Out</span>
                     </DropdownMenuItem>

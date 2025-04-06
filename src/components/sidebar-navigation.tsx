@@ -65,7 +65,10 @@ export function SidebarNavigation() {
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Empty space for header alignment */}
+      {/* Subtle premium accent */}
+      <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-gradient-to-b from-transparent via-primary/20 to-transparent"></div>
+      
+      {/* Menu header */}
       <div className="p-4 flex items-center justify-between border-b border-border/40">
         {!isCollapsed && (
           <motion.span 
@@ -78,15 +81,20 @@ export function SidebarNavigation() {
           </motion.span>
         )}
         
-        <Button
-          variant="ghost"
-          size="icon"
-          className={cn(isCollapsed ? "mx-auto" : "ml-auto")}
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        <motion.div
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
         >
-          {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(isCollapsed ? "mx-auto" : "ml-auto")}
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </Button>
+        </motion.div>
       </div>
       
       {/* Navigation */}
@@ -96,49 +104,69 @@ export function SidebarNavigation() {
           {showUpgradeButton && (
             <Link to="/pricing">
               <Button
-                variant="premium"
+                variant="ghost"
                 className={cn(
-                  "w-full mb-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0",
+                  "w-full mb-4 group relative overflow-hidden border border-dashed border-primary/30 hover:border-primary/50 text-foreground/90 hover:text-primary/90 transition-all duration-300",
                   isCollapsed ? "justify-center p-2" : "px-3 py-2 justify-start gap-3"
                 )}
                 title={isCollapsed ? "Upgrade to Pro" : undefined}
               >
-                <Sparkles size={20} />
-                {!isCollapsed && <span>Upgrade to Pro</span>}
+                <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <Sparkles 
+                  size={20} 
+                  className="text-primary relative z-10 group-hover:animate-pulse" 
+                />
+                {!isCollapsed && (
+                  <span className="relative z-10 flex-1">
+                    Upgrade to Pro
+                    <span className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-indigo-500/40 via-purple-500/40 to-pink-500/40 transform origin-right group-hover:origin-left group-hover:scale-x-100 scale-x-0 transition-transform duration-300"></span>
+                  </span>
+                )}
               </Button>
             </Link>
           )}
 
-          {navItems.map((item) => {
+          {navItems.map((item, index) => {
             const isActive = location.pathname === item.path;
             
             return (
-              <Link key={item.name} to={item.path}>
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  className={cn(
-                    "w-full justify-start gap-3 mb-1",
-                    isCollapsed ? "justify-center p-2" : "px-3 py-2",
-                    isActive && "bg-primary/10 text-primary hover:bg-primary/15"
-                  )}
-                  title={isCollapsed ? item.name : undefined}
-                >
-                  <item.icon size={20} />
-                  {!isCollapsed && <span>{item.name}</span>}
-                </Button>
-              </Link>
+              <motion.div
+                key={item.name}
+                initial={{ opacity: 0, x: -5 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 + 0.2 }}
+                whileHover={{ x: isCollapsed ? 0 : 2 }}
+              >
+                <Link to={item.path}>
+                  <Button
+                    variant={isActive ? "secondary" : "ghost"}
+                    className={cn(
+                      "w-full justify-start gap-3 mb-1",
+                      isCollapsed ? "justify-center p-2" : "px-3 py-2",
+                      isActive && "bg-primary/10 text-primary hover:bg-primary/15"
+                    )}
+                    title={isCollapsed ? item.name : undefined}
+                  >
+                    <item.icon size={20} className={isActive ? "animate-pulse" : ""} />
+                    {!isCollapsed && <span>{item.name}</span>}
+                  </Button>
+                </Link>
+              </motion.div>
             );
           })}
         </nav>
       </div>
       
       {/* Theme toggle */}
-      <div className={cn(
-        "px-2 py-2",
-        isCollapsed ? "flex justify-center" : ""
-      )}>
+      <motion.div 
+        className={cn(
+          "px-2 py-2",
+          isCollapsed ? "flex justify-center" : ""
+        )}
+        whileHover={{ y: -2 }}
+      >
         <ThemeToggle />
-      </div>
+      </motion.div>
       
       {/* User Profile */}
       <div className={cn(
@@ -147,11 +175,15 @@ export function SidebarNavigation() {
       )}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <div className={cn(
-              "flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer",
-              isCollapsed ? "justify-center" : ""
-            )}>
-              <Avatar className="h-9 w-9">
+            <motion.div 
+              className={cn(
+                "flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer",
+                isCollapsed ? "justify-center" : ""
+              )}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Avatar className="h-9 w-9 border border-primary/10">
                 <AvatarImage src={profile?.avatar_url || ""} alt={profile?.username || user?.email || "User"} />
                 <AvatarFallback className="bg-primary/20 text-primary">
                   {userInitial}
@@ -164,9 +196,9 @@ export function SidebarNavigation() {
                   <p className="text-xs text-muted-foreground">{profile?.is_premium ? "Premium Plan" : "Free Plan"}</p>
                 </div>
               )}
-            </div>
+            </motion.div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="min-w-[180px] rounded-lg shadow-lg animate-in slide-in-from-bottom-5 fade-in-80">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate('/account')}>
