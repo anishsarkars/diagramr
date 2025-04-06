@@ -1,70 +1,34 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, ZapIcon, SearchIcon, SparklesIcon, Clock, Star, Shield, Rocket, Zap, Infinity, Crown, User } from "lucide-react";
+import { CheckCircle, ZapIcon, SearchIcon, SparklesIcon, Clock, Star, Shield, Rocket, Zap, Infinity, Crown, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { useAuth } from "@/components/auth-context";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 
 const Pricing = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"monthly" | "yearly">("monthly");
-  
-  // Animation effects for logged-in users
-  const [animateParticles, setAnimateParticles] = useState(false);
-  const [windowSize, setWindowSize] = useState({
-    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
-    height: typeof window !== 'undefined' ? window.innerHeight : 800,
-  });
+  const [animatePlan, setAnimatePlan] = useState<string | null>(null);
 
-  // Update window size on resize
+  // Animate the recommended plan after a short delay for logged-in users
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Trigger special animation effects when logged in
-  useEffect(() => {
-    if (user) {
-      // Small delay to ensure DOM is ready
+    if (user && !profile?.is_premium) {
       const timer = setTimeout(() => {
-        setAnimateParticles(true);
-      }, 500);
+        setAnimatePlan("Premium");
+        setTimeout(() => setAnimatePlan(null), 2000);
+      }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [user]);
-
-  // Calculate savings text based on billing period
-  const savingsText = "Save 20%";
-  
-  // Settings for animation particles
-  const particleCount = 15; // Reduced count to avoid performance issues
-  const particles = useMemo(() => {
-    return Array.from({ length: particleCount }).map((_, i) => ({
-      id: i,
-      x: Math.random() * windowSize.width,
-      y: Math.random() * windowSize.height,
-      delay: Math.random() * 10
-    }));
-  }, [windowSize, particleCount]);
+  }, [user, profile]);
 
   const plans = [
     {
       name: "Free",
-      price: activeTab === "monthly" ? "₹0" : "₹0",
+      price: "₹0",
       period: "forever",
       description: "Perfect for casual exploration of educational diagrams",
       features: [
@@ -74,13 +38,14 @@ const Pricing = () => {
         { text: "Save up to 20 diagrams", icon: <Star className="h-4 w-4 text-primary flex-shrink-0" /> },
       ],
       isPopular: false,
-      buttonText: user && !profile?.is_premium ? "Current Plan" : "Get Started",
+      buttonText: user ? (profile?.is_premium ? "Downgrade" : "Current Plan") : "Get Started",
       buttonAction: () => navigate("/"),
+      disabled: user && !profile?.is_premium,
     },
     {
       name: "Premium",
-      price: activeTab === "monthly" ? "₹259" : "₹2499",
-      period: activeTab === "monthly" ? "per month" : "per year",
+      price: "₹259",
+      period: "per month",
       description: "Enhanced experience with premium features for students and educators",
       features: [
         { text: "Unlimited searches", icon: <Infinity className="h-4 w-4 text-primary flex-shrink-0" /> },
@@ -91,101 +56,89 @@ const Pricing = () => {
         { text: "Early access to new features", icon: <Zap className="h-4 w-4 text-primary flex-shrink-0" /> },
       ],
       isPopular: true,
-      buttonText: user && profile?.is_premium ? "Current Plan" : "Upgrade Now",
+      buttonText: profile?.is_premium ? "Current Plan" : "Upgrade Now",
       buttonAction: () => {
         if (!user) {
           navigate("/auth", { state: { returnTo: "/pricing" } });
         } else {
-          // Handle subscription logic - using different links based on billing period
-          window.open(
-            activeTab === "monthly" 
-              ? "https://diagramr.lemonsqueezy.com/buy/5c0b7ecd-65a5-4e74-95c3-fa001496e2e2" 
-              : "https://diagramr.lemonsqueezy.com/buy/5c0b7ecd-65a5-4e74-95c3-fa001496e2e2?billing=yearly",
-            "_blank"
-          );
+          // Handle subscription logic
+          window.open("https://diagramr.lemonsqueezy.com/buy/5c0b7ecd-65a5-4e74-95c3-fa001496e2e2", "_blank");
         }
       },
+      disabled: user && profile?.is_premium,
     }
   ];
+
+  // Personalized greeting for logged-in users
+  const getPersonalizedHeading = () => {
+    if (!user) return "Unlock the Power of Educational Diagrams";
+    
+    if (profile?.is_premium) {
+      return `Thanks for being a Premium member, ${profile.username || 'there'}!`;
+    }
+    
+    return `Upgrade your Experience, ${profile?.username || 'there'}!`;
+  };
+
+  // Personalized subheading for logged-in users
+  const getPersonalizedSubheading = () => {
+    if (!user) {
+      return "Choose the plan that fits your needs and elevate your learning experience with our premium features";
+    }
+    
+    if (profile?.is_premium) {
+      return "You're enjoying all premium features. Here's a breakdown of your benefits:";
+    }
+    
+    return "Take your learning experience to the next level with Premium features";
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
       
       <main className="flex-1 pt-24 pb-16 relative overflow-hidden">
-        {/* Animated background decoration elements */}
+        {/* Enhanced background decoration for premium feel */}
         <div className="absolute top-0 left-0 right-0 h-[500px] overflow-hidden -z-10 opacity-30 pointer-events-none">
-          <motion.div 
-            className="absolute top-0 right-[10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px]" 
-            animate={{ 
-              scale: [1, 1.1, 1],
-              opacity: [0.3, 0.5, 0.3],
-            }}
-            transition={{ 
-              duration: 8, 
-              repeat: Infinity,
-              repeatType: "reverse" 
-            }}
-          />
-          <motion.div 
-            className="absolute top-[15%] left-[5%] w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px]" 
-            animate={{ 
-              scale: [1, 1.15, 1],
-              opacity: [0.2, 0.4, 0.2],
-            }}
-            transition={{ 
-              duration: 10, 
-              repeat: Infinity,
-              repeatType: "reverse",
-              delay: 1 
-            }}
-          />
-          <motion.div 
-            className="absolute bottom-[10%] left-[30%] w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-[100px]" 
-            animate={{ 
-              scale: [1, 1.1, 1],
-              opacity: [0.2, 0.3, 0.2],
-            }}
-            transition={{ 
-              duration: 12, 
-              repeat: Infinity,
-              repeatType: "reverse",
-              delay: 2 
-            }}
-          />
-        </div>
-        
-        {/* Premium particles animation for logged-in users */}
-        {user && animateParticles && (
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {particles.map((particle) => (
-              <motion.div
-                key={particle.id}
-                className="absolute w-1 h-1 bg-primary/20 rounded-full"
-                initial={{ 
-                  x: particle.x, 
-                  y: particle.y,
-                  opacity: 0,
-                  scale: 0
+          <div className="absolute top-0 right-[10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px]" />
+          <div className="absolute top-[15%] left-[5%] w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px]" />
+          <div className="absolute bottom-[10%] left-[30%] w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-[100px]" />
+          
+          {/* Additional animated elements for logged-in users */}
+          {user && (
+            <>
+              <motion.div 
+                className="absolute top-[30%] right-[5%] w-[200px] h-[200px] bg-yellow-500/10 rounded-full blur-[80px]"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.2, 0.3, 0.2],
                 }}
-                animate={{ 
-                  y: [null, particle.y - 200 - (Math.random() * 300)], 
-                  opacity: [0, 0.8, 0],
-                  scale: [0, 1 + Math.random() * 0.5, 0]
-                }}
-                transition={{ 
-                  duration: 4 + Math.random() * 3,
+                transition={{
+                  duration: 8,
                   repeat: Infinity,
-                  delay: particle.delay
+                  repeatType: "reverse",
                 }}
               />
-            ))}
-          </div>
-        )}
-
+              <motion.div 
+                className="absolute bottom-[20%] right-[15%] w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[90px]"
+                animate={{
+                  scale: [1, 1.1, 1],
+                  opacity: [0.2, 0.25, 0.2],
+                }}
+                transition={{
+                  duration: 6,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                  delay: 1,
+                }}
+              />
+            </>
+          )}
+        </div>
+        
         <div className="container relative z-10">
           <motion.div 
-            className="text-center max-w-3xl mx-auto mb-12"
+            className="text-center max-w-3xl mx-auto mb-16"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -197,8 +150,25 @@ const Pricing = () => {
               transition={{ duration: 0.5 }}
             >
               <Badge variant="outline" className="px-4 py-1 border-primary/30 bg-primary/5 text-primary">
-                <SparklesIcon className="h-3.5 w-3.5 mr-1" /> 
-                {user ? 'Exclusive Pricing' : 'Choose Your Plan'}
+                {user && profile?.is_premium ? (
+                  <motion.div 
+                    className="flex items-center"
+                    initial={{ x: -5 }}
+                    animate={{ x: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Crown className="h-3.5 w-3.5 mr-1.5" /> Your Premium Membership
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    className="flex items-center"
+                    initial={{ x: -5 }}
+                    animate={{ x: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <SparklesIcon className="h-3.5 w-3.5 mr-1.5" /> Choose Your Plan
+                  </motion.div>
+                )}
               </Badge>
             </motion.span>
             
@@ -208,9 +178,7 @@ const Pricing = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              {user && profile 
-                ? `Welcome${profile.username ? `, ${profile.username}` : ''} to Premium Features`
-                : "Unlock the Power of Educational Diagrams"}
+              {getPersonalizedHeading()}
             </motion.h1>
             
             <motion.p 
@@ -219,52 +187,59 @@ const Pricing = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              {user 
-                ? "Enjoy a seamless experience with our premium features and elevate your learning journey" 
-                : "Choose the plan that fits your needs and elevate your learning experience with our premium features"}
+              {getPersonalizedSubheading()}
             </motion.p>
-            
-            {/* Billing toggle for logged-in users */}
-            {user && (
-              <motion.div 
-                className="mt-8 inline-flex items-center bg-muted/50 p-1 rounded-full border border-border/40 shadow-sm"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.4 }}
-              >
-                <motion.button
-                  className={`py-2 px-4 rounded-full text-sm font-medium transition-all duration-200 ${
-                    activeTab === "monthly" 
-                      ? "bg-primary text-white shadow-md" 
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  onClick={() => setActiveTab("monthly")}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  Monthly
-                </motion.button>
-                <motion.button
-                  className={`py-2 px-4 rounded-full text-sm font-medium relative transition-all duration-200 ${
-                    activeTab === "yearly" 
-                      ? "bg-primary text-white shadow-md" 
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  onClick={() => setActiveTab("yearly")}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  Yearly
-                  <motion.span 
-                    className="absolute -top-3 -right-2 bg-green-500 text-white text-[10px] font-bold py-0.5 px-1.5 rounded-full"
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.6, type: "spring" }}
-                  >
-                    {savingsText}
-                  </motion.span>
-                </motion.button>
-              </motion.div>
-            )}
           </motion.div>
+          
+          {/* Special personalized section for logged-in users */}
+          {user && !profile?.is_premium && (
+            <motion.div 
+              className="max-w-3xl mx-auto -mt-8 mb-16"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+            >
+              <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-primary/5 backdrop-blur-sm p-5 flex items-center gap-4">
+                <motion.div 
+                  className="absolute -right-20 -top-20 w-[200px] h-[200px] bg-primary/10 rounded-full blur-[80px] z-0"
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [0.2, 0.3, 0.2],
+                  }}
+                  transition={{
+                    duration: 6,
+                    repeat: Infinity,
+                    repeatType: "reverse",
+                  }}
+                />
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 relative z-10">
+                  <SparklesIcon className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex-1 z-10">
+                  <h3 className="text-base font-medium mb-1">Personalized Recommendation</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Based on your usage patterns, Premium would unlock substantial benefits for your educational journey.
+                  </p>
+                </div>
+                <motion.div
+                  className="flex-shrink-0 z-10"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button 
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1"
+                    onClick={() => {
+                      setHoveredCard("Premium");
+                      document.getElementById('premium-plan')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    See Premium 
+                    <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                  </Button>
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
           
           <motion.div 
             className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto"
@@ -275,47 +250,49 @@ const Pricing = () => {
             <AnimatePresence>
               {plans.map((plan, index) => (
                 <motion.div
-                  key={`${plan.name}-${activeTab}`}
+                  key={plan.name}
+                  id={`${plan.name.toLowerCase()}-plan`}
                   className={`rounded-xl border ${
                     plan.isPopular
                       ? "border-primary/30 bg-gradient-to-b from-primary/[0.05] to-primary/[0.02]"
                       : "border-border/60 bg-background/60"
-                  } backdrop-blur-sm shadow-lg relative overflow-hidden`}
+                  } backdrop-blur-sm shadow-lg relative overflow-hidden ${plan.disabled ? 'opacity-70' : ''}`}
                   initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.1 * (index + 1) }}
-                  onHoverStart={() => setHoveredCard(plan.name)}
-                  onHoverEnd={() => setHoveredCard(null)}
-                  whileHover={{
-                    y: -6,
-                    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-                    transition: { duration: 0.2 },
+                  animate={{ 
+                    opacity: 1, 
+                    y: 0,
+                    scale: animatePlan === plan.name ? [1, 1.05, 1] : 1,
+                    boxShadow: animatePlan === plan.name 
+                      ? ["0 0 0 rgba(0, 0, 0, 0)", "0 0 25px rgba(124, 58, 237, 0.3)", "0 0 0 rgba(0, 0, 0, 0)"] 
+                      : "none"
                   }}
+                  transition={{ 
+                    duration: 0.4, 
+                    delay: 0.1 * (index + 1),
+                    scale: { duration: 0.8 },
+                    boxShadow: { duration: 0.8 }
+                  }}
+                  onHoverStart={() => !plan.disabled && setHoveredCard(plan.name)}
+                  onHoverEnd={() => setHoveredCard(null)}
+                  whileHover={!plan.disabled ? {
+                    y: -6,
+                    boxShadow: plan.isPopular 
+                      ? "0 20px 30px -5px rgba(124, 58, 237, 0.15), 0 10px 15px -5px rgba(124, 58, 237, 0.1)"
+                      : "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                    transition: { duration: 0.2 },
+                  } : {}}
                 >
+                  {/* Current plan indicator for logged in users */}
+                  {user && ((profile?.is_premium && plan.name === "Premium") || (!profile?.is_premium && plan.name === "Free")) && (
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/30 via-primary to-primary/30" />
+                  )}
+                  
                   {plan.isPopular && (
                     <div className="absolute -top-1 -right-1 z-10">
                       <div className="bg-primary text-primary-foreground text-xs font-medium py-1 px-3 rounded-bl-md rounded-tr-md shadow-sm">
                         MOST POPULAR
                       </div>
                     </div>
-                  )}
-                  
-                  {/* Spotlight effect for plan cards when logged in */}
-                  {user && (
-                    <motion.div 
-                      className="absolute -inset-[100px] opacity-0 pointer-events-none"
-                      animate={{ 
-                        top: hoveredCard === plan.name ? -150 : -100,
-                        left: hoveredCard === plan.name ? -150 : -100,
-                        right: hoveredCard === plan.name ? -150 : -100,
-                        bottom: hoveredCard === plan.name ? -150 : -100,
-                        opacity: hoveredCard === plan.name ? 0.07 : 0
-                      }}
-                      transition={{ duration: 0.3 }}
-                      style={{
-                        background: "radial-gradient(circle, rgba(128, 128, 255, 1) 0%, rgba(128, 128, 255, 0) 70%)",
-                      }}
-                    />
                   )}
                   
                   {plan.isPopular && hoveredCard === plan.name && (
@@ -325,31 +302,6 @@ const Pricing = () => {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.2 }}
-                    />
-                  )}
-                  
-                  {/* Current plan indicator for logged-in users */}
-                  {user && 
-                    ((plan.name === "Free" && !profile?.is_premium) || 
-                     (plan.name === "Premium" && profile?.is_premium)) && (
-                    <motion.div
-                      className="absolute top-6 left-6 flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-medium py-1 px-2.5 rounded-full"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.5, duration: 0.3 }}
-                    >
-                      <User className="h-3 w-3" />
-                      <span>Your Plan</span>
-                    </motion.div>
-                  )}
-                  
-                  {/* Premium glow effect for premium plan when logged in */}
-                  {user && plan.isPopular && (
-                    <motion.div
-                      className="absolute h-px top-0 inset-x-0 bg-gradient-to-r from-transparent via-primary/50 to-transparent"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: [0, 0.8, 0] }}
-                      transition={{ duration: 3, repeat: Infinity, repeatDelay: 1 }}
                     />
                   )}
                   
@@ -370,27 +322,20 @@ const Pricing = () => {
                             rotate: hoveredCard === plan.name ? [0, -10, 10, 0] : 0,
                           }}
                           transition={{ duration: 0.4, delay: 0.1 }}
+                          className={plan.isPopular ? "text-primary" : "text-muted-foreground"}
                         >
-                          {plan.name === "Free" && <SearchIcon className="h-5 w-5 text-muted-foreground" />}
-                          {plan.name === "Premium" && (
-                            <motion.div
-                              animate={user ? {
-                                rotate: [0, 15, 0],
-                                scale: [1, 1.15, 1]
-                              } : {}}
-                              transition={{
-                                duration: 1.5,
-                                repeat: Infinity,
-                                repeatType: "reverse",
-                                repeatDelay: 1
-                              }}
-                            >
-                              <Crown className="h-5 w-5 text-primary" />
-                            </motion.div>
-                          )}
+                          {plan.name === "Free" && <SearchIcon className="h-5 w-5" />}
+                          {plan.name === "Premium" && <ZapIcon className="h-5 w-5" />}
                         </motion.div>
                         {plan.name}
                       </h3>
+                      
+                      {/* Current plan badge for logged-in users */}
+                      {user && ((profile?.is_premium && plan.name === "Premium") || (!profile?.is_premium && plan.name === "Free")) && (
+                        <Badge variant="outline" className="bg-primary/5 text-primary px-2 text-xs font-normal">
+                          Current
+                        </Badge>
+                      )}
                     </motion.div>
                     
                     <p className="text-muted-foreground text-sm mb-5">
@@ -398,16 +343,9 @@ const Pricing = () => {
                     </p>
                     
                     <div className="flex items-baseline gap-1 mb-6">
-                      <motion.span 
-                        className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80"
-                        key={`${plan.price}-${activeTab}`}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.3 }}
-                      >
+                      <span className={`text-4xl font-bold ${plan.isPopular ? "bg-clip-text text-transparent bg-gradient-to-r from-primary/90 to-purple-500" : "bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80"}`}>
                         {plan.price}
-                      </motion.span>
+                      </span>
                       <span className="text-muted-foreground text-sm">/{plan.period}</span>
                     </div>
                     
@@ -438,35 +376,24 @@ const Pricing = () => {
                     </div>
                     
                     <motion.div
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                      whileHover={!plan.disabled ? { scale: 1.02 } : {}}
+                      whileTap={!plan.disabled ? { scale: 0.98 } : {}}
+                      className={plan.disabled ? "opacity-70 cursor-not-allowed" : ""}
                     >
                       <Button
                         className={`w-full h-11 font-medium ${
-                          plan.isPopular
-                            ? (user ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:shadow-lg hover:shadow-primary/20 text-white" : "bg-primary hover:bg-primary/90 text-white")
+                          plan.isPopular && !plan.disabled
+                            ? "bg-primary hover:bg-primary/90 text-white"
                             : ""
                         }`}
-                        variant={plan.isPopular ? "default" : "outline"}
-                        onClick={plan.buttonAction}
+                        variant={plan.isPopular && !plan.disabled ? "default" : "outline"}
+                        onClick={!plan.disabled ? plan.buttonAction : undefined}
                         size="lg"
+                        disabled={plan.disabled}
                       >
                         {plan.buttonText}
-                        
-                        {/* Subtle animation for premium button when logged in */}
-                        {user && plan.isPopular && !profile?.is_premium && (
-                          <motion.span 
-                            className="absolute inset-0 rounded-md"
-                            animate={{ 
-                              boxShadow: ["0 0 0px 0px rgba(124, 58, 237, 0)", "0 0 15px 2px rgba(124, 58, 237, 0.3)", "0 0 0px 0px rgba(124, 58, 237, 0)"]
-                            }}
-                            transition={{ 
-                              duration: 2, 
-                              repeat: Infinity,
-                              repeatType: "loop",
-                              ease: "easeInOut"
-                            }}
-                          />
+                        {plan.name === "Premium" && !profile?.is_premium && !plan.disabled && (
+                          <ArrowRight className="ml-2 h-4 w-4" />
                         )}
                       </Button>
                     </motion.div>
@@ -485,12 +412,10 @@ const Pricing = () => {
             <div className="bg-muted/30 border border-border/50 p-6 rounded-xl backdrop-blur-sm">
               <h3 className="text-lg font-medium mb-3 flex items-center justify-center gap-2">
                 <SparklesIcon className="h-5 w-5 text-primary" /> 
-                {user ? "Your Special Access" : "Special Beta Access"}
+                Special Beta Access
               </h3>
               <p className="text-muted-foreground mb-4">
-                {user 
-                  ? "Thank you for being part of our journey! Enjoy special access to our educational diagrams while we continue to improve Diagramr just for you." 
-                  : "During our beta phase, most Premium features are available for free. Enjoy access to our educational diagrams and resources while we continue to improve Diagramr."}
+                During our beta phase, most Premium features are available for free. Enjoy access to our educational diagrams and resources while we continue to improve Diagramr.
               </p>
               <Badge variant="outline" className="bg-primary/5 text-primary">Limited Time Offer</Badge>
             </div>
