@@ -43,6 +43,8 @@ export function NameCollectionDialog() {
     setIsLoading(true);
     
     try {
+      console.log("Attempting to save name:", name.trim());
+      
       // Use auth context's updateProfile instead of direct Supabase call
       const success = await updateProfile({ 
         username: name.trim() 
@@ -54,6 +56,15 @@ export function NameCollectionDialog() {
       
       // Mark that the user has set their name (to avoid showing this dialog again)
       localStorage.setItem(`diagramr-has-set-name-${user.id}`, 'true');
+      
+      // Verify that the name was updated by checking the profile
+      const { data } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", user.id)
+        .single();
+      
+      console.log("Verification after save:", data);
       
       toast.success("Your name has been saved");
       setOpen(false);

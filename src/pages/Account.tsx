@@ -46,22 +46,25 @@ export default function Account() {
     const handleProfileUpdate = (event: any) => {
       console.log("Profile update detected in Account:", event.detail);
       if (event.detail && event.detail.profile) {
-        setUserName(event.detail.profile.username || "");
-      } else if (profile) {
-        setUserName(profile.username || "");
+        const updatedProfile = event.detail.profile;
+        console.log("Setting username to:", updatedProfile.username);
+        setUserName(updatedProfile.username || "");
       }
     };
-
-    // Initial setup
-    if (profile) {
-      setUserName(profile.username || "");
-    }
 
     window.addEventListener('profile-updated', handleProfileUpdate);
     
     return () => {
       window.removeEventListener('profile-updated', handleProfileUpdate);
     };
+  }, []);
+
+  // Set initial values when profile data loads
+  useEffect(() => {
+    if (profile) {
+      console.log("Initial profile data loaded:", profile);
+      setUserName(profile.username || "");
+    }
   }, [profile]);
 
   const handleUpdateProfile = async () => {
@@ -76,6 +79,8 @@ export default function Account() {
         setIsLoading(false);
         return;
       }
+      
+      console.log("Attempting to update profile with username:", userName.trim());
       
       // Use the updateProfile method from auth context
       const success = await updateProfile({ 

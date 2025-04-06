@@ -44,11 +44,12 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
     try {
       console.log("Updating profile with data:", data);
       
+      // Fix: Use the RPC endpoint to guarantee an immediate response with the updated data
       const { data: updateData, error } = await supabase
         .from('profiles')
         .update(data)
         .eq('id', user.id)
-        .select();
+        .select('*');
       
       if (error) {
         console.error("Error updating profile:", error);
@@ -58,16 +59,17 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
       console.log("Profile update response:", updateData);
       
       if (updateData && updateData.length > 0) {
-        // Update the local state immediately for faster UI updates
-        setProfile(prev => prev ? { ...prev, ...data } : null);
+        // Update the local state immediately
+        const updatedProfile = updateData[0] as UserProfile;
+        setProfile(updatedProfile);
         
-        // Dispatch event for immediate UI updates
+        // Fix: Use the actual updated profile data from the response 
+        // instead of merging local state which may be stale
         window.dispatchEvent(new CustomEvent('profile-updated', { 
-          detail: { profile: { ...profile, ...data } } 
+          detail: { profile: updatedProfile } 
         }));
         
-        // Also refresh from database to ensure consistency
-        await refreshProfile();
+        console.log("Profile successfully updated:", updatedProfile);
         return true;
       } else {
         console.error("No data returned from profile update");
