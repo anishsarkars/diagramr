@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Heart, Settings, User, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import { Heart, Settings, User, ChevronLeft, ChevronRight, LogOut, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/components/auth-context";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -20,9 +20,13 @@ export function SidebarNavigation() {
   const [isCollapsed, setIsCollapsed] = useState(true); // Default to collapsed for mobile-first
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   
-  const userInitial = user?.email ? user.email[0].toUpperCase() : "U";
+  const userInitial = profile?.username 
+    ? profile.username[0].toUpperCase() 
+    : user?.email 
+      ? user.email[0].toUpperCase() 
+      : "U";
   
   const navItems = [
     {
@@ -47,6 +51,9 @@ export function SidebarNavigation() {
       console.error("Error signing out:", error);
     }
   };
+
+  // Determine if user should see upgrade button
+  const showUpgradeButton = user && profile && !profile.is_premium;
 
   return (
     <motion.div 
@@ -85,6 +92,23 @@ export function SidebarNavigation() {
       {/* Navigation */}
       <div className="flex-1 overflow-auto py-6">
         <nav className="space-y-1 px-2">
+          {/* Upgrade button for non-premium users */}
+          {showUpgradeButton && (
+            <Link to="/pricing">
+              <Button
+                variant="premium"
+                className={cn(
+                  "w-full mb-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0",
+                  isCollapsed ? "justify-center p-2" : "px-3 py-2 justify-start gap-3"
+                )}
+                title={isCollapsed ? "Upgrade to Pro" : undefined}
+              >
+                <Sparkles size={20} />
+                {!isCollapsed && <span>Upgrade to Pro</span>}
+              </Button>
+            </Link>
+          )}
+
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             
@@ -128,7 +152,7 @@ export function SidebarNavigation() {
               isCollapsed ? "justify-center" : ""
             )}>
               <Avatar className="h-9 w-9">
-                <AvatarImage src="" alt="User" />
+                <AvatarImage src={profile?.avatar_url || ""} alt={profile?.username || user?.email || "User"} />
                 <AvatarFallback className="bg-primary/20 text-primary">
                   {userInitial}
                 </AvatarFallback>
@@ -136,8 +160,8 @@ export function SidebarNavigation() {
               
               {!isCollapsed && (
                 <div className="truncate">
-                  <p className="text-sm font-medium truncate">{user?.email}</p>
-                  <p className="text-xs text-muted-foreground">Free Plan</p>
+                  <p className="text-sm font-medium truncate">{profile?.username || user?.email}</p>
+                  <p className="text-xs text-muted-foreground">{profile?.is_premium ? "Premium Plan" : "Free Plan"}</p>
                 </div>
               )}
             </div>
@@ -153,6 +177,15 @@ export function SidebarNavigation() {
               <Heart className="mr-2 h-4 w-4" />
               <span>Liked Diagrams</span>
             </DropdownMenuItem>
+            {showUpgradeButton && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/pricing')} className="text-primary">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  <span>Upgrade to Pro</span>
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>
               <LogOut className="mr-2 h-4 w-4" />

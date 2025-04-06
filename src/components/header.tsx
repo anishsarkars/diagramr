@@ -94,17 +94,37 @@ export function Header() {
         <div className="flex-1"></div>
         
         <div className="flex items-center justify-end space-x-2 sm:space-x-4">
-          <Link to="/pricing">
-            <Button variant="ghost" size="sm" className="text-foreground/80 hover:text-foreground transition-colors gap-2">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
-              <span>Pricing</span>
-              {user && getUserPlan() === "Premium" && (
-                <Badge variant="outline" className="ml-1 py-0 h-5 px-1.5 text-xs bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 border-0 text-white">
-                  PREMIUM
-                </Badge>
-              )}
-            </Button>
-          </Link>
+          {user && !profile?.is_premium ? (
+            <Link to="/pricing">
+              <Button 
+                variant="premium" 
+                size="sm" 
+                className="text-white font-medium h-8 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 border-0 shadow-md transition-all duration-200 hover:shadow-lg"
+              >
+                <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                <span>Upgrade</span>
+              </Button>
+            </Link>
+          ) : !user ? (
+            <Link to="/pricing">
+              <Button variant="ghost" size="sm" className="text-foreground/80 hover:text-foreground transition-colors gap-2">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <span>Pricing</span>
+              </Button>
+            </Link>
+          ) : (
+            <Link to="/pricing">
+              <Button variant="ghost" size="sm" className="text-foreground/80 hover:text-foreground transition-colors gap-2">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <span>Pricing</span>
+                {getUserPlan() === "Premium" && (
+                  <Badge variant="outline" className="ml-1 py-0 h-5 px-1.5 text-xs bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 border-0 text-white">
+                    PREMIUM
+                  </Badge>
+                )}
+              </Button>
+            </Link>
+          )}
           
           {user && (
             <Link to="/liked">
