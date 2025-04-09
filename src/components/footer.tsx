@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { DiagramrLogo } from "@/components/diagramr-logo";
+import { Linkedin } from "lucide-react";
 
 export function Footer() {
   return (
@@ -25,12 +26,13 @@ export function Footer() {
             © 2025 Diagramr. All rights reserved.
           </div>
           <a 
-            href="https://twitter.com/AnishDe12020" 
+            href="https://www.linkedin.com/in/anishsarkar-/" 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="text-xs flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/5 hover:bg-primary/10 transition-colors border border-primary/10 text-primary"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20 text-primary font-medium shadow-sm"
           >
-            by <span className="font-medium">@Anish</span>
+            <Linkedin className="h-3.5 w-3.5" />
+            <span>Built by Anish</span>
           </a>
         </div>
       </div>

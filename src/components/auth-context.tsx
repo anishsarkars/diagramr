@@ -14,7 +14,7 @@ interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   isLoading: boolean;
-  signOut: () => Promise<void>;
+  signOut: () => Promise<boolean>;
   isNewLogin: boolean;
   setIsNewLogin: (value: boolean) => void;
   refreshProfile: () => Promise<UserProfile | undefined>;
@@ -46,11 +46,16 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
     try {
       console.log("Updating profile with data:", data);
       
-      // Fix: Use the RPC endpoint to guarantee an immediate response with the updated data
+      // Using upsert instead of update to ensure profile exists
       const { data: updateData, error } = await supabase
         .from('profiles')
-        .update(data)
-        .eq('id', user.id)
+        .upsert({
+          id: user.id,
+          ...data,
+          updated_at: new Date().toISOString()
+        }, { 
+          onConflict: 'id'
+        })
         .select('*');
       
       if (error) {
@@ -63,13 +68,19 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
       if (updateData && updateData.length > 0) {
         // Update the local state immediately
         const updatedProfile = updateData[0] as UserProfile;
-        setProfile(updatedProfile);
         
-        // Fix: Use the actual updated profile data from the response 
-        // instead of merging local state which may be stale
-        window.dispatchEvent(new CustomEvent('profile-updated', { 
-          detail: { profile: updatedProfile } 
+        // Ensure we maintain existing profile data
+        setProfile(prev => ({
+          ...prev,
+          ...updatedProfile
         }));
+        
+        // Use setTimeout to ensure the event fires after state update
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('profile-updated', { 
+            detail: { profile: updatedProfile } 
+          }));
+        }, 50);
         
         console.log("Profile successfully updated:", updatedProfile);
         return true;
@@ -303,27 +314,57 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      console.log("Signing out user");
       
-      // Clear session data
+      // Clear session data first
       sessionStorage.clear();
+      localStorage.removeItem('last_login_time');
       
-      // Redirect to home page after sign out
-      window.location.href = '/';
+      // Call the actual signOut method
+      const { error } = await supabase.auth.signOut();
       
-      if (onLogout) {
-        onLogout();
+      if (error) {
+        console.error("Error during signOut:", error);
+        throw error;
       }
+      
+      // Reset local state
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      
+      // Using setTimeout gives a small delay to ensure auth state is cleared
+      setTimeout(() => {
+        // Redirect to home page after sign out
+        window.location.href = '/';
+        
+        if (onLogout) {
+          onLogout();
+        }
+      }, 100);
+      
+      return true;
     } catch (error) {
       console.error("Error signing out:", error);
+      return false;
     }
   };
 
   // Function to handle forgot password
   const forgotPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    if (!email || !email.includes('@')) {
+      return { success: false, error: "Please provide a valid email address" };
+    }
+    
     try {
+      console.log("Sending password reset email to:", email);
+      
+      // Set proper redirect URL with absolute path
+      const redirectUrl = `${window.location.origin}/auth?reset=true`;
+      console.log("Redirect URL for password reset:", redirectUrl);
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: redirectUrl,
       });
       
       if (error) {
@@ -331,6 +372,7 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
         return { success: false, error: error.message };
       }
       
+      console.log("Password reset email sent successfully");
       return { success: true };
     } catch (error) {
       console.error("Unexpected error in forgotPassword:", error);
@@ -346,11 +388,15 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
     if (!user) return { success: false, error: "No active user session" };
     
     try {
+      // First, capture the user ID since we'll lose the session
+      const userId = user.id;
+      console.log("Attempting to delete account for user:", userId);
+      
       // Step 1: Delete the user's profile data
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
-        .eq('id', user.id);
+        .eq('id', userId);
       
       if (profileError) {
         console.error("Error deleting user profile:", profileError);
@@ -358,35 +404,40 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
       }
       
       // Step 2: Delete any other user-related data
-      // Example: Delete saved diagrams, search history, etc.
-      const { error: savedDiagramsError } = await supabase
-        .from('saved_diagrams')
-        .delete()
-        .eq('user_id', user.id);
-      
-      if (savedDiagramsError) {
-        console.error("Error deleting saved diagrams:", savedDiagramsError);
+      try {
+        // Delete saved diagrams
+        await supabase
+          .from('saved_diagrams')
+          .delete()
+          .eq('user_id', userId);
+        
+        // Delete search logs
+        await supabase
+          .from('user_search_logs')
+          .delete()
+          .eq('user_id', userId);
+          
+        // Add any other tables that need cleaning up
+      } catch (dataError) {
+        console.error("Error deleting user data:", dataError);
+        // Continue with deletion even if some data cleanup fails
       }
       
-      const { error: searchLogsError } = await supabase
-        .from('user_search_logs')
-        .delete()
-        .eq('user_id', user.id);
+      // Step 3: Request the admin function to delete the user account
+      const { error: adminDeleteError } = await supabase.functions.invoke('delete-user', {
+        body: { user_id: userId }
+      });
       
-      if (searchLogsError) {
-        console.error("Error deleting search logs:", searchLogsError);
+      if (adminDeleteError) {
+        console.error("Error calling delete-user function:", adminDeleteError);
+        // Continue anyway to sign out the user
       }
       
-      // Step 3: Sign out - this needs to happen before we attempt to delete the user
+      // Step 4: Sign out the user - this will clear the session
       await signOut();
       
-      // Step 4: Inform the user that their data has been deleted
-      // Note: In Supabase, users cannot delete their own accounts from the client-side for security reasons
-      // The admin would need to delete the user account from the Supabase dashboard or using server-side functions
-      
       return { 
-        success: true, 
-        error: "Your data has been deleted. Your account may require administrator action for complete removal."
+        success: true 
       };
     } catch (error) {
       console.error("Unexpected error in deleteAccount:", error);
