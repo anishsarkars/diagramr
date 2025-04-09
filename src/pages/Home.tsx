@@ -1,4 +1,26 @@
-  <main className="flex-1 relative">
+import { motion } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { SparklesIcon, SearchIcon } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import { SearchBox } from "@/components/search-box";
+import { Compact3DMarquee } from "@/components/3d-marquee";
+import { useState } from "react";
+
+export default function Home() {
+  const [query, setQuery] = useState("");
+  const [typingInProgress, setTypingInProgress] = useState(false);
+  const [showTypingSuggestions, setShowTypingSuggestions] = useState(false);
+  const [typingSuggestions, setTypingSuggestions] = useState<string[]>([]);
+  const sampleImages = []; // You'll need to populate this with your sample images
+
+  const handleSearch = (searchQuery: string) => {
+    // Implement your search logic here
+    console.log("Searching for:", searchQuery);
+  };
+
+  return (
+    <main className="flex-1 relative">
     {/* Hero section */}
     <section className="relative overflow-hidden py-20 sm:py-24 md:py-28">
       <div className="container px-4 relative z-10">
@@ -21,6 +43,28 @@
                 >
                   <SparklesIcon className="h-3.5 w-3.5 mr-1.5" /> Educational Diagrams
                 </Badge>
+                
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                  className="mb-4"
+                >
+                  <a
+                    href="https://www.producthunt.com/posts/diagramr?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-diagramr"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block hover:opacity-90 transition-opacity"
+                  >
+                    <img
+                      src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=950719&theme=light&t=1744154655943"
+                      alt="Diagramr - Fastest way to find any diagram ✦ Google Images Sucks!"
+                      width="250"
+                      height="54"
+                      style={{ width: '250px', height: '54px' }}
+                    />
+                  </a>
+                </motion.div>
                 
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-right md:text-left mr-0 md:mr-8">
                   Discover<br className="hidden sm:block" /> Diagrams that<br className="hidden sm:block" /> 
@@ -109,4 +153,6 @@
     </section>
 
     {/* ... rest of existing code ... */}
-  </main> 
+  </main>
+  );
+} 

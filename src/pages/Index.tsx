@@ -575,6 +575,28 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
         {!searchTerm ? (
           <div className="flex flex-col items-center justify-center min-h-[70vh] container max-w-2xl mx-auto px-4 md:px-6 py-4">
             <div className="text-center mb-16">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.05 }}
+                className="mb-6 flex justify-center"
+              >
+                <a
+                  href="https://www.producthunt.com/posts/diagramr?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-diagramr"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block hover:opacity-90 transition-opacity"
+                >
+                  <img
+                    src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=950719&theme=light&t=1744154655943"
+                    alt="Diagramr - Fastest way to find any diagram ✦ Google Images Sucks!"
+                    width="180"
+                    height="40"
+                    style={{ width: '180px', height: '40px' }}
+                  />
+                </a>
+              </motion.div>
+              
               <motion.h1 
                 className="text-[28px] md:text-[32px] font-normal mb-2 tracking-tight text-foreground"
                 initial={{ y: -20, opacity: 0 }}
@@ -583,6 +605,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
               >
                 Find diagrams at the speed of thought.
               </motion.h1>
+              
               <motion.div
                 className="h-6 overflow-hidden relative"
                 initial={{ y: -20, opacity: 0 }}
