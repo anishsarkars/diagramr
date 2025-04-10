@@ -14,6 +14,9 @@ import Account from "./pages/Account";
 import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import ForgotPassword from "./pages/ForgotPassword";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Refund from "./pages/Refund";
 import { SiteLoader } from "./components/site-loader";
 import { FeedbackButton } from "./components/feedback-button";
 import ChatDashboard from "./pages/ChatDashboard";
@@ -128,6 +131,9 @@ function AppContent() {
             <Route path="/liked" element={<Liked />} />
             <Route path="/account" element={<Account />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/refund" element={<Refund />} />
             <Route path="/dashboard" element={<ChatDashboard />} />
             <Route path="/admin/api-status" element={
               <Suspense fallback={<SiteLoader />}>

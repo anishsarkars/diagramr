@@ -21,7 +21,7 @@ const authSchema = z.object({
 });
 
 // Maximum number of users allowed
-const USER_LIMIT = 70;
+const USER_LIMIT = 95;
 
 export default function Auth() {
   const navigate = useNavigate();

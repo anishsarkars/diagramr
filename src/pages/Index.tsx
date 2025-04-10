@@ -989,8 +989,8 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
             )}
             
             {/* Mobile scrolling tag chips */}
-            <div className="mt-4 overflow-x-auto pb-2">
-              <div className="flex gap-2">
+            <div className="mt-4 overflow-x-auto pb-2 -mx-2 px-2">
+              <div className="flex gap-2 min-w-max">
                 {scrollingSuggestions.map((suggestion) => (
                   <button
                     key={suggestion}
@@ -1026,7 +1026,7 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
               
               <button 
                 onClick={() => setShowTips(true)}
-                className="flex items-center hover:text-primary/80 transition-colors"
+                className="flex items-center hover:text-primary/80 transition-colors p-2 -m-2"
               >
                 <Sparkles className="h-3 w-3 mr-1" />
                 <span>Search tips</span>

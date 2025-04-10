@@ -599,6 +599,29 @@ export default function ChatDashboard() {
         {!searchTerm && (
           <div className="flex flex-col items-center justify-center min-h-[70vh] container max-w-2xl mx-auto px-4 md:px-6 py-4">
             <div className="text-center mb-16">
+            {/* Product Hunt Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.05 }}
+              className="mb-6 flex justify-center"
+            >
+              <a
+                href="https://www.producthunt.com/posts/diagramr?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-diagramr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block hover:opacity-90 transition-opacity"
+              >
+                <img
+                  src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=950719&theme=light&t=1744154655943"
+                  alt="Diagramr - Fastest way to find any diagram ✦ Google Images Sucks!"
+                  width="180"
+                  height="40"
+                  style={{ width: '180px', height: '40px' }}
+                />
+              </a>
+            </motion.div>
+            
             <motion.h1 
                 className="text-[28px] md:text-[32px] font-normal mb-2 tracking-tight text-foreground"
               initial={{ y: -20, opacity: 0 }}
@@ -785,7 +808,8 @@ export default function ChatDashboard() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="rounded-full text-sm py-2 px-4 h-auto border-primary/20 hover:border-primary/60 hover:bg-primary/5 whitespace-nowrap dark:border-gray-600 dark:bg-gray-800/60 dark:hover:bg-gray-800 pointer-events-none"
+                        className="rounded-full text-sm py-2 px-4 h-auto border-primary/20 hover:border-primary/60 hover:bg-primary/5 whitespace-nowrap dark:border-gray-600 dark:bg-gray-800/60 dark:hover:bg-gray-800"
+                        onClick={() => handleSearch(suggestion)}
                       >
                         {suggestion}
                       </Button>
@@ -901,71 +925,141 @@ export default function ChatDashboard() {
         
       {/* Mobile search input fixed to bottom */}
       {isMobile && !searchTerm && (
-        <div className="fixed bottom-0 left-0 right-0 bg-[#f9f8f6]/95 dark:bg-[#1d1e20]/95 backdrop-blur-lg border-t border-border/30 dark:border-gray-800 p-3 pb-5 z-50 safe-bottom">
-          <div className="relative z-10">
-            {/* Subtle glow effect behind input */}
+        <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border/30 p-4 pb-10 z-50 safe-bottom">
+          <div className="relative">
+            {/* Subtle glow effect */}
             <div className="absolute -inset-4 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-full blur-xl opacity-70"></div>
             
-            <div className="relative overflow-hidden rounded-[18px] shadow-md border border-border/40 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 dark:border-gray-700/50 bg-background/90 dark:bg-[#1d1e20]/90 backdrop-blur-sm">
-                <Input
-                  ref={inputRef}
-                  type="text"
-                  placeholder="What diagrams are you looking for?"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSearch(query);
-                      setShowTypingSuggestions(false);
-                    }
-                  }}
-                  className="pr-20 pl-12 py-6 border-0 text-base shadow-none focus:ring-0 focus:outline-none dark:bg-transparent"
-                />
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-primary h-5 w-5" />
-                <Button
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-10 rounded-full px-5 bg-primary/90 hover:bg-primary dark:bg-primary dark:hover:bg-primary/90 shadow"
-                  onClick={() => {
+            <div className="relative overflow-hidden rounded-full shadow-md border border-border/40 focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/20 bg-background/90 backdrop-blur-sm">
+              <Input
+                ref={inputRef}
+                type="text"
+                placeholder="What diagrams are you looking for?"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  // Immediately show suggestions if at least 2 characters typed
+                  if (e.target.value.trim().length > 1) {
+                    setShowTypingSuggestions(true);
+                  }
+                }}
+                onFocus={() => {
+                  if (query.trim().length > 1) {
+                    setShowTypingSuggestions(true);
+                  }
+                }}
+                onBlur={() => {
+                  setTimeout(() => {
+                    setShowTypingSuggestions(false);
+                  }, 200);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
                     handleSearch(query);
                     setShowTypingSuggestions(false);
-                  }}
-                  disabled={!query.trim()}
+                  }
+                }}
+                className="pr-16 pl-6 py-7 border-0 text-base shadow-none focus:ring-0 focus:outline-none bg-transparent"
+              />
+              
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                <Button 
+                  type="submit" 
+                  onClick={() => handleSearch(query)}
+                  className="rounded-xl px-4 py-5 bg-primary/90 hover:bg-primary text-white"
                 >
-                  <span className="text-sm">Search</span>
+                  <span className="mr-1">Search</span>
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
+              </div>
+            </div>
             
             {/* Mobile typing suggestions */}
-            {showTypingSuggestions && isMobile && (
+            {showTypingSuggestions && (
               <motion.div 
-                className="absolute left-0 right-0 bottom-full mb-2 bg-background/95 dark:bg-[#1d1e20]/95 rounded-xl shadow-lg border border-border/50 dark:border-gray-700 py-2 z-20 backdrop-blur-sm"
+                className="absolute left-0 right-0 bottom-full mb-2 bg-background/90 backdrop-blur-md rounded-xl shadow-sm border border-border/20 py-1.5 z-20 max-h-[45vh] overflow-auto"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.2 }}
               >
-                <ul className="max-h-64 overflow-auto">
+                <div className="flex flex-col space-y-0.5">
                   {typingSuggestions.map((suggestion, index) => (
-                    <motion.li 
+                    <motion.button
                       key={suggestion} 
-                      className="px-4 py-2 hover:bg-muted dark:hover:bg-gray-800 cursor-pointer"
-                      initial={{ opacity: 0, x: -5 }}
+                      className="w-full px-3.5 py-2.5 text-left hover:bg-primary/5 flex items-center gap-2.5 transition-colors"
+                      initial={{ opacity: 0, x: -3 }}
                       animate={{ 
                         opacity: 1, 
                         x: 0,
-                        transition: { delay: index * 0.05 }
+                        transition: { delay: index * 0.03 }
                       }}
                       onClick={() => {
+                        setQuery(suggestion);
                         handleSearch(suggestion);
                         setShowTypingSuggestions(false);
                       }}
                     >
-                      <div className="flex items-center">
-                        <Search className="h-3 w-3 mr-2 text-muted-foreground" />
-                        <span className="text-sm">{suggestion}</span>
+                      <div className="rounded-full bg-primary/10 p-1.5 flex items-center justify-center">
+                        <Search className="h-3 w-3 text-primary/80" />
                       </div>
-                    </motion.li>
+                      <span className="text-sm leading-tight">
+                        {query && suggestion.toLowerCase().includes(query.toLowerCase()) ? (
+                          <>
+                            {suggestion.substring(0, suggestion.toLowerCase().indexOf(query.toLowerCase()))}
+                            <span className="font-medium text-primary">
+                              {query}
+                            </span>
+                            {suggestion.substring(suggestion.toLowerCase().indexOf(query.toLowerCase()) + query.length)}
+                          </>
+                        ) : (
+                          suggestion
+                        )}
+                      </span>
+                    </motion.button>
                   ))}
-                </ul>
+                </div>
               </motion.div>
             )}
+            
+            {/* Mobile scrolling tag chips */}
+            <div className="mt-4 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-none">
+              <div className="flex gap-2 min-w-max">
+                {scrollingSuggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    className="flex-none whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium bg-secondary hover:bg-primary/10 text-muted-foreground hover:text-foreground transition-colors active:scale-95"
+                    onClick={() => {
+                      setQuery(suggestion);
+                      handleSearch(suggestion);
+                      setShowTypingSuggestions(false);
+                    }}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Mobile search counter */}
+            <div className="flex justify-between items-center text-xs text-muted-foreground/70 mt-2 px-2">
+              <div className="flex items-center">
+                <Info className="h-3 w-3 mr-1" />
+                <span>
+                  {remainingSearches !== undefined ? 
+                    `${remainingSearches} searches remaining today` : 
+                    "Unlimited searches"
+                  }
+                </span>
+              </div>
+              
+              <button 
+                onClick={() => setShowTips(true)}
+                className="flex items-center hover:text-primary/80 transition-colors p-2 -m-2 active:scale-95"
+              >
+                <Sparkles className="h-3 w-3 mr-1" />
+                <span>Search tips</span>
+              </button>
             </div>
           </div>
         </div>

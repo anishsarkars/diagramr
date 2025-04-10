@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { DiagramrLogo } from "@/components/diagramr-logo";
 import { Linkedin } from "lucide-react";
+import PolicyMenu from "./policy-menu";
 
 export function Footer() {
   return (
@@ -11,11 +12,17 @@ export function Footer() {
             <DiagramrLogo size="sm" />
           </Link>
           
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <Link to="/pricing" className="hover:text-foreground transition-colors">
+          <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-center">
+            <Link to="/" className="hover:text-foreground transition-colors text-sm">
+              Home
+            </Link>
+            <Link to="/pricing" className="hover:text-foreground transition-colors text-sm">
               Pricing
             </Link>
-            <Link to="/auth" className="hover:text-foreground transition-colors">
+            <div className="relative inline-block">
+              <PolicyMenu />
+            </div>
+            <Link to="/auth" className="hover:text-foreground transition-colors text-sm">
               Login
             </Link>
           </div>
