@@ -41,10 +41,25 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
 
   // Enhanced function to update the user profile
   const updateProfile = async (data: Partial<UserProfile>): Promise<boolean> => {
-    if (!user) return false;
+    if (!user) {
+      console.error("Cannot update profile: No user is logged in");
+      return false;
+    }
     
     try {
       console.log("Updating profile with data:", data);
+      
+      // Validate data before sending to server
+      if (data.username && typeof data.username === 'string') {
+        // Trim whitespace and limit length
+        data.username = data.username.trim().substring(0, 50);
+        
+        // Check if username is empty after trimming
+        if (!data.username) {
+          console.error("Username cannot be empty after trimming");
+          return false;
+        }
+      }
       
       // Using upsert instead of update to ensure profile exists
       const { data: updateData, error } = await supabase
@@ -75,12 +90,17 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
           ...updatedProfile
         }));
         
-        // Use setTimeout to ensure the event fires after state update
-        setTimeout(() => {
+        // Use a more reliable event dispatch approach
+        try {
+          // First try using CustomEvent
           window.dispatchEvent(new CustomEvent('profile-updated', { 
             detail: { profile: updatedProfile } 
           }));
-        }, 50);
+        } catch (eventError) {
+          console.error("Error dispatching profile-updated event:", eventError);
+          // Fallback to a simple reload if event dispatch fails
+          window.location.reload();
+        }
         
         console.log("Profile successfully updated:", updatedProfile);
         return true;
@@ -164,52 +184,102 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
   }, [initialSessionChecked, prevUserId]);
 
   const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // Profile not found, attempt to create it
-          await createProfileIfNotExists({ id: userId });
-          // Retry fetch after creation
-          const { data: retryData } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", userId)
-            .single();
-          
-          if (retryData) {
-            console.log("Profile created and fetched:", retryData);
-            setProfile(retryData as UserProfile);
-          }
-        } else {
-          console.error("Error fetching profile:", error);
-        }
-      } else if (data) {
-        console.log("Profile fetched:", data);
-        setProfile(data as UserProfile);
-        
-        // Broadcast profile update
-        window.dispatchEvent(new CustomEvent('profile-updated', { 
-          detail: { profile: data } 
-        }));
-      }
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-    } finally {
+    if (!userId) {
+      console.error("Cannot fetch profile: No user ID provided");
       setIsLoading(false);
+      return;
     }
+    
+    console.log("Fetching profile for user:", userId);
+    
+    // Add retry logic for more reliability
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userId)
+          .single();
+
+        if (error) {
+          if (error.code === 'PGRST116') {
+            // Profile not found, attempt to create it
+            console.log("Profile not found, attempting to create it");
+            const created = await createProfileIfNotExists({ id: userId });
+            
+            if (created) {
+              // Retry fetch after creation
+              retryCount++;
+              continue;
+            } else {
+              console.error("Failed to create profile");
+              break;
+            }
+          } else {
+            console.error(`Error fetching profile (attempt ${retryCount + 1}/${maxRetries}):`, error);
+            retryCount++;
+            
+            if (retryCount < maxRetries) {
+              // Wait a bit before retrying (exponential backoff)
+              await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, retryCount)));
+              continue;
+            }
+          }
+        } else if (data) {
+          console.log("Profile fetched successfully:", data);
+          
+          // Update the local profile state
+          setProfile(data as UserProfile);
+          
+          // Dispatch profile updated event
+          try {
+            window.dispatchEvent(new CustomEvent('profile-updated', { 
+              detail: { profile: data } 
+            }));
+          } catch (eventError) {
+            console.error("Error dispatching profile-updated event:", eventError);
+          }
+          
+          break; // Success, exit the retry loop
+        } else {
+          console.error("No profile data found");
+          retryCount++;
+        }
+      } catch (error) {
+        console.error(`Unexpected error fetching profile (attempt ${retryCount + 1}/${maxRetries}):`, error);
+        retryCount++;
+        
+        if (retryCount < maxRetries) {
+          // Wait a bit before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, retryCount)));
+        }
+      }
+    }
+    
+    if (retryCount >= maxRetries) {
+      console.error(`Failed to fetch profile after ${maxRetries} attempts`);
+    }
+    
+    setIsLoading(false);
   };
 
   // Function to manually refresh user profile - can be called after profile updates
   const refreshProfile = async () => {
-    if (user) {
-      console.log("Refreshing profile for user:", user.id);
-      
+    if (!user) {
+      console.error("Cannot refresh profile: No user is logged in");
+      return;
+    }
+    
+    console.log("Refreshing profile for user:", user.id);
+    
+    // Add retry logic for more reliability
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
       try {
         const { data, error } = await supabase
           .from("profiles")
@@ -218,7 +288,27 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
           .single();
 
         if (error) {
-          console.error("Error refreshing profile:", error);
+          console.error(`Error refreshing profile (attempt ${retryCount + 1}/${maxRetries}):`, error);
+          
+          // If it's a "not found" error, try to create the profile
+          if (error.code === 'PGRST116') {
+            console.log("Profile not found, attempting to create it");
+            const created = await createProfileIfNotExists(user);
+            if (created) {
+              // If profile was created, retry the fetch
+              retryCount++;
+              continue;
+            }
+          }
+          
+          // For other errors, increment retry count and try again
+          retryCount++;
+          if (retryCount < maxRetries) {
+            // Wait a bit before retrying (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, retryCount)));
+            continue;
+          }
+          
           return;
         }
 
@@ -229,24 +319,40 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
           setProfile(data as UserProfile);
           
           // Dispatch an event that other components can listen to
-          const event = new CustomEvent('profile-updated', { 
-            detail: { profile: data } 
-          });
-          console.log("Dispatching profile-updated event:", event);
-          window.dispatchEvent(event);
+          try {
+            const event = new CustomEvent('profile-updated', { 
+              detail: { profile: data } 
+            });
+            console.log("Dispatching profile-updated event:", event);
+            window.dispatchEvent(event);
+          } catch (eventError) {
+            console.error("Error dispatching profile-updated event:", eventError);
+            // Continue even if event dispatch fails
+          }
           
           return data;
         } else {
           console.error("No profile data found during refresh");
+          retryCount++;
         }
       } catch (error) {
-        console.error("Unexpected error refreshing profile:", error);
+        console.error(`Unexpected error refreshing profile (attempt ${retryCount + 1}/${maxRetries}):`, error);
+        retryCount++;
+        
+        if (retryCount < maxRetries) {
+          // Wait a bit before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, retryCount)));
+        }
       }
     }
+    
+    console.error(`Failed to refresh profile after ${maxRetries} attempts`);
   };
 
   const createProfileIfNotExists = async (user: User | { id: string }): Promise<boolean> => {
     try {
+      console.log("Checking if profile exists for user:", user.id);
+      
       // First check if profile exists
       const { data, error } = await supabase
         .from("profiles")
@@ -261,10 +367,16 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
       
       // If profile doesn't exist, create it
       if (!data) {
+        console.log("Profile not found, creating new profile");
+        
         // Get full user data if only ID was provided
         let fullUser = user as User;
         if (!('user_metadata' in user)) {
-          const { data: userData } = await supabase.auth.getUser(user.id);
+          const { data: userData, error: userError } = await supabase.auth.getUser(user.id);
+          if (userError) {
+            console.error("Error fetching user data:", userError);
+            return false;
+          }
           if (userData?.user) {
             fullUser = userData.user;
           }
@@ -286,28 +398,90 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
           username = `user_${Math.floor(Math.random() * 10000)}`;
         }
         
-        console.log("Creating new profile with username:", username);
-        
-        const { error: createError } = await supabase
-          .from("profiles")
-          .insert({
-            id: user.id,
-            username: username, 
-            avatar_url: fullUser.user_metadata?.avatar_url || null,
-            is_premium: false
-          });
-        
-        if (createError) {
-          console.error("Error creating profile:", createError);
-          return false;
+        // Ensure username is not empty and has a reasonable length
+        username = username.trim().substring(0, 50);
+        if (!username) {
+          username = `user_${Math.floor(Math.random() * 10000)}`;
         }
         
-        return true;
+        console.log("Creating new profile with username:", username);
+        
+        // Add retry logic for profile creation
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        while (retryCount < maxRetries) {
+          try {
+            const { error: createError } = await supabase
+              .from("profiles")
+              .insert({
+                id: user.id,
+                username: username, 
+                avatar_url: fullUser.user_metadata?.avatar_url || null,
+                is_premium: false,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+            
+            if (createError) {
+              console.error(`Error creating profile (attempt ${retryCount + 1}/${maxRetries}):`, createError);
+              retryCount++;
+              
+              if (retryCount < maxRetries) {
+                // Wait a bit before retrying (exponential backoff)
+                await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, retryCount)));
+                continue;
+              }
+              
+              return false;
+            }
+            
+            console.log("Profile created successfully");
+            
+            // Fetch the newly created profile to update local state
+            const { data: newProfile, error: fetchError } = await supabase
+              .from("profiles")
+              .select("*")
+              .eq("id", user.id)
+              .single();
+            
+            if (fetchError) {
+              console.error("Error fetching newly created profile:", fetchError);
+              // Continue anyway since profile was created
+            } else if (newProfile) {
+              // Update local state with the new profile
+              setProfile(newProfile as UserProfile);
+              
+              // Dispatch profile updated event
+              try {
+                window.dispatchEvent(new CustomEvent('profile-updated', { 
+                  detail: { profile: newProfile } 
+                }));
+              } catch (eventError) {
+                console.error("Error dispatching profile-updated event:", eventError);
+              }
+            }
+            
+            return true;
+          } catch (error) {
+            console.error(`Unexpected error creating profile (attempt ${retryCount + 1}/${maxRetries}):`, error);
+            retryCount++;
+            
+            if (retryCount < maxRetries) {
+              // Wait a bit before retrying (exponential backoff)
+              await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, retryCount)));
+            }
+          }
+        }
+        
+        console.error(`Failed to create profile after ${maxRetries} attempts`);
+        return false;
       }
       
+      console.log("Profile already exists");
       return false;
     } catch (error) {
-      console.error("Error in profile creation:", error);
+      console.error("Unexpected error in profile creation:", error);
       return false;
     }
   };
@@ -316,9 +490,16 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
     try {
       console.log("Signing out user");
       
-      // Clear session data first
+      // Clear all session and local storage data first
       sessionStorage.clear();
+      localStorage.clear();
       localStorage.removeItem('last_login_time');
+      localStorage.removeItem('diagramr-search-history');
+      
+      // Reset local state before API call to ensure UI updates immediately
+      setUser(null);
+      setSession(null);
+      setProfile(null);
       
       // Call the actual signOut method
       const { error } = await supabase.auth.signOut();
@@ -328,24 +509,33 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
         throw error;
       }
       
-      // Reset local state
+      // Using a more reliable redirect approach
+      // First try using window.location
+      try {
+        window.location.href = '/';
+      } catch (redirectError) {
+        console.error("Error redirecting with window.location:", redirectError);
+        // Fallback to history API
+        try {
+          window.history.pushState({}, '', '/');
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        } catch (historyError) {
+          console.error("Error redirecting with history API:", historyError);
+          // Last resort - reload the page
+          window.location.reload();
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error during signOut:", error);
+      // Even if there's an error, try to clear state and redirect
       setUser(null);
       setSession(null);
       setProfile(null);
       
-      // Using setTimeout gives a small delay to ensure auth state is cleared
-      setTimeout(() => {
-        // Redirect to home page after sign out
-        window.location.href = '/';
-        
-        if (onLogout) {
-          onLogout();
-        }
-      }, 100);
-      
-      return true;
-    } catch (error) {
-      console.error("Error signing out:", error);
+      // Attempt to redirect despite error
+      window.location.href = '/';
       return false;
     }
   };
@@ -359,91 +549,136 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
     try {
       console.log("Sending password reset email to:", email);
       
-      // Set proper redirect URL with absolute path
-      const redirectUrl = `${window.location.origin}/auth?reset=true`;
+      // Set proper redirect URL with absolute path and ensure it's properly encoded
+      const redirectUrl = encodeURI(`${window.location.origin}/auth?reset=true`);
       console.log("Redirect URL for password reset:", redirectUrl);
       
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectUrl,
-      });
+      // First check if the user exists
+      const { data: { users }, error: userError } = await supabase.auth.admin.listUsers();
+      const userExists = users?.some((u: { email?: string }) => u.email?.toLowerCase() === email.toLowerCase());
       
-      if (error) {
-        console.error("Error sending password reset email:", error);
-        return { success: false, error: error.message };
+      if (!userExists) {
+        return { success: false, error: "No account found with this email address" };
       }
       
-      console.log("Password reset email sent successfully");
-      return { success: true };
+      // Send the reset email with retry logic
+      let attempts = 0;
+      const maxAttempts = 3;
+      let lastError = null;
+      
+      while (attempts < maxAttempts) {
+        try {
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: redirectUrl
+          });
+          
+          if (error) {
+            console.error(`Attempt ${attempts + 1} failed:`, error);
+            lastError = error;
+            attempts++;
+            if (attempts < maxAttempts) {
+              // Wait before retrying (exponential backoff)
+              await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempts) * 1000));
+              continue;
+            }
+          } else {
+            console.log("Password reset email sent successfully");
+            return { success: true };
+          }
+        } catch (retryError) {
+          console.error(`Attempt ${attempts + 1} failed with unexpected error:`, retryError);
+          lastError = retryError;
+          attempts++;
+          if (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempts) * 1000));
+            continue;
+          }
+        }
+      }
+      
+      // If we get here, all attempts failed
+      return { 
+        success: false, 
+        error: lastError instanceof Error ? lastError.message : "Failed to send password reset email after multiple attempts" 
+      };
     } catch (error) {
       console.error("Unexpected error in forgotPassword:", error);
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : "An unexpected error occurred" 
+        error: error instanceof Error ? error.message : "An unexpected error occurred while sending the password reset email" 
       };
     }
   };
   
   // Function to handle account deletion
-  const deleteAccount = async (): Promise<{ success: boolean; error?: string }> => {
-    if (!user) return { success: false, error: "No active user session" };
-    
+  const deleteAccount = async () => {
     try {
-      // First, capture the user ID since we'll lose the session
-      const userId = user.id;
-      console.log("Attempting to delete account for user:", userId);
-      
-      // Step 1: Delete the user's profile data
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error("Unable to verify user identity");
+      }
+
+      const confirmed = window.confirm(
+        "Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted."
+      );
+      if (!confirmed) {
+        return { success: false, error: "Account deletion cancelled" };
+      }
+
+      // Delete user's saved diagrams first
+      const { error: diagramsError } = await supabase
+        .from('saved_diagrams')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (diagramsError) {
+        console.error('Error deleting saved diagrams:', diagramsError);
+        throw new Error("Failed to delete saved diagrams");
+      }
+
+      // Delete user's search logs
+      const { error: searchLogsError } = await supabase
+        .from('user_search_logs')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (searchLogsError) {
+        console.error('Error deleting search logs:', searchLogsError);
+        throw new Error("Failed to delete search history");
+      }
+
+      // Delete user's profile
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
-        .eq('id', userId);
-      
+        .eq('id', user.id);
+
       if (profileError) {
-        console.error("Error deleting user profile:", profileError);
-        return { success: false, error: profileError.message };
+        console.error('Error deleting profile:', profileError);
+        throw new Error("Failed to delete profile");
       }
-      
-      // Step 2: Delete any other user-related data
-      try {
-        // Delete saved diagrams
-        await supabase
-          .from('saved_diagrams')
-          .delete()
-          .eq('user_id', userId);
-        
-        // Delete search logs
-        await supabase
-          .from('user_search_logs')
-          .delete()
-          .eq('user_id', userId);
-          
-        // Add any other tables that need cleaning up
-      } catch (dataError) {
-        console.error("Error deleting user data:", dataError);
-        // Continue with deletion even if some data cleanup fails
+
+      // Finally, delete the auth user
+      const { error: authError } = await supabase.auth.admin.deleteUser(user.id);
+      if (authError) {
+        console.error('Error deleting auth user:', authError);
+        throw new Error("Failed to delete account");
       }
-      
-      // Step 3: Request the admin function to delete the user account
-      const { error: adminDeleteError } = await supabase.functions.invoke('delete-user', {
-        body: { user_id: userId }
-      });
-      
-      if (adminDeleteError) {
-        console.error("Error calling delete-user function:", adminDeleteError);
-        // Continue anyway to sign out the user
-      }
-      
-      // Step 4: Sign out the user - this will clear the session
-      await signOut();
-      
-      return { 
-        success: true 
-      };
+
+      // Clear local storage and state
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('diagramr-search-history');
+      localStorage.removeItem(`diagramr-has-set-name-${user.id}`);
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+
+      return { success: true };
     } catch (error) {
-      console.error("Unexpected error in deleteAccount:", error);
+      console.error('Error in deleteAccount:', error);
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : "An unexpected error occurred" 
+        error: error instanceof Error ? error.message : "An unexpected error occurred while deleting your account"
       };
     }
   };
