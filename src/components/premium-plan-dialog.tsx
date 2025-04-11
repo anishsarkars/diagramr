@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -19,7 +20,7 @@ export function PremiumPlanDialog({
 }: PremiumPlanDialogProps) {
   
   const handleUpgradeClick = () => {
-    window.open("https://diagramr.lemonsqueezy.com/buy/5c0b7ecd-65a5-4e74-95c3-fa001496e2e2", "_blank");
+    window.open("https://checkout.dodopayments.com/buy/pdt_StmFpatk6LW4F2n3L46LL?quantity=1&redirect_url=https://diagramr.vercel.app", "_blank");
     onClose();
   };
   

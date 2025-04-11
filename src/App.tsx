@@ -21,6 +21,7 @@ import { SiteLoader } from "./components/site-loader";
 import { FeedbackButton } from "./components/feedback-button";
 import ChatDashboard from "./pages/ChatDashboard";
 import { LoginConfetti } from "./components/login-confetti";
+import { PaymentSuccessNotification } from "./components/payment-success-notification";
 
 // Lazy load admin pages
 const AdminApiStatus = lazy(() => import('./pages/admin/api-status'));
@@ -122,6 +123,8 @@ function AppContent() {
         <div className="top-glow header-spacing relative min-h-screen bg-transparent overflow-x-hidden">
           {/* Confetti will automatically show when user logs in */}
           <LoginConfetti />
+          {/* Handle payment success notifications */}
+          <PaymentSuccessNotification />
           <Toaster />
           <Sonner closeButton position="top-right" />
           <Routes>

@@ -19,7 +19,7 @@ export interface DiagramResult {
 
 export function useInfiniteSearch({
   initialQuery = '',
-  pageSize = 15 
+  pageSize = 20
 }: {
   initialQuery?: string;
   pageSize?: number;
@@ -94,8 +94,8 @@ export function useInfiniteSearch({
     try {
       console.log("Searching for images with query:", query);
       
-      // Reduce initial batch pages to limit results to 15-20 items
-      const initialBatchPages = 2; // Fetch only 2 pages initially (about 15-20 results)
+      // Fetch initial batch of results
+      const initialBatchPages = 3; // Increased from 2 to 3 to get more initial results
       let batchedResults: DiagramResult[] = [];
       
       // First page - primary importance
@@ -109,14 +109,13 @@ export function useInfiniteSearch({
         knownImageUrls.current.add(normalizedUrl);
       });
       
-      // Only fetch second page if we need more results to meet the 15-20 target
-      if (batchedResults.length < 15) {
-        console.log("Fetching second page to reach target result count");
+      // Fetch more pages for the initial batch
+      for (let i = 2; i <= initialBatchPages; i++) {
         try {
-          const secondPageResults = await searchDiagrams(query, 2);
+          const nextPageResults = await searchDiagrams(query, i);
           
           // Add only non-duplicate results
-          const uniqueResults = secondPageResults.filter(item => {
+          const uniqueResults = nextPageResults.filter(item => {
             const normalizedUrl = item.imageSrc.split('?')[0];
             if (!knownImageUrls.current.has(normalizedUrl)) {
               knownImageUrls.current.add(normalizedUrl);
@@ -126,10 +125,11 @@ export function useInfiniteSearch({
           });
           
           batchedResults = [...batchedResults, ...uniqueResults];
-          console.log(`Total results after second page: ${batchedResults.length}`);
+          console.log(`Total results after page ${i}: ${batchedResults.length}`);
         } catch (error) {
-          console.error("Error fetching second page:", error);
-          // Continue with just first page results
+          console.error(`Error fetching page ${i}:`, error);
+          // Continue with results we have so far
+          break;
         }
       }
       
@@ -142,16 +142,16 @@ export function useInfiniteSearch({
       
       allResults.current = sortedResults;
       
-      // Limit the number of results to pageSize (15-20)
+      // Show initial batch of results up to pageSize
       const resultSlice = allResults.current.slice(0, pageSize);
       setResults(resultSlice);
-      setHasMore(allResults.current.length > pageSize);
+      setHasMore(allResults.current.length > pageSize || initialBatchPages < 5); // Always show load more option if we haven't loaded all pages
       
       if (allResults.current.length > 0) {
-        toast.success(`Found ${Math.min(allResults.current.length, pageSize)} diagrams for "${query}"`);
+        toast.success(`Found ${resultSlice.length} diagrams for "${query}"`);
         
-        // Don't automatically load more in the background
-        // This is removed to prevent loading too many results
+        // Pre-fetch a few more pages in the background for faster "load more" experience
+        fetchAdditionalPages(query, initialBatchPages + 1);
       } else {
         // Try direct Google search as fallback if search-service returns no results
         try {
@@ -240,7 +240,7 @@ export function useInfiniteSearch({
   }, [pageSize, deduplicateResults, navigate]);
   
   const fetchAdditionalPages = async (query: string, startPage: number) => {
-    const maxAdditionalPages = 10; // Increased from 8 to 10 to get more results
+    const maxAdditionalPages = 15; // Increased from 10 to 15 to get even more results
     if (startPage > maxAdditionalPages) return;
     
     try {
@@ -283,7 +283,7 @@ export function useInfiniteSearch({
     }
   };
   
-  // Load more results function
+  // Load more results function - updated to load more results
   const loadMore = useCallback(async () => {
     // If we're already loading or there are no more results, do nothing
     if (isLoading || isLoadingMore.current || !hasMore) {
@@ -292,19 +292,20 @@ export function useInfiniteSearch({
     
     // If we have more results in our current batch, just show more from there
     if (allResults.current.length > results.length) {
-      console.log(`Loading ${pageSize} more results from existing cache of ${allResults.current.length} results`);
+      console.log(`Loading more results from existing cache of ${allResults.current.length} results`);
       const nextBatchStart = results.length;
-      const nextBatchEnd = nextBatchStart + pageSize;
-      // Only load 8-10 more results at a time to maintain the smaller batches
-      const nextBatch = allResults.current.slice(nextBatchStart, nextBatchStart + 8);
+      const nextBatchSize = 20; // Load 20 more items at a time (increased from 8-10)
+      const nextBatchEnd = nextBatchStart + nextBatchSize;
+      const nextBatch = allResults.current.slice(nextBatchStart, nextBatchEnd);
       
       setResults(prevResults => [...prevResults, ...nextBatch]);
-      setHasMore(nextBatchEnd < allResults.current.length);
+      setHasMore(nextBatchEnd < allResults.current.length || currentSearchPage < 15); // Always allow loading more if we haven't reached max pages
       return;
     }
     
     // Otherwise, fetch new results
     isLoadingMore.current = true;
+    setIsLoading(true);
     
     try {
       setCurrentSearchPage(prevPage => prevPage + 1);
@@ -313,26 +314,25 @@ export function useInfiniteSearch({
       
       if (newResults.length === 0) {
         setHasMore(false);
+        setIsLoading(false);
+        isLoadingMore.current = false;
         return;
       }
       
       // Deduplicate new results
       const uniqueNewResults = deduplicateResults(newResults);
       
-      // Limit to just 8-10 new results
-      const limitedNewResults = uniqueNewResults.slice(0, 8);
-      
       // If we got unique results, add them
-      if (limitedNewResults.length > 0) {
+      if (uniqueNewResults.length > 0) {
         // Add to all results reference
-        allResults.current = [...allResults.current, ...limitedNewResults];
+        allResults.current = [...allResults.current, ...uniqueNewResults];
         
-        // Update visible results
-        setResults(prevResults => [...prevResults, ...limitedNewResults]);
+        // Update visible results - show up to 20 new results
+        setResults(prevResults => [...prevResults, ...uniqueNewResults.slice(0, 20)]);
         
-        // If we didn't get the full requested batch, assume there are no more
-        setHasMore(limitedNewResults.length >= 8);
-      } else {
+        // Always allow more loading unless we've reached the maximum page
+        setHasMore(currentSearchPage + 1 < 15);
+      } else if (currentSearchPage + 1 >= 15) {
         setHasMore(false);
       }
       
@@ -341,6 +341,7 @@ export function useInfiniteSearch({
       setError(err instanceof Error ? err : new Error('Failed to load more results'));
       toast.error('Failed to load more results');
     } finally {
+      setIsLoading(false);
       isLoadingMore.current = false;
     }
   }, [
@@ -348,7 +349,6 @@ export function useInfiniteSearch({
     hasMore, 
     results.length, 
     allResults.current.length, 
-    pageSize, 
     searchTerm, 
     currentSearchPage, 
     deduplicateResults

@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { DiagramrLogo } from "@/components/diagramr-logo";
 import { Linkedin } from "lucide-react";
@@ -36,9 +37,9 @@ export function Footer() {
             href="https://www.linkedin.com/in/anishsarkar-/" 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20 text-primary font-medium shadow-sm"
+            className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20 text-primary text-xs font-medium shadow-sm"
           >
-            <Linkedin className="h-3.5 w-3.5" />
+            <Linkedin className="h-3 w-3" />
             <span>Built by Anish</span>
           </a>
         </div>

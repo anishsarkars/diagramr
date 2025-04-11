@@ -1,8 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <rect width="24" height="24" fill="#0A1A2F"/>
-  <path d="M12 4l2.5 2.5L12 9l-2.5-2.5L12 4zM4 12l2.5-2.5L9 12l-2.5 2.5L4 12zM20 12l-2.5-2.5L15 12l2.5 2.5L20 12zM12 20l-2.5-2.5L12 15l2.5 2.5L12 20z" fill="white"/>
-  <circle cx="12" cy="4" r="1.5" fill="white"/>
-  <circle cx="4" cy="12" r="1.5" fill="white"/>
-  <circle cx="20" cy="12" r="1.5" fill="white"/>
-  <circle cx="12" cy="20" r="1.5" fill="white"/>
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <rect width="500" height="500" fill="transparent"/>
+  <path d="M250 100 L310 150 L250 200 L190 150 Z" fill="#FF4500"/>
+  <path d="M100 250 L150 190 L200 250 L150 310 Z" fill="#FF4500"/>
+  <path d="M400 250 L350 190 L300 250 L350 310 Z" fill="#FF4500"/>
+  <path d="M250 400 L190 350 L250 300 L310 350 Z" fill="#FF4500"/>
+  <circle cx="250" cy="100" r="30" fill="#FF4500"/>
+  <circle cx="100" cy="250" r="30" fill="#FF4500"/>
+  <circle cx="400" cy="250" r="30" fill="#FF4500"/>
+  <circle cx="250" cy="400" r="30" fill="#FF4500"/>
 </svg>

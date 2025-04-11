@@ -48,8 +48,7 @@ const Pricing = () => {
         if (!user) {
           navigate("/auth", { state: { returnTo: "/pricing" } });
         } else {
-          // Handle subscription logic
-          window.open("https://payments.cashfree.com/forms/diagramr", "_blank");
+          window.open("https://checkout.dodopayments.com/buy/pdt_StmFpatk6LW4F2n3L46LL?quantity=1&redirect_url=https://diagramr.vercel.app", "_blank");
         }
       },
     }
@@ -60,7 +59,6 @@ const Pricing = () => {
       <Header />
       
       <main className="flex-1 pt-24 pb-16 relative overflow-hidden">
-        {/* Background decoration elements */}
         <div className="absolute top-0 left-0 right-0 h-[500px] overflow-hidden -z-10 opacity-30 pointer-events-none">
           <div className="absolute top-0 right-[10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px]" />
           <div className="absolute top-[15%] left-[5%] w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px]" />
