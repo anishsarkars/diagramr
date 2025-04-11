@@ -4,7 +4,6 @@ import { useAuth } from "@/components/auth-context";
 import { useAccess } from "@/components/access-context";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import confetti from "canvas-confetti";
 import { supabase } from "@/integrations/supabase/client";
 import { ConfettiCelebration } from "./confetti-celebration";
 
