@@ -2,19 +2,11 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, BookOpen, Youtube, FileText, Lightbulb, ArrowRight } from "lucide-react";
+import { ExternalLink, BookOpen, Youtube, FileText, Lightbulb, ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-
-interface Resource {
-  id: string;
-  title: string;
-  description: string;
-  url: string;
-  type: "course" | "video" | "article" | "resource";
-  source?: string;
-  imageUrl?: string;
-}
+import { generateRelatedResources, ResourceItem } from "@/utils/gemini-ai";
+import { useAccess } from "@/components/access-context";
 
 interface RecommendationsSectionProps {
   searchQuery: string;
@@ -22,9 +14,10 @@ interface RecommendationsSectionProps {
 }
 
 export function RecommendationsSection({ searchQuery, className }: RecommendationsSectionProps) {
-  const [resources, setResources] = useState<Resource[]>([]);
+  const [resources, setResources] = useState<ResourceItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { isPremium } = useAccess();
 
   useEffect(() => {
     const fetchRecommendations = async () => {
@@ -34,16 +27,19 @@ export function RecommendationsSection({ searchQuery, className }: Recommendatio
       setError(null);
       
       try {
-        // For now, we'll use a mock API call that returns hardcoded results based on the query
-        // In a real implementation, this would call an external API
-        setTimeout(() => {
-          const mockResults = generateMockResults(searchQuery);
-          setResources(mockResults);
-          setIsLoading(false);
-        }, 1500);
+        const response = await generateRelatedResources(searchQuery);
+        
+        if (response.resources && response.resources.length > 0) {
+          setResources(response.resources);
+        } else if (response.error) {
+          setError(response.error);
+        } else {
+          setError("No recommendations found");
+        }
       } catch (err) {
         console.error("Error fetching recommendations:", err);
         setError("Failed to load recommendations");
+      } finally {
         setIsLoading(false);
       }
     };
@@ -51,56 +47,7 @@ export function RecommendationsSection({ searchQuery, className }: Recommendatio
     fetchRecommendations();
   }, [searchQuery]);
 
-  // Generate mock results based on the search query
-  const generateMockResults = (query: string): Resource[] => {
-    const cleanQuery = query.toLowerCase().trim();
-    const defaultResources: Resource[] = [
-      {
-        id: "1",
-        title: `Learn ${capitalizeFirstLetter(cleanQuery)} - Comprehensive Course`,
-        description: `Master ${capitalizeFirstLetter(cleanQuery)} with this step-by-step interactive course.`,
-        url: "https://example.com/course",
-        type: "course",
-        source: "Example Learning",
-        imageUrl: "https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=300&q=80"
-      },
-      {
-        id: "2",
-        title: `${capitalizeFirstLetter(cleanQuery)} Explained - Video Tutorial`,
-        description: `Watch this video tutorial to understand ${cleanQuery} concepts visually.`,
-        url: "https://example.com/video",
-        type: "video",
-        source: "Example Academy",
-        imageUrl: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300&q=80"
-      },
-      {
-        id: "3",
-        title: `Understanding ${capitalizeFirstLetter(cleanQuery)} - Comprehensive Guide`,
-        description: `Read this in-depth article about ${cleanQuery} with practical examples.`,
-        url: "https://example.com/article",
-        type: "article",
-        source: "Example Blog",
-        imageUrl: "https://images.unsplash.com/photo-1543286386-713bdd548da4?w=300&q=80"
-      },
-      {
-        id: "4",
-        title: `${capitalizeFirstLetter(cleanQuery)} Resources Collection`,
-        description: `A curated collection of resources about ${cleanQuery} for all skill levels.`,
-        url: "https://example.com/resources",
-        type: "resource",
-        source: "Example Hub",
-        imageUrl: "https://images.unsplash.com/photo-1532012197267-da84d127e765?w=300&q=80"
-      }
-    ];
-
-    return defaultResources;
-  };
-
-  const capitalizeFirstLetter = (string: string) => {
-    return string.charAt(0).toUpperCase() + string.slice(1);
-  };
-
-  const getIconForResourceType = (type: Resource["type"]) => {
+  const getIconForResourceType = (type: ResourceItem["type"]) => {
     switch (type) {
       case "course":
         return <BookOpen className="h-4 w-4" />;
@@ -128,10 +75,22 @@ export function RecommendationsSection({ searchQuery, className }: Recommendatio
             onClick={() => {
               setIsLoading(true);
               setError(null);
-              setTimeout(() => {
-                setResources(generateMockResults(searchQuery));
-                setIsLoading(false);
-              }, 1000);
+              
+              // Retry fetching recommendations
+              generateRelatedResources(searchQuery)
+                .then(response => {
+                  if (response.resources && response.resources.length > 0) {
+                    setResources(response.resources);
+                  } else {
+                    setError("Still no recommendations found");
+                  }
+                })
+                .catch(err => {
+                  setError("Failed to load recommendations");
+                })
+                .finally(() => {
+                  setIsLoading(false);
+                });
             }}
           >
             Try Again
@@ -168,7 +127,14 @@ export function RecommendationsSection({ searchQuery, className }: Recommendatio
 
   return (
     <div className={`mt-8 ${className || ""}`}>
-      <h3 className="text-lg font-semibold mb-3">Related Resources</h3>
+      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+        Related Resources
+        {!isPremium && (
+          <span className="text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5">
+            Free Preview
+          </span>
+        )}
+      </h3>
       <Card className="p-4">
         <div className="space-y-4">
           {resources.map((resource) => (
