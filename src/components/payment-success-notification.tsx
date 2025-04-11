@@ -5,12 +5,15 @@ import { useAccess } from "@/components/access-context";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import confetti from "canvas-confetti";
+import { supabase } from "@/integrations/supabase/client";
+import { ConfettiCelebration } from "./confetti-celebration";
 
 export function PaymentSuccessNotification() {
   const { user, refreshProfile } = useAuth();
   const { setPremiumUser } = useAccess();
   const navigate = useNavigate();
   const [processed, setProcessed] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   // Process payment success URL parameters
   useEffect(() => {
@@ -23,40 +26,24 @@ export function PaymentSuccessNotification() {
       
       if (paymentStatus === 'success' && paymentReference && user) {
         setProcessed(true);
+        setShowConfetti(true);
         
         try {
-          // Here we would call a Supabase function to verify the payment
-          // But for now, we'll simulate a successful verification
           console.log(`Verifying payment with reference: ${paymentReference}`);
           
-          // Show confetti celebration
-          const duration = 3 * 1000;
-          const end = Date.now() + duration;
+          // Update the user's premium status in Supabase
+          const { error } = await supabase
+            .from('profiles')
+            .update({ is_premium: true })
+            .eq('id', user.id);
           
-          // Launch confetti
-          function frame() {
-            confetti({
-              particleCount: 2,
-              angle: 60,
-              spread: 55,
-              origin: { x: 0 },
-              colors: ['#FF4500', '#0066FF', '#FFD700']
+          if (error) {
+            console.error("Error updating premium status:", error);
+            toast.error("Error updating premium status", {
+              description: "Please contact support if premium features are not available.",
             });
-            
-            confetti({
-              particleCount: 2,
-              angle: 120,
-              spread: 55,
-              origin: { x: 1 },
-              colors: ['#FF4500', '#0066FF', '#FFD700']
-            });
-            
-            if (Date.now() < end) {
-              requestAnimationFrame(frame);
-            }
+            return;
           }
-          
-          frame();
           
           // Update user's premium status in the local access context
           setPremiumUser(true);
@@ -87,5 +74,14 @@ export function PaymentSuccessNotification() {
     }
   }, [user, processed, setPremiumUser, navigate, refreshProfile]);
   
-  return null; // This component doesn't render anything
+  return (
+    <>
+      {showConfetti && (
+        <ConfettiCelebration 
+          duration={4000}
+          onComplete={() => setShowConfetti(false)}
+        />
+      )}
+    </>
+  );
 }

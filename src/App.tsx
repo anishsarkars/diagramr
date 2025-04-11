@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +23,7 @@ import { FeedbackButton } from "./components/feedback-button";
 import ChatDashboard from "./pages/ChatDashboard";
 import { LoginConfetti } from "./components/login-confetti";
 import { PaymentSuccessNotification } from "./components/payment-success-notification";
+import { PaymentWebhookHandler } from "./components/payment-webhook-handler";
 
 // Lazy load admin pages
 const AdminApiStatus = lazy(() => import('./pages/admin/api-status'));
@@ -125,6 +127,8 @@ function AppContent() {
           <LoginConfetti />
           {/* Handle payment success notifications */}
           <PaymentSuccessNotification />
+          {/* Handle payment webhooks */}
+          <PaymentWebhookHandler />
           <Toaster />
           <Sonner closeButton position="top-right" />
           <Routes>

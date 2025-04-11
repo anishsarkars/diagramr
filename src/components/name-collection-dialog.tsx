@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Dialog, 
@@ -10,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth-context";
-import { UserRound } from "lucide-react";
+import { UserRound, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,6 +19,7 @@ export function NameCollectionDialog() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [retries, setRetries] = useState(0);
   const { user, profile, refreshProfile, updateProfile } = useAuth();
 
   useEffect(() => {
@@ -30,9 +32,17 @@ export function NameCollectionDialog() {
       
       setOpen(hasDefaultUsername && !hasSetNameBefore);
       
-      // Pre-fill with existing username
-      if (profile.username) {
+      // Pre-fill with existing username if not default-looking
+      if (profile.username && !hasDefaultUsername) {
         setName(profile.username);
+      } else if (user.email) {
+        // Try to extract a name from the email
+        const emailName = user.email.split('@')[0];
+        // Capitalize first letter and replace dots/underscores with spaces
+        const formattedName = emailName
+          .replace(/[._]/g, ' ')
+          .replace(/\b\w/g, c => c.toUpperCase());
+        setName(formattedName);
       }
     }
   }, [user, profile]);
@@ -45,26 +55,63 @@ export function NameCollectionDialog() {
     try {
       console.log("Attempting to save name:", name.trim());
       
-      // Use auth context's updateProfile instead of direct Supabase call
-      const success = await updateProfile({ 
-        username: name.trim() 
-      });
+      // Try direct Supabase update with retries
+      let success = false;
+      let attempt = 0;
+      const maxAttempts = 3;
       
-      if (!success) {
-        throw new Error("Failed to update profile");
+      while (!success && attempt < maxAttempts) {
+        attempt++;
+        
+        try {
+          // Use direct Supabase call for more reliability
+          const { data, error } = await supabase
+            .from("profiles")
+            .update({ username: name.trim() })
+            .eq("id", user.id)
+            .select();
+          
+          if (error) {
+            console.error(`Attempt ${attempt}: Error updating profile directly:`, error);
+            // Wait a bit before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            continue;
+          }
+          
+          if (data && data.length > 0) {
+            success = true;
+            console.log(`Profile updated successfully on attempt ${attempt}:`, data);
+          }
+        } catch (err) {
+          console.error(`Attempt ${attempt}: Unexpected error in direct update:`, err);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
       
-      // Mark that the user has set their name (to avoid showing this dialog again)
+      // If direct updates failed, try the context method
+      if (!success) {
+        success = await updateProfile({ 
+          username: name.trim() 
+        });
+      }
+      
+      if (!success) {
+        // If we're still not successful but haven't reached max retries
+        if (retries < 2) {
+          setRetries(prev => prev + 1);
+          toast.error("Failed to update name. Retrying...");
+          setIsLoading(false);
+          return;
+        }
+        
+        throw new Error("Failed to update profile after multiple attempts");
+      }
+      
+      // Mark that the user has set their name
       localStorage.setItem(`diagramr-has-set-name-${user.id}`, 'true');
       
-      // Verify that the name was updated by checking the profile
-      const { data } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("id", user.id)
-        .single();
-      
-      console.log("Verification after save:", data);
+      // Refresh profile to ensure UI is updated
+      await refreshProfile();
       
       toast.success("Your name has been saved");
       setOpen(false);
@@ -115,12 +162,13 @@ export function NameCollectionDialog() {
           <Button 
             onClick={handleSaveName}
             disabled={isLoading || !name.trim()}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto gap-2"
           >
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             {isLoading ? "Saving..." : "Save Name"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-} 
+}

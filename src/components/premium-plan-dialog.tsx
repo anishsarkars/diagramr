@@ -20,7 +20,7 @@ export function PremiumPlanDialog({
 }: PremiumPlanDialogProps) {
   
   const handleUpgradeClick = () => {
-    window.open("https://checkout.dodopayments.com/buy/pdt_StmFpatk6LW4F2n3L46LL?quantity=1&redirect_url=https://diagramr.vercel.app", "_blank");
+    window.open("https://checkout.dodopayments.com/buy/pdt_Wx3ImdRPDky11pATGyLRa?quantity=1&redirect_url=https://diagramr.vercel.app", "_blank");
     onClose();
   };
   

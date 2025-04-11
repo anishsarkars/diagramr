@@ -37,11 +37,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { LoadMoreButton } from "@/components/load-more-button";
 
-// Number of results to show initially (limit to 15-20 as requested)
 const INITIAL_RESULTS_COUNT = 15;
-const MOBILE_RESULTS_COUNT = 15;
-const RESULTS_PER_LOAD = 12;
+const MOBILE_RESULTS_COUNT = 10;
+const RESULTS_PER_LOAD = 8;
+const MAX_RESULTS = 30;
 
 interface ResultsSectionProps {
   results: DiagramResult[];
@@ -86,109 +87,106 @@ export function ResultsSection({
   const [visibleResults, setVisibleResults] = useState<DiagramResult[]>([]);
   const [sortBy, setSortBy] = useState("popular");
   const [diagramTypeFilter, setDiagramTypeFilter] = useState<string>("all");
+  const [totalDisplayed, setTotalDisplayed] = useState(0);
   
-  // Calculate initial visible count based on device
   const initialVisibleCount = isMobile ? MOBILE_RESULTS_COUNT : INITIAL_RESULTS_COUNT;
   
-  // Extract unique tags from results and set up initial batch
   useEffect(() => {
     if (results.length === 0) return;
 
-    const allTags = results
-      .flatMap((result) => result.tags || [])
+    const processedResults = JSON.parse(JSON.stringify(results));
+    
+    const uniqueResults = removeDuplicates(processedResults);
+    
+    const limitedResults = uniqueResults.slice(0, MAX_RESULTS);
+    
+    const allTags = limitedResults
+      .flatMap((result: DiagramResult) => result.tags || [])
       .filter(Boolean);
     
     const uniqueTags = Array.from(new Set(allTags))
       .sort((a, b) => a.localeCompare(b))
-      .slice(0, 3); // Limit to 3 tags for cleaner UI
+      .slice(0, 5);
     
     setTags(uniqueTags);
-    setCurrentBatch(results);
+    setCurrentBatch(limitedResults);
+    setTotalDisplayed(limitedResults.length);
     
-    // Initialize visible results with first batch
-    setVisibleResults(results.slice(0, initialVisibleCount));
+    setVisibleResults(limitedResults.slice(0, initialVisibleCount));
   }, [results, initialVisibleCount]);
   
-  // Filter results based on diagram type and tag
+  const removeDuplicates = (items: DiagramResult[]) => {
+    const seen = new Map();
+    return items.filter(item => {
+      const title = (item.title || '').toLowerCase();
+      const imgSrc = (item.imageSrc || '').split('?')[0];
+      const key = `${title}-${imgSrc}`;
+      
+      if (seen.has(key)) return false;
+      
+      seen.set(key, true);
+      return true;
+    });
+  };
+  
   useEffect(() => {
-    let filtered = [...currentBatch]; // Create a copy to avoid mutation issues
+    let filtered = [...currentBatch];
     
-    // Apply tag filter
     if (selectedTagFilter) {
       filtered = filtered.filter(
         (result) => result.tags && result.tags.includes(selectedTagFilter)
       );
     }
     
-    // Apply diagram type filter using tags
     if (diagramTypeFilter !== "all") {
-      filtered = filtered.filter(
-        (result) => {
-          // Handle tags being possibly undefined
-          if (!result.tags || result.tags.length === 0) return false;
-          
-          // For exact matches like "flowchart", "uml", etc.
-          const exactMatch = result.tags.some(tag => 
-            tag.toLowerCase() === diagramTypeFilter.toLowerCase() ||
-            tag.toLowerCase().includes(diagramTypeFilter.toLowerCase())
-          );
-          
-          // For compound terms like "er-diagram", "mind-map"
-          const partMatch = result.tags.some(tag => 
-            diagramTypeFilter.toLowerCase().includes(tag.toLowerCase())
-          );
-          
-          return exactMatch || partMatch;
-        }
-      );
+      filtered = filtered.filter(result => {
+        if (!result.tags || result.tags.length === 0) return false;
+        
+        const exactMatch = result.tags.some(tag => 
+          tag.toLowerCase() === diagramTypeFilter.toLowerCase() ||
+          tag.toLowerCase().includes(diagramTypeFilter.toLowerCase())
+        );
+        
+        const partMatch = result.tags.some(tag => 
+          diagramTypeFilter.toLowerCase().includes(tag.toLowerCase())
+        );
+        
+        return exactMatch || partMatch;
+      });
     }
     
-    // Apply basic deduplication by removing results with identical titles or images
-    const seen = new Set();
-    filtered = filtered.filter(result => {
-      // Create a unique key from title and image source
-      const key = `${result.title?.toLowerCase() || ''}-${result.imageSrc?.split('?')[0] || ''}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-    
-    // Apply sorting (default to relevant if filtering)
     if (sortBy === "popular") {
       filtered.sort((a, b) => ((b as any).likes || 0) - ((a as any).likes || 0));
     } else if (sortBy === "newest") {
       filtered.sort((a, b) => new Date((b as any).createdAt || Date.now()).getTime() - new Date((a as any).createdAt || Date.now()).getTime());
-    } else { // "relevant"
-      // Boost results with more complete metadata and prioritize title matches
+    } else {
       filtered.sort((a, b) => {
-        // Check if title contains search term for higher relevance
         const aMatchesSearch = a.title?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
         const bMatchesSearch = b.title?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
         
         if (aMatchesSearch && !bMatchesSearch) return -1;
         if (!aMatchesSearch && bMatchesSearch) return 1;
         
-        // Then check metadata completeness
         const completenessA = (a.title ? 1 : 0) + (a.author ? 1 : 0) + (a.tags?.length ? 1 : 0);
         const completenessB = (b.title ? 1 : 0) + (b.author ? 1 : 0) + (b.tags?.length ? 1 : 0);
         return completenessB - completenessA;
       });
     }
     
-    // Update visible results with proper count
+    filtered = filtered.slice(0, MAX_RESULTS);
+    setTotalDisplayed(filtered.length);
+    
     setVisibleResults(filtered.slice(0, initialVisibleCount));
   }, [currentBatch, selectedTagFilter, diagramTypeFilter, initialVisibleCount, sortBy, searchTerm]);
-
+  
   const handleLoadMore = useCallback(async () => {
     if (isLoading || isLoadingMore) return;
     
     setIsLoadingMore(true);
     
     try {
-      // Apply filters to ensure consistent results when loading more
       let filteredBatch = [...currentBatch];
       
-      // Apply same filters as the useEffect
       if (selectedTagFilter) {
         filteredBatch = filteredBatch.filter(
           (result) => result.tags && result.tags.includes(selectedTagFilter)
@@ -212,25 +210,28 @@ export function ResultsSection({
         });
       }
       
+      filteredBatch = filteredBatch.slice(0, MAX_RESULTS);
+      
       if (visibleResults.length < filteredBatch.length) {
-        // Load more from current filtered batch
         const moreResults = filteredBatch.slice(visibleResults.length, 
-          visibleResults.length + RESULTS_PER_LOAD);
+          Math.min(visibleResults.length + RESULTS_PER_LOAD, filteredBatch.length));
         
         setVisibleResults(prev => [...prev, ...moreResults]);
         
-        toast.success("More diagrams loaded", { 
+        toast.success(`Loaded ${moreResults.length} more diagrams`, { 
           duration: 2000,
-          position: "bottom-center",
-          style: { backgroundColor: "rgba(0,0,0,0.7)", color: "white" }
+          position: "bottom-center"
         });
-      } else if (loadMore) {
-        // Load more from API
-      await loadMore();
+      } else if (loadMore && currentBatch.length < MAX_RESULTS) {
+        await loadMore();
         toast.success("More diagrams loaded", { 
           duration: 2000,
-          position: "bottom-center",
-          style: { backgroundColor: "rgba(0,0,0,0.7)", color: "white" }
+          position: "bottom-center"
+        });
+      } else {
+        toast.info(`Showing maximum of ${MAX_RESULTS} results`, {
+          duration: 3000,
+          position: "bottom-center"
         });
       }
     } catch (error) {
@@ -241,42 +242,29 @@ export function ResultsSection({
     }
   }, [isLoading, isLoadingMore, loadMore, visibleResults.length, currentBatch, 
       selectedTagFilter, diagramTypeFilter]);
-
+  
   const handleDownload = (id: string | number, format: string) => {
-    // Start loading indicator
     toast.loading(`Preparing ${format.toUpperCase()} download...`, {
       id: `download-${id}`,
       duration: 2000
     });
     
-    // In a real implementation, you would fetch the diagram
-    // For demo, simulate download with timeout
     setTimeout(() => {
-      // Create a dummy download link
       const link = document.createElement('a');
-      link.href = '#'; // In real app: actual URL to download the file
+      link.href = '#';
       link.download = `diagram-${id}.${format.toLowerCase()}`;
       
-      // Success notification
       toast.success(`Downloaded diagram as ${format.toUpperCase()}`, {
         id: `download-${id}`,
         duration: 3000,
         position: "bottom-center"
       });
-      
-      // Simulate click to trigger download
-      // In a real app, you might use the actual link and trigger download
-      // document.body.appendChild(link);
-      // link.click();
-      // document.body.removeChild(link);
     }, 1500);
   };
 
   const handleShare = (id: string | number) => {
-    // Generate shareable link
     const shareableLink = `${window.location.origin}/diagrams/${id}`;
     
-    // Check if native share is available (mobile devices)
     if (navigator.share) {
       navigator.share({
         title: 'Check out this diagram',
@@ -291,16 +279,13 @@ export function ResultsSection({
       })
       .catch((error) => {
         console.error('Error sharing:', error);
-        // Fall back to clipboard
         copyToClipboard(shareableLink);
       });
     } else {
-      // Use clipboard if share API not available
       copyToClipboard(shareableLink);
     }
   };
   
-  // Helper function to copy to clipboard
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
       .then(() => {
@@ -322,14 +307,14 @@ export function ResultsSection({
     const totalCount = 
       diagramTypeFilter !== "all" || selectedTagFilter 
         ? visibleResults.length
-        : Math.min(currentBatch.length, 20); // Limit displayed total to 20 as per requirement
+        : Math.min(totalDisplayed, MAX_RESULTS);
         
     let resultsText = `${count} `;
     
     if (lastAction === "search") {
       resultsText += `result${count !== 1 ? "s" : ""} for "${searchTerm}"`;
-      if (currentBatch.length > 20) {
-        resultsText += ` (showing limited set)`;
+      if (totalDisplayed > MAX_RESULTS) {
+        resultsText += ` (showing max ${MAX_RESULTS})`;
       }
     } else if (lastAction === "like") {
       resultsText += `liked diagram${count !== 1 ? "s" : ""}`;
@@ -347,7 +332,6 @@ export function ResultsSection({
   };
 
   const getLayoutGridClasses = () => {
-    // Enhanced responsive grid - adjusts columns for different screen sizes
     return {
       "grid gap-3 md:gap-4": true,
       "grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5": viewMode === "grid",
@@ -355,18 +339,9 @@ export function ResultsSection({
     };
   };
 
-  // Export formats
-  const exportFormats = [
-    { value: "png", label: "PNG" },
-    { value: "jpeg", label: "JPEG" },
-    { value: "svg", label: "SVG" },
-    { value: "pdf", label: "PDF" },
-  ];
-
-  // Determine if we should show the "Load More" button
   const shouldShowLoadMore = 
-    visibleResults.length < currentBatch.length || 
-    (hasMore && visibleResults.length >= initialVisibleCount);
+    visibleResults.length < Math.min(totalDisplayed, MAX_RESULTS) ||
+    (hasMore && visibleResults.length < MAX_RESULTS && currentBatch.length < MAX_RESULTS);
 
   return (
     <div className="relative">
@@ -387,7 +362,7 @@ export function ResultsSection({
                 )}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {results.length > 0 && `Found ${results.length} diagrams`}
+                {results.length > 0 && `Found ${Math.min(results.length, MAX_RESULTS)} diagrams`}
               </p>
             </div>
             
@@ -402,7 +377,7 @@ export function ResultsSection({
                   <DropdownMenuContent align="end">
                     <DropdownMenuRadioGroup
                       value={selectedTagFilter || "all"}
-            onValueChange={(value) => {
+                      onValueChange={(value) => {
                         onSelectTagFilter?.(value === "all" ? null : value);
                       }}
                     >
@@ -420,32 +395,32 @@ export function ResultsSection({
                 </DropdownMenu>
               )}
               
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="h-8">
                     {viewMode === "grid" ? <Grid3X3 className="h-4 w-4" /> : <List className="h-4 w-4" />}
-                </Button>
-              </DropdownMenuTrigger>
+                  </Button>
+                </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>View Mode</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem 
+                  <DropdownMenuCheckboxItem 
                     checked={viewMode === "grid"}
                     onCheckedChange={() => setViewMode("grid")}
-                >
+                  >
                     <Grid3X3 className="mr-2 h-4 w-4" />
                     Grid
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem 
                     checked={viewMode === "list"}
                     onCheckedChange={() => setViewMode("list")}
                   >
                     <List className="mr-2 h-4 w-4" />
                     List
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="h-8">
@@ -468,17 +443,17 @@ export function ResultsSection({
               </DropdownMenu>
               
               {searchTerm && (
-          <Button
-                variant="ghost"
+                <Button
+                  variant="ghost"
                   size="sm"
                   className="h-8"
                   onClick={onNewSearch}
                 >
                   <Search className="mr-2 h-4 w-4" />
                   New Search
-          </Button>
+                </Button>
               )}
-      </div>
+            </div>
           </div>
         )}
         
@@ -490,19 +465,19 @@ export function ResultsSection({
           >
             {visibleResults.map((result, index) => {
               const isLastItem = index === visibleResults.length - 1;
-                return (
+              return (
                 <DiagramCard
-                    key={`${result.id}-${index}`}
+                  key={`${result.id}-${index}`}
                   diagram={result}
                   viewMode={viewMode}
                   onLike={() => onLike?.(result.id)}
-                    isLiked={likedDiagrams.has(String(result.id))}
+                  isLiked={likedDiagrams.has(String(result.id))}
                   onShare={() => handleShare(result.id)}
                   onDownload={handleDownload}
                   ref={isLastItem ? lastDiagramRef : undefined}
                 />
-                );
-              })}
+              );
+            })}
           </div>
         ) : (
           <div className="flex items-center justify-center min-h-[300px] bg-gray-50 dark:bg-gray-900 rounded-lg">
@@ -531,29 +506,22 @@ export function ResultsSection({
           </div>
         )}
         
-        {/* Explicit Load More button */}
-        {results.length > 0 && hasMore && (
-          <div className="flex justify-center mt-8 mb-4">
-                <Button 
-                  onClick={handleLoadMore} 
-                  disabled={isLoadingMore}
-              className="min-w-[180px]"
-                >
-                  {isLoadingMore ? (
-                    <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                  Loading...
-                    </>
-                  ) : (
-                    <>
-                  Show 8 More Results
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-            </div>
-          )}
-        </div>
+        {shouldShowLoadMore && (
+          <LoadMoreButton 
+            onClick={handleLoadMore} 
+            isLoading={isLoadingMore}
+            visible={true}
+            count={visibleResults.length}
+            total={Math.min(totalDisplayed, MAX_RESULTS)}
+          />
+        )}
+        
+        {totalDisplayed >= MAX_RESULTS && visibleResults.length >= MAX_RESULTS && (
+          <div className="text-center text-sm text-muted-foreground mt-4">
+            Showing maximum of {MAX_RESULTS} results. Try a more specific search for better results.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

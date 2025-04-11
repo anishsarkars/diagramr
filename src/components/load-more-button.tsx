@@ -7,9 +7,17 @@ interface LoadMoreButtonProps {
   onClick: () => void;
   isLoading: boolean;
   visible: boolean;
+  count?: number;
+  total?: number;
 }
 
-export function LoadMoreButton({ onClick, isLoading, visible }: LoadMoreButtonProps) {
+export function LoadMoreButton({ 
+  onClick, 
+  isLoading, 
+  visible, 
+  count = 0,
+  total = 0
+}: LoadMoreButtonProps) {
   if (!visible) return null;
   
   return (
@@ -34,7 +42,9 @@ export function LoadMoreButton({ onClick, isLoading, visible }: LoadMoreButtonPr
         ) : (
           <>
             <ArrowDown className="h-4 w-4" />
-            <span>Load More Results</span>
+            <span>
+              {total > 0 ? `Showing ${count} of ${Math.min(total, 30)} Results` : "Load More Results"}
+            </span>
           </>
         )}
       </Button>

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User, AuthChangeEvent } from "@supabase/supabase-js";
+import { toast } from "sonner";
 
 interface UserProfile {
   id: string;
@@ -14,6 +15,8 @@ interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   isLoading: boolean;
+  signIn: (email: string, password: string) => Promise<User | null>;
+  signUp: (email: string, password: string) => Promise<User | null>;
   signOut: () => Promise<boolean>;
   isNewLogin: boolean;
   setIsNewLogin: (value: boolean) => void;
@@ -38,6 +41,77 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
   const [isNewLogin, setIsNewLogin] = useState(false);
   const [initialSessionChecked, setInitialSessionChecked] = useState(false);
   const [prevUserId, setPrevUserId] = useState<string | null>(null);
+
+  // Implement sign in functionality
+  const signIn = async (email: string, password: string): Promise<User | null> => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error("Error signing in:", error.message);
+        toast.error("Failed to sign in", {
+          description: error.message,
+        });
+        return null;
+      }
+
+      if (data.user) {
+        setUser(data.user);
+        setSession(data.session);
+        setIsNewLogin(true);
+        toast.success("Signed in successfully!");
+        return data.user;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error("Unexpected error during sign in:", error);
+      toast.error("An unexpected error occurred");
+      return null;
+    }
+  };
+
+  // Implement sign up functionality
+  const signUp = async (email: string, password: string): Promise<User | null> => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error("Error signing up:", error.message);
+        toast.error("Failed to sign up", {
+          description: error.message,
+        });
+        return null;
+      }
+
+      if (data.user) {
+        // Check if email confirmation is required
+        if (data.session === null) {
+          toast.success("Registration successful!", {
+            description: "Please check your email to confirm your account.",
+          });
+        } else {
+          setUser(data.user);
+          setSession(data.session);
+          setIsNewLogin(true);
+          toast.success("Account created successfully!");
+        }
+        return data.user;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error("Unexpected error during sign up:", error);
+      toast.error("An unexpected error occurred");
+      return null;
+    }
+  };
 
   // Enhanced function to update the user profile
   const updateProfile = async (data: Partial<UserProfile>): Promise<boolean> => {
@@ -75,6 +149,9 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
       
       if (error) {
         console.error("Error updating profile:", error);
+        toast.error("Failed to update profile", {
+          description: "Please try again later.",
+        });
         return false;
       }
       
@@ -103,85 +180,23 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
         }
         
         console.log("Profile successfully updated:", updatedProfile);
+        toast.success("Profile updated successfully!");
         return true;
       } else {
         console.error("No data returned from profile update");
+        toast.error("Failed to update profile", {
+          description: "Please try again later.",
+        });
         return false;
       }
     } catch (error) {
       console.error("Unexpected error updating profile:", error);
+      toast.error("Failed to update profile", {
+        description: "An unexpected error occurred.",
+      });
       return false;
     }
   };
-
-  useEffect(() => {
-    // Initial session fetch
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("Initial auth session:", session ? "authenticated" : "not authenticated");
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-        // Store the user ID to detect changes
-        setPrevUserId(session.user.id);
-      } else {
-        setIsLoading(false);
-      }
-      setInitialSessionChecked(true);
-    }).catch(error => {
-      console.error("Error fetching initial session:", error);
-      setIsLoading(false);
-      setInitialSessionChecked(true);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session) => {
-        console.log("Auth state change event:", event);
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Check for login, signup, or user switching
-          const isUserChanged = prevUserId !== session.user.id;
-          
-          // Force confetti on explicit sign-in events
-          if (initialSessionChecked && 
-              (event === 'SIGNED_IN' || isUserChanged || !prevUserId)) {
-            console.log("New login or signup detected, triggering confetti celebration");
-            setIsNewLogin(true);
-            
-            // Store login timestamp for session consistency
-            localStorage.setItem('last_login_time', Date.now().toString());
-            sessionStorage.setItem('confetti_shown', 'false');
-          }
-          
-          // Update previous user ID
-          setPrevUserId(session.user.id);
-          
-          // Create profile if this is a new user
-          if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-            const profileCreated = await createProfileIfNotExists(session.user);
-            if (profileCreated) {
-              console.log("New profile created, showing confetti");
-              setIsNewLogin(true);
-            }
-          }
-          
-          // Always fetch fresh profile data on auth changes
-          await fetchProfile(session.user.id);
-        } else {
-          setPrevUserId(null);
-          setProfile(null);
-          setIsLoading(false);
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [initialSessionChecked, prevUserId]);
 
   const fetchProfile = async (userId: string) => {
     if (!userId) {
@@ -492,9 +507,17 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
       
       // Clear all session and local storage data first
       sessionStorage.clear();
+      
+      // Keep certain items in localStorage that should persist
+      const searchHistory = localStorage.getItem('diagramr-search-history');
+      const theme = localStorage.getItem('diagramr-theme');
+      
+      // Clear localStorage but preserve specific items
       localStorage.clear();
-      localStorage.removeItem('last_login_time');
-      localStorage.removeItem('diagramr-search-history');
+      
+      // Restore persistent items
+      if (searchHistory) localStorage.setItem('diagramr-search-history', searchHistory);
+      if (theme) localStorage.setItem('diagramr-theme', theme);
       
       // Reset local state before API call to ensure UI updates immediately
       setUser(null);
@@ -502,30 +525,24 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
       setProfile(null);
       
       // Call the actual signOut method
-      const { error } = await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
       
       if (error) {
         console.error("Error during signOut:", error);
+        toast.error("Failed to sign out", {
+          description: error.message,
+        });
         throw error;
       }
       
-      // Using a more reliable redirect approach
-      // First try using window.location
-      try {
-        window.location.href = '/';
-      } catch (redirectError) {
-        console.error("Error redirecting with window.location:", redirectError);
-        // Fallback to history API
-        try {
-          window.history.pushState({}, '', '/');
-          window.dispatchEvent(new PopStateEvent('popstate'));
-        } catch (historyError) {
-          console.error("Error redirecting with history API:", historyError);
-          // Last resort - reload the page
-          window.location.reload();
-        }
+      // Directly navigate to home page
+      window.location.href = '/';
+      
+      if (onLogout) {
+        onLogout();
       }
       
+      toast.success("Signed out successfully");
       return true;
     } catch (error) {
       console.error("Error during signOut:", error);
@@ -683,11 +700,82 @@ export function AuthProvider({ children, onLogout }: AuthProviderProps) {
     }
   };
 
+  useEffect(() => {
+    // Initial session fetch
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial auth session:", session ? "authenticated" : "not authenticated");
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+        // Store the user ID to detect changes
+        setPrevUserId(session.user.id);
+      } else {
+        setIsLoading(false);
+      }
+      setInitialSessionChecked(true);
+    }).catch(error => {
+      console.error("Error fetching initial session:", error);
+      setIsLoading(false);
+      setInitialSessionChecked(true);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event: AuthChangeEvent, session) => {
+        console.log("Auth state change event:", event);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Check for login, signup, or user switching
+          const isUserChanged = prevUserId !== session.user.id;
+          
+          // Force confetti on explicit sign-in events
+          if (initialSessionChecked && 
+              (event === 'SIGNED_IN' || isUserChanged || !prevUserId)) {
+            console.log("New login or signup detected, triggering confetti celebration");
+            setIsNewLogin(true);
+            
+            // Store login timestamp for session consistency
+            localStorage.setItem('last_login_time', Date.now().toString());
+            sessionStorage.setItem('confetti_shown', 'false');
+          }
+          
+          // Update previous user ID
+          setPrevUserId(session.user.id);
+          
+          // Create profile if this is a new user
+          if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+            const profileCreated = await createProfileIfNotExists(session.user);
+            if (profileCreated) {
+              console.log("New profile created, showing confetti");
+              setIsNewLogin(true);
+            }
+          }
+          
+          // Always fetch fresh profile data on auth changes
+          await fetchProfile(session.user.id);
+        } else {
+          setPrevUserId(null);
+          setProfile(null);
+          setIsLoading(false);
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [initialSessionChecked, prevUserId]);
+
   const value = {
     session,
     user,
     profile,
     isLoading,
+    signIn,
+    signUp,
     signOut,
     isNewLogin,
     setIsNewLogin,
