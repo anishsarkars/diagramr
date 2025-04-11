@@ -1,3 +1,4 @@
+
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
@@ -16,7 +17,7 @@ export function ThemeToggle({
   className 
 }: ThemeToggleProps) {
   const { theme, toggleTheme } = useTheme();
-  const { isPremiumUser } = useAccess();
+  const { isPremium } = useAccess(); // Updated from isPremiumUser
   
   return (
     <Button
