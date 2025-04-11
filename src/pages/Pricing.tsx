@@ -1,3 +1,4 @@
+
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, ZapIcon, SearchIcon, SparklesIcon, Clock, Star, Shield, Rocket, Zap, Infinity } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,7 +49,7 @@ const Pricing = () => {
         if (!user) {
           navigate("/auth", { state: { returnTo: "/pricing" } });
         } else {
-          window.open("https://checkout.dodopayments.com/buy/pdt_StmFpatk6LW4F2n3L46LL?quantity=1&redirect_url=https://diagramr.vercel.app", "_blank");
+          window.open("https://checkout.dodopayments.com/buy/pdt_Wx3ImdRPDky11pATGyLRa?quantity=1&redirect_url=https://diagramr.vercel.app", "_blank");
         }
       },
     }

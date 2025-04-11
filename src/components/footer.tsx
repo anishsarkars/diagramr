@@ -41,8 +41,7 @@ export function Footer() {
             target="_blank" 
             rel="noopener noreferrer" 
             className={`flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors 
-                        border border-primary/20 text-primary text-xs font-medium shadow-sm 
-                        ${isMobile ? 'scale-75 origin-right' : ''}`}
+                        border border-primary/20 text-primary text-xs font-medium shadow-sm`}
           >
             <Linkedin className="h-3 w-3" />
             <span>Built by Anish</span>
