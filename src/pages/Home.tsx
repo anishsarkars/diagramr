@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,13 @@ export default function Home() {
   const [typingInProgress, setTypingInProgress] = useState(false);
   const [showTypingSuggestions, setShowTypingSuggestions] = useState(false);
   const [typingSuggestions, setTypingSuggestions] = useState<string[]>([]);
-  const sampleImages = []; // You'll need to populate this with your sample images
+  const sampleImages = [
+    'https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700',
+    'https://images.unsplash.com/photo-1559757175-7b21671636f4?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700',
+    'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700',
+    'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700',
+    'https://images.unsplash.com/photo-1542903660-eedba2cda473?ixlib=rb-4.0.3&auto=format&fit=crop&w=970&h=700',
+  ];
 
   const handleSearch = (searchQuery: string) => {
     // Implement your search logic here
@@ -155,4 +162,4 @@ export default function Home() {
     {/* ... rest of existing code ... */}
   </main>
   );
-} 
+}
