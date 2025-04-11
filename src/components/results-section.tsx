@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LoadMoreButton } from "@/components/load-more-button";
+import { RecommendationsSection } from "@/components/recommendations-section";
 
 const INITIAL_RESULTS_COUNT = 15;
 const MOBILE_RESULTS_COUNT = 10;
@@ -520,6 +521,10 @@ export function ResultsSection({
           <div className="text-center text-sm text-muted-foreground mt-4">
             Showing maximum of {MAX_RESULTS} results. Try a more specific search for better results.
           </div>
+        )}
+        
+        {searchTerm && results.length > 0 && (
+          <RecommendationsSection searchQuery={searchTerm} className="mt-8" />
         )}
       </div>
     </div>
