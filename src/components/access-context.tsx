@@ -2,7 +2,7 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
 interface AccessContextType {
-  isPremium: boolean;
+  isPremiumUser: boolean;
   setPremiumUser: (value: boolean) => void;
 }
 
@@ -13,16 +13,16 @@ interface AccessProviderProps {
 }
 
 export function AccessProvider({ children }: AccessProviderProps) {
-  const [isPremium, setIsPremium] = useState(false);
+  const [isPremiumUser, setIsPremiumUser] = useState(false);
 
   const setPremiumUser = (value: boolean) => {
-    setIsPremium(value);
+    setIsPremiumUser(value);
   };
 
   return (
     <AccessContext.Provider
       value={{
-        isPremium,
+        isPremiumUser,
         setPremiumUser
       }}
     >
