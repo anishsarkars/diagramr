@@ -3,10 +3,11 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ExternalLink, BookOpen, Video, FileText, Loader2, Sparkles } from "lucide-react";
+import { ExternalLink, BookOpen, Video, FileText, Loader2, Sparkles, GraduationCap, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { findAdditionalResources } from "@/utils/search-service";
 import { motion } from "framer-motion";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface RecommendationSectionProps {
   searchQuery: string;
@@ -17,28 +18,42 @@ export interface ResourceItem {
   url: string;
   source: string;
   type: "course" | "video" | "article" | "resource";
+  description?: string;
+  estimatedTime?: string;
+  level?: "beginner" | "intermediate" | "advanced";
+  keyTopics?: string;
 }
 
 export function RecommendationSection({ searchQuery }: RecommendationSectionProps) {
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     if (!searchQuery) return;
     
     async function fetchResources() {
       setLoading(true);
+      setError(null);
       try {
+        console.log("Fetching resources for:", searchQuery);
         const resourcesData = await findAdditionalResources(searchQuery);
-        // Ensure the resources have the correct type format
-        const validatedResources = resourcesData.map(resource => ({
-          ...resource,
-          type: validateResourceType(resource.type)
-        }));
-        setResources(validatedResources);
+        
+        if (resourcesData.length === 0) {
+          setError("No learning resources found for this search. Try another query!");
+          setResources([]);
+        } else {
+          // Ensure the resources have the correct type format
+          const validatedResources = resourcesData.map(resource => ({
+            ...resource,
+            type: validateResourceType(resource.type)
+          }));
+          setResources(validatedResources);
+        }
       } catch (error) {
         console.error("Error fetching recommendations:", error);
+        setError("Failed to load resources. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -77,6 +92,21 @@ export function RecommendationSection({ searchQuery }: RecommendationSectionProp
     }
   };
   
+  const getLevelBadgeColor = (level?: string) => {
+    if (!level) return "bg-gray-100 text-gray-800";
+    
+    switch(level.toLowerCase()) {
+      case "beginner":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "intermediate":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "advanced":
+        return "bg-purple-100 text-purple-800 border-purple-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+  
   if (!searchQuery) return null;
   
   return (
@@ -89,7 +119,10 @@ export function RecommendationSection({ searchQuery }: RecommendationSectionProp
       <Card className="border border-border/50 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-medium flex items-center justify-between">
-            <span>Related Learning Resources</span>
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span>Free Learning Resources for "{searchQuery}"</span>
+            </div>
             {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </CardTitle>
         </CardHeader>
@@ -106,6 +139,10 @@ export function RecommendationSection({ searchQuery }: RecommendationSectionProp
             {loading ? (
               <div className="flex justify-center items-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary/60" />
+              </div>
+            ) : error ? (
+              <div className="text-center py-8 text-muted-foreground">
+                {error}
               </div>
             ) : filteredResources.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -133,7 +170,65 @@ export function RecommendationSection({ searchQuery }: RecommendationSectionProp
                           </div>
                           
                           <h3 className="font-medium text-base mb-2">{resource.title}</h3>
-                          <p className="text-xs text-muted-foreground mt-auto">Source: {resource.source}</p>
+                          
+                          {resource.description && (
+                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                              {resource.description}
+                            </p>
+                          )}
+                          
+                          <div className="flex flex-wrap gap-2 mt-auto">
+                            {resource.level && (
+                              <TooltipProvider delayDuration={300}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant="outline" className={`flex items-center gap-1 ${getLevelBadgeColor(resource.level)}`}>
+                                      <GraduationCap className="h-3 w-3" />
+                                      <span className="capitalize">{resource.level}</span>
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Difficulty level</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                            
+                            {resource.estimatedTime && (
+                              <TooltipProvider delayDuration={300}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant="outline" className="flex items-center gap-1 bg-amber-50 text-amber-800 border-amber-200">
+                                      <Clock className="h-3 w-3" />
+                                      <span>{resource.estimatedTime}</span>
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Estimated completion time</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/10">
+                            <p className="text-xs text-muted-foreground">Source: {resource.source}</p>
+                            {resource.keyTopics && (
+                              <TooltipProvider delayDuration={300}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button className="text-xs text-primary hover:text-primary/80 flex items-center gap-1">
+                                      <span>Topics</span>
+                                      <Sparkles className="h-3 w-3" />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-[250px]">
+                                    <p className="text-sm">{resource.keyTopics}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
                         </CardContent>
                       </Card>
                     </a>

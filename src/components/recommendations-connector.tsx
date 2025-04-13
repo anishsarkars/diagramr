@@ -14,11 +14,19 @@ export function RecommendationsConnector({
   const [activeQuery, setActiveQuery] = useState("");
   const [isVisible, setIsVisible] = useState(false);
 
-  // Debounce search query to avoid too many searches
+  // Reset state when the search query changes
   useEffect(() => {
-    if (!enabled || !searchQuery) return;
+    if (!enabled || !searchQuery) {
+      setIsVisible(false);
+      return;
+    }
     
+    // Clear previous state
+    setIsVisible(false);
+    
+    // Debounce search query to avoid too many searches
     const timer = setTimeout(() => {
+      console.log("Setting active query for recommendations:", searchQuery);
       setActiveQuery(searchQuery);
       setIsVisible(true);
     }, 800); // Slightly longer delay to let main search results load first
@@ -26,9 +34,23 @@ export function RecommendationsConnector({
     return () => clearTimeout(timer);
   }, [searchQuery, enabled]);
   
+  // For debugging
+  useEffect(() => {
+    console.log("RecommendationsConnector state:", { 
+      enabled, 
+      searchQuery, 
+      activeQuery, 
+      isVisible 
+    });
+  }, [enabled, searchQuery, activeQuery, isVisible]);
+  
   // If recommendations are disabled or no search query, don't render
-  if (!enabled || !activeQuery || !isVisible) return null;
+  if (!enabled || !activeQuery || !isVisible) {
+    console.log("RecommendationsConnector not rendering", { enabled, activeQuery, isVisible });
+    return null;
+  }
 
+  console.log("Rendering RecommendationSection with query:", activeQuery);
   return (
     <RecommendationSection 
       searchQuery={activeQuery} 

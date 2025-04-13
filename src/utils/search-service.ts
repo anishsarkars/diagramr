@@ -2,6 +2,7 @@ import { DiagramResult } from "@/hooks/use-infinite-search";
 import { searchGoogleImages } from "@/utils/googleSearch";
 import { toast } from "sonner";
 import { ResourceItem } from "@/components/recommendation-section";
+import { generateRelatedResources } from "./gemini-ai";
 
 const MAX_CACHE_SIZE = 200;
 
@@ -565,8 +566,10 @@ function getExampleSearches(): string[] {
  * Fetches additional educational resources based on the search query
  */
 export async function findAdditionalResources(query: string): Promise<ResourceItem[]> {
+  console.log("Finding additional resources for:", query);
+  
   try {
-    console.log("Finding additional resources for:", query);
+    // Use the Gemini AI to find relevant resources
     const resources = await generateRelatedResources(query);
     return resources;
   } catch (error) {

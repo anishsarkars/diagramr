@@ -1,9 +1,10 @@
 
 import { Link } from "react-router-dom";
 import { DiagramrLogo } from "@/components/diagramr-logo";
-import { Linkedin } from "lucide-react";
+import { Linkedin, Sparkles } from "lucide-react";
 import PolicyMenu from "./policy-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { motion } from "framer-motion";
 
 export function Footer() {
   const isMobile = useIsMobile();
@@ -36,16 +37,25 @@ export function Footer() {
           <div className="text-xs text-muted-foreground">
             © 2025 Diagramr. All rights reserved.
           </div>
-          <a 
-            href="https://www.linkedin.com/in/anishsarkar-/" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors 
-                        border border-primary/20 text-primary text-sm font-medium shadow-sm`}
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
           >
-            <Linkedin className="h-4 w-4" />
-            <span>Built by Anish</span>
-          </a>
+            <a 
+              href="https://www.linkedin.com/in/anishsarkar-/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/20 to-primary/10 hover:from-primary/30 hover:to-primary/20 transition-all duration-300 
+                        border border-primary/30 text-primary font-medium shadow-md hover:shadow-lg"
+            >
+              <Linkedin className="h-4.5 w-4.5" />
+              <span className="flex items-center gap-1">
+                <span>Built by</span>
+                <span className="font-semibold">Anish</span>
+                <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+              </span>
+            </a>
+          </motion.div>
         </div>
       </div>
     </footer>
