@@ -2,7 +2,7 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
 interface AccessContextType {
-  isPremium: boolean;
+  isPremiumUser: boolean;
   setPremiumUser: (value: boolean) => void;
 }
 
@@ -13,7 +13,7 @@ interface AccessProviderProps {
 }
 
 export function AccessProvider({ children }: AccessProviderProps) {
-  const [isPremium, setIsPremiumUser] = useState(false);
+  const [isPremiumUser, setIsPremiumUser] = useState(false);
 
   const setPremiumUser = (value: boolean) => {
     setIsPremiumUser(value);
@@ -22,7 +22,7 @@ export function AccessProvider({ children }: AccessProviderProps) {
   return (
     <AccessContext.Provider
       value={{
-        isPremium,
+        isPremiumUser,
         setPremiumUser
       }}
     >
@@ -37,10 +37,4 @@ export const useAccess = () => {
     throw new Error('useAccess must be used within an AccessProvider');
   }
   return context;
-};
-
-// Provide a safe version of the hook for components that might render outside the provider
-export const useSafeAccess = () => {
-  const context = useContext(AccessContext);
-  return context || { isPremium: false, setPremiumUser: () => {} };
 };
