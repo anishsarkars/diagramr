@@ -12,7 +12,7 @@ interface RecommendationSectionProps {
   searchQuery: string;
 }
 
-interface ResourceItem {
+export interface ResourceItem {
   title: string;
   url: string;
   source: string;
@@ -31,7 +31,12 @@ export function RecommendationSection({ searchQuery }: RecommendationSectionProp
       setLoading(true);
       try {
         const resourcesData = await findAdditionalResources(searchQuery);
-        setResources(resourcesData);
+        // Ensure the resources have the correct type format
+        const validatedResources = resourcesData.map(resource => ({
+          ...resource,
+          type: validateResourceType(resource.type)
+        }));
+        setResources(validatedResources);
       } catch (error) {
         console.error("Error fetching recommendations:", error);
       } finally {
@@ -41,6 +46,19 @@ export function RecommendationSection({ searchQuery }: RecommendationSectionProp
     
     fetchResources();
   }, [searchQuery]);
+  
+  // Helper function to validate and normalize resource types
+  const validateResourceType = (type: string): "course" | "video" | "article" | "resource" => {
+    const normalizedType = type.toLowerCase();
+    if (
+      normalizedType === "course" || 
+      normalizedType === "video" || 
+      normalizedType === "article"
+    ) {
+      return normalizedType as "course" | "video" | "article";
+    }
+    return "resource";
+  };
   
   const filteredResources = activeTab === "all" 
     ? resources 

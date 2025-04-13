@@ -1,7 +1,6 @@
 
 import { useEffect, useState } from "react";
 import { RecommendationSection } from "./recommendation-section";
-import { findAdditionalResources } from "@/utils/search-service";
 
 interface RecommendationsConnectorProps {
   searchQuery: string;
