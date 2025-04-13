@@ -43,7 +43,7 @@ interface Folder {
 
 export default function Liked() {
   const { user, profile } = useAuth();
-  const { isPremiumUser } = useAccess();
+  const { isPremium } = useAccess();
   const [likedDiagrams, setLikedDiagrams] = useState<LikedDiagram[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
@@ -176,7 +176,7 @@ export default function Liked() {
     : likedDiagrams.filter(diagram => diagram.folder === activeTab);
 
   return (
-    <div className={`flex flex-col min-h-screen ${isPremiumUser ? "bg-gradient-to-b from-background to-background/95" : "bg-background"}`}>
+    <div className={`flex flex-col min-h-screen ${isPremium ? "bg-gradient-to-b from-background to-background/95" : "bg-background"}`}>
       <Header />
       
       <main className="flex-1 container py-8 md:py-12">
@@ -188,9 +188,9 @@ export default function Liked() {
         >
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Heart className={`h-5 w-5 ${isPremiumUser ? "text-purple-500" : "text-primary"}`} />
+              <Heart className={`h-5 w-5 ${isPremium ? "text-purple-500" : "text-primary"}`} />
               Your Liked Diagrams
-              {isPremiumUser && (
+              {isPremium && (
                 <motion.span 
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -310,7 +310,7 @@ export default function Liked() {
                     <motion.div
                       key={diagram.id}
                       className={`diagram-card overflow-hidden rounded-xl border ${
-                        isPremiumUser ? "border-border/80 shadow-sm hover:shadow-md" : "border-border"
+                        isPremium ? "border-border/80 shadow-sm hover:shadow-md" : "border-border"
                       } transition-all duration-300`}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -409,7 +409,7 @@ export default function Liked() {
                     <motion.div
                       key={diagram.id}
                       className={`flex gap-4 p-4 rounded-xl border ${
-                        isPremiumUser ? "border-border/80 shadow-sm hover:shadow-md" : "border-border"
+                        isPremium ? "border-border/80 shadow-sm hover:shadow-md" : "border-border"
                       } transition-all duration-300`}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}

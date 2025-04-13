@@ -244,7 +244,7 @@ function getFallbackSuggestions(query: string): GeminiResponse {
 function getFallbackResources(query: string): ResourceResponse {
   const capitalizedQuery = query.charAt(0).toUpperCase() + query.slice(1).toLowerCase();
   
-  const resources = [
+  const resources: ResourceItem[] = [
     {
       id: "resource-1",
       title: `${capitalizedQuery} Fundamentals Course`,
