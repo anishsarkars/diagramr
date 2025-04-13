@@ -1,3 +1,4 @@
+
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SearchSuggestions } from "@/components/search-suggestions";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/components/theme-provider";
+import { useAuth } from "@/components/auth-context";
 
 interface AIInputProps {
   className?: string;
@@ -23,6 +25,7 @@ export function AIInput({ className, onSubmit, placeholder, isLoading, showTrial
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { isDarkMode } = useTheme();
+  const { user } = useAuth();
   
   const [examples] = useState<string[]>([
     "Data structure visualization",
@@ -109,7 +112,7 @@ export function AIInput({ className, onSubmit, placeholder, isLoading, showTrial
 
   return (
     <div className="flex flex-col items-center w-full">
-      {showTrialMessage && (
+      {showTrialMessage && !user && (
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -204,7 +207,7 @@ export function AIInput({ className, onSubmit, placeholder, isLoading, showTrial
               <Input
                 ref={inputRef}
                 type="text"
-                placeholder={placeholder || "What's on your mind?"}
+                placeholder={placeholder || "Search for diagrams..."}
                 className="pl-16 pr-12 py-8 text-lg border-0 shadow-none focus-visible:ring-0 bg-transparent"
                 value={prompt}
                 onChange={(e) => {

@@ -29,7 +29,7 @@ export function RecommendationsConnector({
       console.log("Setting active query for recommendations:", searchQuery);
       setActiveQuery(searchQuery);
       setIsVisible(true);
-    }, 800); // Slightly longer delay to let main search results load first
+    }, 500); // Shorter delay to load recommendations faster
     
     return () => clearTimeout(timer);
   }, [searchQuery, enabled]);
@@ -50,10 +50,12 @@ export function RecommendationsConnector({
     return null;
   }
 
+  // Set a unique key based on the search query to force re-render when query changes
   console.log("Rendering RecommendationSection with query:", activeQuery);
   return (
     <RecommendationSection 
-      searchQuery={activeQuery} 
+      searchQuery={activeQuery}
+      key={`recommendation-${activeQuery}`} // Add key to force remount on query change
     />
   );
 }

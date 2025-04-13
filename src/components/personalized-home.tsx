@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Avatar } from "@/components/ui/avatar";
@@ -8,14 +9,11 @@ import {
   Mic, 
   Image, 
   Camera, 
-  Send, 
   Newspaper, 
-  Gamepad2, 
-  BookOpen, 
-  Code, 
   Database, 
   Network, 
-  PieChart
+  PieChart,
+  Code
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth-context";
@@ -31,6 +29,22 @@ export function PersonalizedHome({ onSearch }: PersonalizedHomeProps) {
   const userName = user?.user_metadata?.full_name || "there";
   const firstName = userName.split(" ")[0];
   
+  // Get recent searches from localStorage
+  const getRecentSearches = () => {
+    const savedHistory = localStorage.getItem('diagramr-search-history');
+    let history: string[] = [];
+    
+    if (savedHistory) {
+      try {
+        history = JSON.parse(savedHistory);
+      } catch (e) {
+        console.error('Error parsing search history:', e);
+      }
+    }
+    
+    return history.slice(0, 5);
+  };
+  
   // Set appropriate greeting based on time of day
   useEffect(() => {
     const hour = new Date().getHours();
@@ -45,16 +59,6 @@ export function PersonalizedHome({ onSearch }: PersonalizedHomeProps) {
 
   // Example categories that would be useful for diagram searches
   const categories = [
-    { 
-      name: "Latest News", 
-      icon: <Newspaper className="h-5 w-5 text-blue-500" />,
-      colorClass: "bg-blue-100 dark:bg-blue-900/20"
-    },
-    { 
-      name: "Companion", 
-      icon: <Avatar className="h-5 w-5 bg-purple-200"><span className="text-purple-600 text-xs">AI</span></Avatar>,
-      colorClass: "bg-purple-100 dark:bg-purple-900/20"
-    },
     { 
       name: "Database Diagrams", 
       icon: <Database className="h-5 w-5 text-green-500" />,
@@ -79,6 +83,21 @@ export function PersonalizedHome({ onSearch }: PersonalizedHomeProps) {
 
   const handleSearch = () => {
     if (query.trim()) {
+      // Save to search history
+      const savedHistory = localStorage.getItem('diagramr-search-history');
+      let history: string[] = [];
+      
+      if (savedHistory) {
+        try {
+          history = JSON.parse(savedHistory);
+        } catch (e) {
+          console.error('Error parsing search history:', e);
+        }
+      }
+      
+      const newHistory = [query, ...history.filter(item => item !== query)].slice(0, 10);
+      localStorage.setItem('diagramr-search-history', JSON.stringify(newHistory));
+      
       onSearch(query);
     }
   };
@@ -116,6 +135,33 @@ export function PersonalizedHome({ onSearch }: PersonalizedHomeProps) {
             How can I help you today?
           </p>
         </motion.div>
+
+        {/* Recent searches */}
+        {getRecentSearches().length > 0 && (
+          <motion.div
+            className="mb-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+          >
+            <h2 className="text-sm font-medium text-foreground mb-2">
+              Recent searches
+            </h2>
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+              {getRecentSearches().map((search, index) => (
+                <Badge 
+                  key={index}
+                  variant="outline" 
+                  className="cursor-pointer hover:bg-muted px-3 py-1.5 text-xs"
+                  onClick={() => onSearch(search)}
+                >
+                  <Search className="h-3 w-3 mr-1 text-muted-foreground" />
+                  {search}
+                </Badge>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Categories */}
         <motion.div 
@@ -192,18 +238,18 @@ export function PersonalizedHome({ onSearch }: PersonalizedHomeProps) {
             </div>
             <Input
               type="text"
-              placeholder="What do you want to know?"
+              placeholder="Search for diagrams..."
               className="pr-16 sm:pr-24 pl-10 sm:pl-12 py-5 sm:py-6 w-full text-sm sm:text-base bg-card/60 border-border/20 focus:border-primary rounded-full shadow-sm mobile-input"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
             />
             <div className="absolute right-2 sm:right-3 flex items-center gap-1 sm:gap-2">
-              <button className="p-1 sm:p-1.5 rounded-full hover:bg-muted touch-feedback">
-                <Mic className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-              </button>
-              <button className="p-1 sm:p-1.5 rounded-full hover:bg-muted touch-feedback">
-                <Camera className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+              <button 
+                className="p-1 sm:p-1.5 rounded-full hover:bg-muted touch-feedback"
+                onClick={handleSearch}
+              >
+                <Search className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </button>
             </div>
           </div>
@@ -211,4 +257,4 @@ export function PersonalizedHome({ onSearch }: PersonalizedHomeProps) {
       </motion.div>
     </motion.div>
   );
-} 
+}

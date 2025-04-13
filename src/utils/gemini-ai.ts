@@ -1,163 +1,19 @@
+import { ResourceItem } from "@/components/recommendation-section";
 
-// Gemini AI integration
+const API_KEY = "AIzaSyCL-wB_Ym_40vV17e1gFhyyL-o2864KQN8";
+const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
 
-export interface GeminiMessage {
-  role: 'user' | 'model';
-  content: string;
-}
-
-export interface GeminiResponse {
-  suggestions?: string[];
-  error?: string;
-}
-
-export interface ResourceItem {
-  title: string;
-  url: string;
-  source: string;
-  type: "course" | "video" | "article" | "resource";
-  description?: string;
-  estimatedTime?: string;
-  level?: "beginner" | "intermediate" | "advanced";
-  keyTopics?: string;
-}
-
-/**
- * Generates suggestions using Google's Gemini API
- */
-export async function generateSuggestions(query: string): Promise<GeminiResponse> {
+export async function generateRelatedResources(query: string): Promise<ResourceItem[]> {
   try {
-    // Use the provided API key from Google AI Studio
-    const apiKey = "AIzaSyCL-wB_Ym_40vV17e1gFhyyL-o2864KQN8";
+    console.log("Generating related resources for:", query);
     
-    // Additional API key provided
-    const altApiKey = "1662e165fa7f4ef390dc17769cf96792";
-    
-    // Don't make real API calls if the key isn't available or valid
-    if ((!apiKey || apiKey.length === 0) && !altApiKey) {
-      console.log("Using fallback suggestions (no API key available)");
-      return getFallbackSuggestions(query);
-    }
-    
-    const selectedKey = apiKey || altApiKey;
-    
-    const messages: GeminiMessage[] = [
-      {
-        role: "user",
-        content: `I'm looking for diagrams about "${query}". Suggest 5 specific searches that would find good diagrams related to this topic. Each suggestion should be a specific diagram type or use case. Answer with ONLY a JSON array of strings, nothing else. Make suggestions diverse and helpful.`
-      }
-    ];
-    
-    try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${selectedKey}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: messages.map(msg => ({
-            role: msg.role,
-            parts: [{ text: msg.content }]
-          })),
-          generationConfig: {
-            temperature: 0.4,
-            topP: 0.8,
-            topK: 40,
-            maxOutputTokens: 250,
-          }
-        }),
-      });
-      
-      if (!response.ok) {
-        console.error(`API request failed with status: ${response.status}`);
-        throw new Error(`API request failed with status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-        const text = data.candidates[0].content.parts[0].text;
-        try {
-          // Extract JSON array if wrapped in backticks
-          const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/) || 
-                           text.match(/```\s*([\s\S]*?)\s*```/) ||
-                           [null, text];
-          
-          const jsonContent = jsonMatch[1] || text;
-          const suggestions = JSON.parse(jsonContent);
-          
-          if (Array.isArray(suggestions)) {
-            return { suggestions: suggestions.slice(0, 5) };
-          }
-        } catch (e) {
-          console.error("Failed to parse suggestions JSON:", e);
-        }
-      }
-      
-      return getFallbackSuggestions(query);
-      
-    } catch (error) {
-      console.error("Error calling Gemini API:", error);
-      return getFallbackSuggestions(query);
-    }
-    
-  } catch (e) {
-    console.error("Error in generateSuggestions:", e);
-    return getFallbackSuggestions(query);
-  }
-}
-
-/**
- * Provides fallback suggestions when the API call fails
- */
-function getFallbackSuggestions(query: string): GeminiResponse {
-  const baseTypes = [
-    "flowchart", 
-    "UML diagram", 
-    "entity relationship diagram",
-    "sequence diagram", 
-    "mind map", 
-    "process flow",
-    "state diagram",
-    "network topology",
-    "class diagram",
-    "data flow diagram",
-    "architecture diagram",
-    "component diagram"
-  ];
-  
-  // Always give at least one exact match with the query
-  const suggestions = [
-    `${query} ${baseTypes[0]}`,
-    `${query} ${baseTypes[1]}`,
-    `${baseTypes[2]} for ${query}`,
-    `${baseTypes[3]} of ${query} process`,
-    `${baseTypes[Math.floor(Math.random() * baseTypes.length)]} for ${query}`
-  ];
-  
-  return { suggestions };
-}
-
-/**
- * Generates educational resources related to the search query
- */
-export async function generateRelatedResources(searchQuery: string): Promise<ResourceItem[]> {
-  try {
-    // Use the provided API key from Google AI Studio
-    const apiKey = "AIzaSyCL-wB_Ym_40vV17e1gFhyyL-o2864KQN8";
-    
-    // Don't make real API calls if the key isn't available or valid
-    if (!apiKey || apiKey.length === 0) {
-      console.log("Using fallback resources (no API key available)");
-      return getFallbackResources(searchQuery);
-    }
-    
-    const perfectPrompt = `I need to find the absolute best free educational resources about "${searchQuery}" for users who want to learn this topic.
+    const prompt = `
+I need to find the absolute best free educational resources about "${query}" for users who want to learn this topic.
 
 Search the web and provide exactly 6 high-quality, completely free educational resources that:
 1. Are 100% free to access (no paywalls or trials)
 2. Come from reputable, trusted educational platforms
-3. Contain visual elements, examples, or interactive components
+3. Contain visual elements, examples, or interactive components 
 4. Are highly rated by learners
 5. Include a mix of 2 videos, 2 courses, and 2 articles
 
@@ -171,98 +27,121 @@ For each resource, provide ONLY the following data:
 - level: Learning level ("beginner", "intermediate", or "advanced")
 - keyTopics: 3-4 main concepts covered, as a comma-separated string
 
-Return ONLY a valid JSON array containing these 6 resources with no additional text or formatting.`;
-    
-    try {
-      console.log("Sending request to Gemini API for resources on:", searchQuery);
-      
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: perfectPrompt }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.4,
-            topP: 0.8,
-            topK: 40,
-            maxOutputTokens: 1024, // Increased token limit for longer responses
+Return ONLY a valid JSON array containing these 6 resources with no additional text or formatting.
+`;
+
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": API_KEY
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt
+              }
+            ]
           }
-        }),
-      });
-      
-      if (!response.ok) {
-        console.error(`API request failed with status: ${response.status}`);
-        throw new Error(`API request failed with status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log("Received response from Gemini API:", data);
-      
-      if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-        const text = data.candidates[0].content.parts[0].text;
-        try {
-          // Extract JSON array if wrapped in backticks
-          const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/) || 
-                            text.match(/```\s*([\s\S]*?)\s*```/) ||
-                            [null, text];
-          
-          const jsonContent = jsonMatch[1] || text;
-          console.log("Parsed JSON content:", jsonContent);
-          
-          let resources = JSON.parse(jsonContent);
-          
-          if (Array.isArray(resources)) {
-            // Ensure all resources have the correct type
-            const validTypes = ["course", "video", "article", "resource"];
-            
-            const validatedResources = resources
-              .filter(resource => resource.title && resource.url && resource.source)
-              .map(resource => {
-                // Normalize the type if needed
-                let normalizedType = resource.type.toLowerCase();
-                if (!validTypes.includes(normalizedType)) {
-                  normalizedType = "resource";
-                }
-                
-                return {
-                  ...resource,
-                  type: normalizedType
-                };
-              }) as ResourceItem[];
-            
-            console.log("Validated resources:", validatedResources);
-            return validatedResources.slice(0, 6);
-          }
-        } catch (e) {
-          console.error("Failed to parse resources JSON:", e);
-          console.log("Raw text received:", text);
+        ],
+        generationConfig: {
+          temperature: 0.2,
+          topP: 0.8,
+          topK: 40,
+          maxOutputTokens: 4096
         }
-      }
-      
-      return getFallbackResources(searchQuery);
-      
-    } catch (error) {
-      console.error("Error calling Gemini API for resources:", error);
-      return getFallbackResources(searchQuery);
+      })
+    });
+
+    if (!response.ok) {
+      console.error("Gemini API error:", await response.text());
+      throw new Error(`Gemini API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    let text = "";
+    
+    if (data?.candidates?.[0]?.content?.parts?.length > 0) {
+      text = data.candidates[0].content.parts[0].text;
     }
     
-  } catch (e) {
-    console.error("Error in generateRelatedResources:", e);
-    return getFallbackResources(searchQuery);
+    // Extract JSON from the response
+    let jsonString = text;
+    
+    // Handle case where AI surrounds JSON with markdown code block
+    if (text.includes("```json")) {
+      jsonString = text.split("```json")[1].split("```")[0].trim();
+    } else if (text.includes("```")) {
+      jsonString = text.split("```")[1].split("```")[0].trim();
+    }
+    
+    try {
+      const resources = JSON.parse(jsonString);
+      
+      // Validate and ensure proper types
+      if (Array.isArray(resources)) {
+        console.log("Successfully parsed resources:", resources.length);
+        
+        const validatedResources = resources.map(resource => ({
+          title: resource.title || "Learning Resource",
+          url: resource.link || resource.url || "",
+          source: resource.source || "Educational Platform",
+          type: validateResourceType(resource.type),
+          description: resource.description || "",
+          estimatedTime: resource.estimatedTime || "",
+          level: validateResourceLevel(resource.level),
+          keyTopics: resource.keyTopics || ""
+        }));
+        
+        return validatedResources;
+      }
+      
+      throw new Error("Invalid resource format");
+    } catch (parseError) {
+      console.error("Failed to parse Gemini response:", parseError);
+      console.log("Raw response:", text);
+      throw new Error("Failed to parse resources");
+    }
+  } catch (error) {
+    console.error("Error in generateRelatedResources:", error);
+    
+    // Fallback to hardcoded resources based on the query
+    return getFallbackRelatedResources(query);
   }
 }
 
-/**
- * Provides fallback educational resources when the API call fails
- */
-function getFallbackResources(query: string): ResourceItem[] {
+function validateResourceType(type: string): "course" | "video" | "article" | "resource" {
+  if (!type) return "resource";
+  
+  const normalizedType = type.toLowerCase();
+  if (
+    normalizedType === "course" || 
+    normalizedType === "video" || 
+    normalizedType === "article"
+  ) {
+    return normalizedType as "course" | "video" | "article";
+  }
+  return "resource";
+}
+
+function validateResourceLevel(level: string): "beginner" | "intermediate" | "advanced" | undefined {
+  if (!level) return undefined;
+  
+  const normalizedLevel = level.toLowerCase();
+  if (
+    normalizedLevel === "beginner" || 
+    normalizedLevel === "intermediate" || 
+    normalizedLevel === "advanced"
+  ) {
+    return normalizedLevel as "beginner" | "intermediate" | "advanced";
+  }
+  return undefined;
+}
+
+// Fallback function with static resources when API fails
+function getFallbackRelatedResources(query: string): Promise<ResourceItem[]> {
   const lowercaseQuery = query.toLowerCase();
   
   // General resources that can apply to most topics
@@ -334,7 +213,7 @@ function getFallbackResources(query: string): ResourceItem[] {
     return [
       {
         title: "Essence of Calculus",
-        url: "https://www.youtube.com/watch?v=WUvTyaaNkzM&list=PLZHQObOWTQDMsr9K-rj53DwVRMYO3t5Yr",
+        url: "https://www.youtube.com/watch?v=WUvTyaaNkzM&list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab",
         source: "3Blue1Brown",
         type: "video",
         description: "Visual, intuitive approach to understanding calculus fundamentals.",

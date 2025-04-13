@@ -40,19 +40,20 @@ export function Footer() {
           <motion.div
             whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            className="scale-75 sm:scale-80" // Make the badge smaller
           >
             <a 
               href="https://www.linkedin.com/in/anishsarkar-/" 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/20 to-primary/10 hover:from-primary/30 hover:to-primary/20 transition-all duration-300 
-                        border border-primary/30 text-primary font-medium shadow-md hover:shadow-lg"
+              className="flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-primary/20 to-primary/10 hover:from-primary/30 hover:to-primary/20 transition-all duration-300 
+                        border border-primary/30 text-primary font-medium shadow-md hover:shadow-lg text-xs"
             >
-              <Linkedin className="h-4.5 w-4.5" />
+              <Linkedin className="h-3.5 w-3.5" />
               <span className="flex items-center gap-1">
                 <span>Built by</span>
                 <span className="font-semibold">Anish</span>
-                <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                <Sparkles className="h-3 w-3 text-amber-500" />
               </span>
             </a>
           </motion.div>
