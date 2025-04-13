@@ -1,3 +1,4 @@
+
 import { ResourceItem } from "@/components/recommendation-section";
 
 const API_KEY = "AIzaSyCL-wB_Ym_40vV17e1gFhyyL-o2864KQN8";
@@ -112,6 +113,102 @@ Return ONLY a valid JSON array containing these 6 resources with no additional t
   }
 }
 
+// Added new function for search suggestions
+export async function generateSuggestions(query: string): Promise<{ suggestions: string[] }> {
+  try {
+    console.log("Generating search suggestions for:", query);
+    
+    const prompt = `
+Generate 4-6 search suggestions related to "${query}" that would help a user find educational diagrams and visualizations about this topic.
+
+The suggestions should:
+1. Be clear and concise, focused on educational content
+2. Include specific diagram types where appropriate (flowcharts, mind maps, etc.)
+3. Cover different aspects or subtopics of the main query
+4. Be formatted as simple strings
+
+Return ONLY a valid JSON object with a single "suggestions" property containing an array of suggestion strings.
+Example: { "suggestions": ["query suggestion 1", "query suggestion 2", "query suggestion 3"] }
+    `;
+
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": API_KEY
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          topP: 0.8,
+          topK: 20,
+          maxOutputTokens: 2048
+        }
+      })
+    });
+
+    if (!response.ok) {
+      console.error("Gemini API error:", await response.text());
+      throw new Error(`Gemini API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    let text = "";
+    
+    if (data?.candidates?.[0]?.content?.parts?.length > 0) {
+      text = data.candidates[0].content.parts[0].text;
+    }
+    
+    // Extract JSON from the response
+    let jsonString = text;
+    
+    // Handle case where AI surrounds JSON with markdown code block
+    if (text.includes("```json")) {
+      jsonString = text.split("```json")[1].split("```")[0].trim();
+    } else if (text.includes("```")) {
+      jsonString = text.split("```")[1].split("```")[0].trim();
+    }
+    
+    try {
+      const result = JSON.parse(jsonString);
+      
+      if (result && Array.isArray(result.suggestions)) {
+        return {
+          suggestions: result.suggestions.slice(0, 6)
+        };
+      }
+      
+      throw new Error("Invalid suggestions format");
+    } catch (parseError) {
+      console.error("Failed to parse Gemini suggestions response:", parseError);
+      return { suggestions: getFallbackSuggestions(query) };
+    }
+  } catch (error) {
+    console.error("Error in generateSuggestions:", error);
+    return { suggestions: getFallbackSuggestions(query) };
+  }
+}
+
+function getFallbackSuggestions(query: string): string[] {
+  // Basic fallback suggestions based on the query
+  return [
+    `${query} diagram`, 
+    `${query} flowchart`,
+    `${query} visualization`,
+    `${query} concept map`,
+    `${query} process diagram`
+  ].filter(s => s !== query);
+}
+
 function validateResourceType(type: string): "course" | "video" | "article" | "resource" {
   if (!type) return "resource";
   
@@ -141,7 +238,7 @@ function validateResourceLevel(level: string): "beginner" | "intermediate" | "ad
 }
 
 // Fallback function with static resources when API fails
-function getFallbackRelatedResources(query: string): Promise<ResourceItem[]> {
+function getFallbackRelatedResources(query: string): ResourceItem[] {
   const lowercaseQuery = query.toLowerCase();
   
   // General resources that can apply to most topics
@@ -208,7 +305,7 @@ function getFallbackRelatedResources(query: string): Promise<ResourceItem[]> {
     }
   ];
   
-  // Specific categories with improved resources
+  // Specific categories with improved resources - Fixed to return Promises
   if (lowercaseQuery.includes("math") || lowercaseQuery.includes("calculus") || lowercaseQuery.includes("algebra")) {
     return [
       {

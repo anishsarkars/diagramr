@@ -29,7 +29,7 @@ export function RecommendationsConnector({
       console.log("Setting active query for recommendations:", searchQuery);
       setActiveQuery(searchQuery);
       setIsVisible(true);
-    }, 500); // Shorter delay to load recommendations faster
+    }, 400); // Shorter delay to load recommendations faster
     
     return () => clearTimeout(timer);
   }, [searchQuery, enabled]);
