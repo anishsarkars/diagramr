@@ -561,8 +561,22 @@ function getExampleSearches(): string[] {
   return examples.sort(() => Math.random() - 0.5).slice(0, 18);
 }
 
-export function findAdditionalResources(searchTerm: string): ResourceItem[] {
-  const searchTermLower = searchTerm.toLowerCase();
+/**
+ * Fetches additional educational resources based on the search query
+ */
+export async function findAdditionalResources(query: string): Promise<ResourceItem[]> {
+  try {
+    console.log("Finding additional resources for:", query);
+    const resources = await generateRelatedResources(query);
+    return resources;
+  } catch (error) {
+    console.error("Error finding additional resources:", error);
+    return [];
+  }
+}
+
+function generateRelatedResources(query: string): Promise<ResourceItem[]> {
+  const searchTermLower = query.toLowerCase();
   
   let category = "";
   

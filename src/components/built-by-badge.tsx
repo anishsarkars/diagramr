@@ -43,9 +43,9 @@ export function BuiltByBadge({
         >
           <Badge 
             variant="secondary" 
-            className="gap-1.5 py-2 px-4 shadow-md backdrop-blur-sm bg-card/90 hover:bg-accent border border-primary/20 transition-all group"
+            className="gap-2 py-2.5 px-5 shadow-md backdrop-blur-sm bg-card/90 hover:bg-accent border border-primary/30 transition-all group"
           >
-            <span className="text-sm font-medium">Built by @Anish</span>
+            <span className="text-base font-medium">Built by @Anish</span>
             <motion.div 
               className="flex gap-1"
               variants={{
@@ -54,7 +54,7 @@ export function BuiltByBadge({
               initial={{ x: -10, opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <LinkedinIcon className="h-4 w-4 text-[#0077B5] group-hover:text-[#0077B5]/80 transition-colors" />
+              <LinkedinIcon className="h-5 w-5 text-[#0077B5] group-hover:text-[#0077B5]/80 transition-colors" />
             </motion.div>
           </Badge>
         </a>
@@ -74,9 +74,9 @@ export function BuiltByBadge({
           >
             <Badge 
               variant="secondary" 
-              className="py-1.5 px-2.5 shadow-md backdrop-blur-sm bg-card/90 hover:bg-accent border border-primary/20 transition-all"
+              className="py-2 px-3 shadow-md backdrop-blur-sm bg-card/90 hover:bg-accent border border-primary/30 transition-all"
             >
-              <Github className="h-4 w-4" />
+              <Github className="h-5 w-5" />
             </Badge>
           </a>
           
@@ -88,9 +88,9 @@ export function BuiltByBadge({
           >
             <Badge 
               variant="secondary" 
-              className="py-1.5 px-2.5 shadow-md backdrop-blur-sm bg-card/90 hover:bg-accent border border-primary/20 transition-all"
+              className="py-2 px-3 shadow-md backdrop-blur-sm bg-card/90 hover:bg-accent border border-primary/30 transition-all"
             >
-              <Twitter className="h-4 w-4 text-[#1DA1F2]" />
+              <Twitter className="h-5 w-5 text-[#1DA1F2]" />
             </Badge>
           </a>
         </motion.div>

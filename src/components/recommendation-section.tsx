@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ExternalLink, BookOpen, Video, FileText, Loader2 } from "lucide-react";
+import { ExternalLink, BookOpen, Video, FileText, Loader2, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { findAdditionalResources } from "@/utils/search-service";
 import { motion } from "framer-motion";

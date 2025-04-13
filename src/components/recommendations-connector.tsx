@@ -12,6 +12,7 @@ export function RecommendationsConnector({
   enabled = true 
 }: RecommendationsConnectorProps) {
   const [activeQuery, setActiveQuery] = useState("");
+  const [isVisible, setIsVisible] = useState(false);
 
   // Debounce search query to avoid too many searches
   useEffect(() => {
@@ -19,13 +20,18 @@ export function RecommendationsConnector({
     
     const timer = setTimeout(() => {
       setActiveQuery(searchQuery);
-    }, 600);
+      setIsVisible(true);
+    }, 800); // Slightly longer delay to let main search results load first
     
     return () => clearTimeout(timer);
   }, [searchQuery, enabled]);
   
   // If recommendations are disabled or no search query, don't render
-  if (!enabled || !activeQuery) return null;
+  if (!enabled || !activeQuery || !isVisible) return null;
 
-  return <RecommendationSection searchQuery={activeQuery} />;
+  return (
+    <RecommendationSection 
+      searchQuery={activeQuery} 
+    />
+  );
 }

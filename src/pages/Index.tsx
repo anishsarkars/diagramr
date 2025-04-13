@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 import { EducationalDiagramsMarquee } from "@/components/educational-diagrams-marquee";
+import { RecommendationsConnector } from "@/components/recommendations-connector";
 
 const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
   const [showSearchField, setShowSearchField] = useState(true);
@@ -893,6 +894,14 @@ const Index = ({ onLoginClick }: { onLoginClick?: () => void }) => {
               hasMore={hasMore}
               loadMore={loadMore}
             />
+            
+            {/* Add Recommended Resources Section */}
+            {searchTerm && !isLoading && results.length > 0 && (
+              <RecommendationsConnector 
+                searchQuery={searchTerm} 
+                enabled={!isLoading && results.length > 0}
+              />
+            )}
           </div>
         )}
       </main>
