@@ -40,7 +40,7 @@ export function Footer() {
           <motion.div
             whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 400, damping: 10 }}
-            className="scale-75 sm:scale-80" // Make the badge smaller
+            className="scale-90 sm:scale-100" // Make the badge larger (was scale-75 sm:scale-80)
           >
             <a 
               href="https://www.linkedin.com/in/anishsarkar-/" 

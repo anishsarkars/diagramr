@@ -11,6 +11,7 @@ import { useAccess } from "@/components/access-context";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, ChevronRight, Calendar, Clock, CreditCard, Sparkles, Unlock, HeartHandshake, Star, Search } from "lucide-react";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
@@ -36,14 +37,20 @@ export default function PaymentSuccess() {
   // Verify the payment and update user status
   useEffect(() => {
     const verifyPayment = async () => {
-      if (!paymentId || !status || status !== "success" || !user) {
+      if (!status || status !== "success") {
         setLoading(false);
         return;
       }
       
       try {
-        // In a real implementation, we'd verify this with the backend
-        console.log("Verifying payment:", { paymentId, status, reference });
+        // Wait a moment to ensure session is fully loaded
+        if (!user) {
+          console.log("Waiting for user session to load...");
+          setTimeout(() => verifyPayment(), 1000);
+          return;
+        }
+        
+        console.log("Verifying payment:", { paymentId, status, reference, userId: user.id });
         
         // Update payment details
         setPaymentDetails(prev => ({
@@ -51,20 +58,34 @@ export default function PaymentSuccess() {
           paymentId: paymentId || "Unknown",
           reference: reference || "Unknown"
         }));
-        
-        // Update user's premium status
-        setPremiumUser(true);
-        
-        // Refresh user profile to get updated data
-        await refreshProfile();
-        
-        // Show confetti
-        setShowConfetti(true);
-        
-        // Show success toast
-        toast.success("Payment processed successfully!", {
-          description: "Your account has been upgraded to Premium."
-        });
+
+        // Directly update the user's premium status in Supabase
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ is_premium: true })
+          .eq('id', user.id);
+          
+        if (updateError) {
+          console.error("Error updating premium status:", updateError);
+          toast.error("Failed to update premium status", {
+            description: "Please try refreshing or contact support."
+          });
+        } else {
+          console.log("Successfully updated premium status in database");
+          // Update local context state
+          setPremiumUser(true);
+          
+          // Refresh user profile to get updated premium status
+          await refreshProfile();
+          
+          // Show confetti
+          setShowConfetti(true);
+          
+          // Show success toast
+          toast.success("Payment processed successfully!", {
+            description: "Your account has been upgraded to Premium."
+          });
+        }
       } catch (error) {
         console.error("Error verifying payment:", error);
         toast.error("Error verifying payment. Please contact support.");
@@ -73,6 +94,7 @@ export default function PaymentSuccess() {
       }
     };
     
+    // Start verification process
     verifyPayment();
   }, [paymentId, status, reference, user, setPremiumUser, refreshProfile]);
   
@@ -87,7 +109,7 @@ export default function PaymentSuccess() {
     );
   }
   
-  if (!status || status !== "success" || !user) {
+  if (!status || status !== "success") {
     return (
       <div className="container max-w-lg py-16 mx-auto px-4">
         <Card className="shadow-lg border-border/40">
@@ -122,7 +144,7 @@ export default function PaymentSuccess() {
               <div className="flex justify-between items-start">
                 <div>
                   <CardTitle className="text-2xl font-bold">
-                    You're now Premium, {profile?.username || user.email?.split('@')[0] || 'User'}! 🚀
+                    You're now Premium, {profile?.username || user?.email?.split('@')[0] || 'User'}! 🚀
                   </CardTitle>
                   <CardDescription className="text-base mt-1">
                     Thank you for upgrading. Enjoy your enhanced experience!

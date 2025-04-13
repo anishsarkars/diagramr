@@ -5,7 +5,7 @@ import { useAuth } from '@/components/auth-context';
 import { useAccess } from '@/components/access-context';
 import { toast } from 'sonner';
 
-// This component is used to handle payment webhook responses from Dodo Payments
+// This component is used to handle payment webhook responses from payment providers
 export function PaymentWebhookHandler() {
   const { user, refreshProfile } = useAuth();
   const { setPremiumUser } = useAccess();
@@ -27,6 +27,8 @@ export function PaymentWebhookHandler() {
         
         // Process the payment event
         if (data.status === 'success' && user) {
+          console.log('Processing successful payment webhook for user:', user.id);
+          
           // Update user's premium status in Supabase
           const { error } = await supabase
             .from('profiles')
@@ -35,9 +37,13 @@ export function PaymentWebhookHandler() {
             
           if (error) {
             console.error('Error updating premium status:', error);
-            toast.error('Error updating premium status');
+            toast.error('Error updating premium status', {
+              description: 'Please refresh your profile or contact support.',
+            });
             return;
           }
+          
+          console.log('Successfully updated premium status');
           
           // Update local context
           setPremiumUser(true);

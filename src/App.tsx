@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider, useAuth } from "@/components/auth-context";
-import { AccessProvider } from "@/components/access-context";
+import { AccessProvider, useAccess } from "@/components/access-context";
 import { useState, useEffect, lazy, Suspense } from "react";
 import Index from "./pages/Index";
 import Auth from "./pages/auth";
@@ -47,7 +46,8 @@ function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
+  const { refreshPremiumStatus } = useAccess();
   const [guestSearchCount, setGuestSearchCount] = useState(0);
   
   // Add loading timeout
@@ -58,6 +58,26 @@ function AppContent() {
     
     return () => clearTimeout(timer);
   }, []);
+
+  // Refresh premium status whenever user or profile changes
+  useEffect(() => {
+    if (user) {
+      console.log("Refreshing premium status on user/profile change");
+      refreshPremiumStatus();
+    }
+  }, [user, profile, refreshPremiumStatus]);
+
+  // Refresh profile and premium status on page load and navigation
+  useEffect(() => {
+    const checkUserStatus = async () => {
+      if (user) {
+        await refreshProfile();
+        await refreshPremiumStatus();
+      }
+    };
+    
+    checkUserStatus();
+  }, [location.pathname, user, refreshProfile, refreshPremiumStatus]);
 
   // Function to check if user is admin
   const isAdmin = () => {
