@@ -1,6 +1,7 @@
 import { DiagramResult } from "@/hooks/use-infinite-search";
 import { searchGoogleImages } from "@/utils/googleSearch";
 import { toast } from "sonner";
+import { ResourceItem } from "@/components/recommendation-section";
 
 const MAX_CACHE_SIZE = 200;
 
