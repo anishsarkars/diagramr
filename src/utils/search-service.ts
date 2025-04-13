@@ -653,7 +653,7 @@ function generateRelatedResources(query: string): Promise<ResourceItem[]> {
   
   switch(category) {
     case "computer-science":
-      return [
+      return Promise.resolve([
         {
           title: "Data Structures & Algorithms",
           url: "https://www.geeksforgeeks.org/data-structures/",
@@ -678,9 +678,9 @@ function generateRelatedResources(query: string): Promise<ResourceItem[]> {
           source: "Lucidchart",
           type: "resource"
         }
-      ];
+      ]);
     case "physics":
-      return [
+      return Promise.resolve([
         {
           title: "Physics Courses",
           url: "https://www.khanacademy.org/science/physics",
@@ -705,9 +705,9 @@ function generateRelatedResources(query: string): Promise<ResourceItem[]> {
           source: "Georgia State University",
           type: "resource"
         }
-      ];
+      ]);
     case "biology":
-      return [
+      return Promise.resolve([
         {
           title: "Biology Library",
           url: "https://www.khanacademy.org/science/biology",
@@ -732,9 +732,9 @@ function generateRelatedResources(query: string): Promise<ResourceItem[]> {
           source: "Visible Body",
           type: "resource"
         }
-      ];
+      ]);
     case "chemistry":
-      return [
+      return Promise.resolve([
         {
           title: "Chemistry Library",
           url: "https://www.khanacademy.org/science/chemistry",
@@ -759,9 +759,9 @@ function generateRelatedResources(query: string): Promise<ResourceItem[]> {
           source: "ChemTube3D",
           type: "resource"
         }
-      ];
+      ]);
     case "mathematics":
-      return [
+      return Promise.resolve([
         {
           title: "Mathematics Library",
           url: "https://www.khanacademy.org/math",
@@ -786,9 +786,9 @@ function generateRelatedResources(query: string): Promise<ResourceItem[]> {
           source: "Wolfram MathWorld",
           type: "article"
         }
-      ];
+      ]);
     case "business":
-      return [
+      return Promise.resolve([
         {
           title: "Business Process Modeling",
           url: "https://www.lucidchart.com/pages/business-process-modeling",
@@ -813,9 +813,9 @@ function generateRelatedResources(query: string): Promise<ResourceItem[]> {
           source: "Diagrams.net",
           type: "resource"
         }
-      ];
+      ]);
     default:
-      return [
+      return Promise.resolve([
         {
           title: "Academic Resources",
           url: "https://www.khanacademy.org/",
@@ -840,6 +840,6 @@ function generateRelatedResources(query: string): Promise<ResourceItem[]> {
           source: "Lucidchart",
           type: "resource"
         }
-      ];
+      ]);
   }
 }
