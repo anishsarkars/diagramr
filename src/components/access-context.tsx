@@ -1,5 +1,6 @@
 
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import { useAuth } from '@/components/auth-context';
 
 interface AccessContextType {
   isPremiumUser: boolean;
@@ -14,6 +15,16 @@ interface AccessProviderProps {
 
 export function AccessProvider({ children }: AccessProviderProps) {
   const [isPremiumUser, setIsPremiumUser] = useState(false);
+  const { user, profile } = useAuth();
+  
+  // Update premium status based on user profile
+  useEffect(() => {
+    if (profile?.is_premium) {
+      setIsPremiumUser(true);
+    } else {
+      setIsPremiumUser(false);
+    }
+  }, [profile]);
 
   const setPremiumUser = (value: boolean) => {
     setIsPremiumUser(value);

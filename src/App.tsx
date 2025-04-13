@@ -24,6 +24,8 @@ import ChatDashboard from "./pages/ChatDashboard";
 import { LoginConfetti } from "./components/login-confetti";
 import { PaymentSuccessNotification } from "./components/payment-success-notification";
 import { PaymentWebhookHandler } from "./components/payment-webhook-handler";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCancel from "./pages/PaymentCancel";
 
 // Lazy load admin pages
 const AdminApiStatus = lazy(() => import('./pages/admin/api-status'));
@@ -142,6 +144,8 @@ function AppContent() {
             <Route path="/terms" element={<Terms />} />
             <Route path="/refund" element={<Refund />} />
             <Route path="/dashboard" element={<ChatDashboard />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/payment-cancel" element={<PaymentCancel />} />
             <Route path="/admin/api-status" element={
               <Suspense fallback={<SiteLoader />}>
                 <AdminApiStatus />
