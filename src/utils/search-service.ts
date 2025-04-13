@@ -578,7 +578,8 @@ export async function findAdditionalResources(query: string): Promise<ResourceIt
   }
 }
 
-function generateRelatedResources(query: string): Promise<ResourceItem[]> {
+// Renamed from generateRelatedResources to getFallbackRelatedResources
+function getFallbackRelatedResources(query: string): Promise<ResourceItem[]> {
   const searchTermLower = query.toLowerCase();
   
   let category = "";
