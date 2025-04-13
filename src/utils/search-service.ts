@@ -710,13 +710,13 @@ export function findAdditionalResources(searchTerm: string): ResourceItem[] {
           title: "Interactive Biology",
           url: "https://www.cellsalive.com/",
           source: "Cells Alive",
-          type: "interactive"
+          type: "resource"
         },
         {
           title: "Human Anatomy Atlas",
           url: "https://www.visiblebody.com/",
           source: "Visible Body",
-          type: "tool"
+          type: "resource"
         }
       ];
     case "chemistry":
@@ -731,7 +731,7 @@ export function findAdditionalResources(searchTerm: string): ResourceItem[] {
           title: "Chemistry Guides",
           url: "https://chem.libretexts.org/",
           source: "LibreTexts",
-          type: "textbook"
+          type: "article"
         },
         {
           title: "Chemistry Courses",
@@ -743,7 +743,7 @@ export function findAdditionalResources(searchTerm: string): ResourceItem[] {
           title: "Organic Chemistry Animations",
           url: "https://www.chemtube3d.com/",
           source: "ChemTube3D",
-          type: "interactive"
+          type: "resource"
         }
       ];
     case "mathematics":
@@ -758,7 +758,7 @@ export function findAdditionalResources(searchTerm: string): ResourceItem[] {
           title: "Interactive Mathematics",
           url: "https://www.desmos.com/",
           source: "Desmos",
-          type: "tool"
+          type: "resource"
         },
         {
           title: "Mathematics Courses",
@@ -770,7 +770,7 @@ export function findAdditionalResources(searchTerm: string): ResourceItem[] {
           title: "Mathematics Reference",
           url: "https://mathworld.wolfram.com/",
           source: "Wolfram MathWorld",
-          type: "reference"
+          type: "article"
         }
       ];
     case "business":
@@ -779,7 +779,7 @@ export function findAdditionalResources(searchTerm: string): ResourceItem[] {
           title: "Business Process Modeling",
           url: "https://www.lucidchart.com/pages/business-process-modeling",
           source: "Lucidchart",
-          type: "guide"
+          type: "article"
         },
         {
           title: "Economics Courses",
@@ -797,7 +797,7 @@ export function findAdditionalResources(searchTerm: string): ResourceItem[] {
           title: "Flowchart Maker",
           url: "https://www.diagrams.net/",
           source: "Diagrams.net",
-          type: "tool"
+          type: "resource"
         }
       ];
     default:
